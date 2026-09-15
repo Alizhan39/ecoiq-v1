@@ -156,15 +156,16 @@ build artefact is only trustworthy if something proves it matches its source.
 
 ## Deployment
 
-One Render web service and one PostgreSQL database. Migrations run in
-`preDeployCommand`, so a failing migration fails the deploy rather than serving
-half-migrated.
+One Free Render web service and one durable PostgreSQL database. The Free plan
+has no Pre-Deploy command, so `start.sh` applies migrations before Gunicorn and
+refuses to start if they fail.
 
-**Redis and Celery are not deployed.** They are commented out in `render.yaml`.
-The code contains `@shared_task` definitions, which makes it look otherwise —
-nothing in the request path calls them asynchronously.
+The repository does not declare Redis or a Celery worker. Legacy manually-created
+instances must be removed from the Render dashboard only after the low-cost
+cutover smoke checks pass; see the migration runbook below.
 
 Runbook: [`docs/operations/PRODUCTION_RUNBOOK.md`](docs/operations/PRODUCTION_RUNBOOK.md)
+Low-cost cutover: [`docs/operations/FREE_RENDER_MIGRATION.md`](docs/operations/FREE_RENDER_MIGRATION.md)
 
 ---
 

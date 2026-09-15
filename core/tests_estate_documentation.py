@@ -95,12 +95,14 @@ class RetractedClaimsTests(SimpleTestCase):
                 name, body,
                 f'{name} runs in production and the runbook does not mention it.')
 
-    def test_the_blueprint_says_it_is_not_the_inventory(self):
+    def test_the_blueprint_names_unmanaged_production_services(self):
         """
         render.yaml cannot be fixed by a comment — closing the gap costs money
         and is the owner's call. It can at least stop being read as complete.
         """
-        self.assertIn('DOES NOT DESCRIBE THE RUNNING ESTATE', text('render.yaml'))
+        body = text('render.yaml')
+        self.assertIn('manually-created Key Value, Celery worker', body)
+        self.assertIn('managed by this Blueprint', body)
 
 
 class NothingRunsOnAScheduleTests(SimpleTestCase):

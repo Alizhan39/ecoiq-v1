@@ -203,9 +203,15 @@ class DeploymentScriptTests(SimpleTestCase):
                     command, line,
                     f'{command} must be an explicit operator action, not a deploy step')
 
-    def test_start_does_not_migrate(self):
-        for line in self._code_lines('start.sh'):
-            self.assertNotIn('manage.py migrate', line)
+    def test_start_migrates_before_gunicorn_for_free_plan(self):
+        script = self._read('start.sh')
+        self.assertIn('manage.py migrate --no-input', script)
+        self.assertLess(script.index('manage.py migrate'), script.index('gunicorn'))
+
+    def test_start_aborts_when_migrations_fail(self):
+        script = self._read('start.sh')
+        self.assertIn('set -euo pipefail', script)
+        self.assertIn('exit 1', script)
 
     def test_start_still_launches_gunicorn(self):
         self.assertIn('gunicorn', self._read('start.sh'))
@@ -240,6 +246,30 @@ class DeploymentScriptTests(SimpleTestCase):
 
     def test_build_uses_strict_mode(self):
         self.assertIn('set -euo pipefail', self._read('build.sh'))
+
+
+class FreeRenderTopologyTests(SimpleTestCase):
+    def setUp(self):
+        self.blueprint = (REPO_ROOT / 'render.yaml').read_text()
+        self.code = '\n'.join(
+            line for line in self.blueprint.splitlines()
+            if line.strip() and not line.lstrip().startswith('#')
+        )
+
+    def test_only_the_web_process_is_declared(self):
+        self.assertRegex(self.code, r'(?m)^\s*plan:\s*free(?:\s+#.*)?$')
+        for service_type in ('worker', 'cron', 'redis', 'keyvalue'):
+            self.assertNotRegex(self.code, rf'(?m)^\s*-?\s*type:\s*{service_type}\s*$')
+
+    def test_free_service_does_not_use_paid_predeploy(self):
+        self.assertNotIn('preDeployCommand:', self.code)
+        self.assertIn('manage.py migrate --no-input', (REPO_ROOT / 'start.sh').read_text())
+
+    def test_celery_calls_are_forced_inline_without_a_broker(self):
+        self.assertRegex(
+            self.blueprint,
+            r'key:\s*CELERY_TASK_ALWAYS_EAGER\s*\n\s*value:\s*"True"',
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════

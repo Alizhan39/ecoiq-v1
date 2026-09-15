@@ -34,6 +34,8 @@ one real-agent-pipeline flagship case per demo portfolio (FreshBridge Foods,
 ABC Engineering) from the deterministically generated bulk of entities:
 populated only for the former, null for the latter.
 """
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -127,6 +129,42 @@ FEED_ITEM_TYPE_CHOICES = [
     ('status_change',           'Status Change'),
 ]
 
+SERVICE_FREQUENCY_CHOICES = [
+    ('one_off', 'One-off'),
+    ('monthly', 'Monthly'),
+    ('quarterly', 'Quarterly'),
+    ('annual', 'Annual'),
+]
+
+SERVICE_STATUS_CHOICES = [
+    ('active', 'Active'),
+    ('waiting_client', 'Waiting for client'),
+    ('paused', 'Paused'),
+    ('completed', 'Completed'),
+]
+
+PAYMENT_STATUS_CHOICES = [
+    ('due', 'Due'),
+    ('part_paid', 'Part paid'),
+    ('paid', 'Paid'),
+    ('overdue', 'Overdue'),
+    ('waived', 'Waived'),
+]
+
+REMINDER_STATUS_CHOICES = [
+    ('open', 'Open'),
+    ('snoozed', 'Snoozed'),
+    ('done', 'Done'),
+    ('dismissed', 'Dismissed'),
+]
+
+REMINDER_PRIORITY_CHOICES = [
+    ('low', 'Low'),
+    ('normal', 'Normal'),
+    ('high', 'High'),
+    ('urgent', 'Urgent'),
+]
+
 
 class InstitutionalAccount(models.Model):
     """One subscribing firm — an accounting firm, bank, PE fund, etc."""
@@ -211,6 +249,209 @@ class PortfolioEntity(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class AccountingService(models.Model):
+    """A reusable service sold by one accounting or advisory firm."""
+    institutional_account = models.ForeignKey(
+        InstitutionalAccount, on_delete=models.CASCADE, related_name='accounting_services',
+    )
+    name = models.CharField(max_length=160)
+    code = models.SlugField(max_length=80)
+    description = models.TextField(blank=True)
+    default_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=10, default='GBP')
+    frequency = models.CharField(max_length=12, choices=SERVICE_FREQUENCY_CHOICES, default='annual')
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['institutional_account', 'code'], name='unique_accounting_service_code_per_firm',
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class ClientService(models.Model):
+    """One service engagement for one client, with a named employee and deadline."""
+    client = models.ForeignKey(PortfolioEntity, on_delete=models.CASCADE, related_name='accounting_engagements')
+    service = models.ForeignKey(AccountingService, on_delete=models.PROTECT, related_name='client_engagements')
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='accounting_engagements',
+    )
+    status = models.CharField(max_length=20, choices=SERVICE_STATUS_CHOICES, default='active')
+    start_date = models.DateField(default=timezone.localdate)
+    next_due_date = models.DateField(null=True, blank=True, db_index=True)
+    agreed_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    currency = models.CharField(max_length=10, default='GBP')
+    notes = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['next_due_date', 'client__name']
+        indexes = [
+            models.Index(fields=['status', 'next_due_date']),
+            models.Index(fields=['assigned_to', 'status']),
+        ]
+
+    def __str__(self):
+        return f'{self.client.name} — {self.service.name}'
+
+
+class ClientPayment(models.Model):
+    """A payment obligation and its receipts; rows are retained for audit history."""
+    client_service = models.ForeignKey(ClientService, on_delete=models.PROTECT, related_name='payments')
+    amount_due = models.DecimalField(max_digits=12, decimal_places=2)
+    amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    currency = models.CharField(max_length=10, default='GBP')
+    due_date = models.DateField(db_index=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    payment_method = models.CharField(max_length=80, blank=True)
+    reference = models.CharField(max_length=160, blank=True)
+    status = models.CharField(max_length=12, choices=PAYMENT_STATUS_CHOICES, default='due')
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['due_date', 'client_service__client__name']
+        indexes = [models.Index(fields=['status', 'due_date'])]
+
+    @property
+    def balance(self):
+        return max(self.amount_due - self.amount_paid, 0)
+
+    @property
+    def display_status(self):
+        if self.status == 'due' and self.due_date < timezone.localdate():
+            return 'overdue'
+        return self.status
+
+    def __str__(self):
+        return f'{self.client_service.client.name} — {self.amount_due} {self.currency}'
+
+
+class PaymentReceipt(models.Model):
+    """One immutable receipt; ClientPayment stores the current aggregate balance."""
+    payment = models.ForeignKey(ClientPayment, on_delete=models.PROTECT, related_name='receipts')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    received_at = models.DateTimeField(default=timezone.now)
+    payment_method = models.CharField(max_length=80, blank=True)
+    reference = models.CharField(max_length=160, blank=True)
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='accounting_payment_receipts',
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-received_at', '-pk']
+        indexes = [models.Index(fields=['payment', 'received_at'])]
+
+    def __str__(self):
+        return f'{self.amount} {self.payment.currency} received for payment {self.payment_id}'
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValidationError('Payment receipts are append-only and cannot be edited.')
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Payment receipts are append-only and cannot be deleted.')
+
+
+class ClientReminder(models.Model):
+    """An in-app deadline alarm that needs no Celery or Redis process."""
+    client_service = models.ForeignKey(
+        ClientService, null=True, blank=True, on_delete=models.CASCADE, related_name='reminders',
+    )
+    client = models.ForeignKey(
+        PortfolioEntity, null=True, blank=True, on_delete=models.CASCADE, related_name='accounting_reminders',
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='accounting_reminders',
+    )
+    title = models.CharField(max_length=220)
+    notes = models.TextField(blank=True)
+    due_at = models.DateTimeField(db_index=True)
+    priority = models.CharField(max_length=10, choices=REMINDER_PRIORITY_CHOICES, default='normal')
+    status = models.CharField(max_length=12, choices=REMINDER_STATUS_CHOICES, default='open')
+    snoozed_until = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['due_at']
+        indexes = [
+            models.Index(fields=['status', 'due_at']),
+            models.Index(fields=['owner', 'status']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(client__isnull=False) | models.Q(client_service__isnull=False),
+                name='accounting_reminder_has_client_or_service',
+            ),
+        ]
+
+    @property
+    def effective_due_at(self):
+        if self.status == 'snoozed' and self.snoozed_until:
+            return self.snoozed_until
+        return self.due_at
+
+    @property
+    def is_due(self):
+        return self.status in {'open', 'snoozed'} and self.effective_due_at <= timezone.now()
+
+    def __str__(self):
+        return self.title
+
+
+class AccountingActivity(models.Model):
+    """Append-only human-readable audit trail for operational changes."""
+    institutional_account = models.ForeignKey(
+        InstitutionalAccount, on_delete=models.CASCADE, related_name='accounting_activity',
+    )
+    client = models.ForeignKey(
+        PortfolioEntity, null=True, blank=True, on_delete=models.SET_NULL, related_name='accounting_activity',
+    )
+    client_service = models.ForeignKey(
+        ClientService, null=True, blank=True, on_delete=models.SET_NULL, related_name='activity',
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='accounting_activity',
+    )
+    event_type = models.CharField(max_length=50)
+    summary = models.CharField(max_length=255)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['institutional_account', 'created_at'])]
+
+    def __str__(self):
+        return self.summary
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            raise ValidationError('Accounting activity is append-only and cannot be edited.')
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError('Accounting activity is append-only and cannot be deleted.')
 
 
 class PortfolioSignal(models.Model):

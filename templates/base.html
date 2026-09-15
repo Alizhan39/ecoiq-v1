@@ -190,6 +190,9 @@
       <a href="/about/">{% trans "About" %}</a>
       <a href="{% url 'contact' %}">{% trans "Contact" %}</a>
       {% if request.user.is_authenticated %}
+      {% if request.user.is_staff %}
+      <a href="{% url 'financial_intelligence_cloud:accounting_operations' %}" style="color:#f2cc60;font-weight:600;">{% trans "Accounting Ops" %}</a>
+      {% endif %}
       <a href="/dashboard/" style="color:#00e89a;font-weight:600;">{% trans "Dashboard" %}</a>
       {% else %}
       <a href="/login/" style="color:#00e89a;font-weight:600;">{% trans "Sign in" %}</a>

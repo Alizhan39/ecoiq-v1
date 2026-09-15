@@ -26,14 +26,11 @@ Never add `migrate`, `bootstrap_*`, or any `seed_*` command to `build.sh`.
 | Phase | Script | Runs | Purpose |
 |-------|--------|------|---------|
 | Build | `build.sh` | build env (no DB) | deps, translations, static files |
-| Pre-Deploy | `predeploy.sh` | runtime net (DB resolves) | `migrate` + all seeds, **once per deploy** |
-| Start | `start.sh` | runtime net (DB resolves) | best-effort `migrate` safety net, then Gunicorn |
+| Start | `start.sh` | runtime net (DB resolves) | strict `migrate`, then Gunicorn |
 
-Both `predeploy.sh` and `start.sh` are **best-effort**: if the database is
-temporarily unavailable they log a warning and exit 0 / start the server anyway,
-so **a database hiccup can never block a deploy or stop the web service booting.**
-The app has no import-time database access, so Gunicorn serves even with the DB down;
-schema/data catch up automatically on the next start once the DB is back.
+The Free web plan does not support Render's paid Pre-Deploy command. `start.sh`
+therefore retries migrations in the runtime network and refuses to open the HTTP
+port if they fail. New code never serves against an old schema.
 
 ## Render service configuration (must match `render.yaml`)
 
@@ -42,10 +39,10 @@ were ever set **manually in the Render dashboard**, the dashboard value override
 `render.yaml` — set them to exactly:
 
 - **Build Command:** `pip install -r requirements.txt && ./build.sh`
-- **Pre-Deploy Command:** `./predeploy.sh`
 - **Start Command:** `./start.sh`
 
-`preDeployCommand` requires a paid instance type (this service runs on **Starter**).
+The web service runs on **Free**. Keep `predeploy.sh` only as the migration step
+if the service later returns to paid compute.
 
 ## Required environment variables (Render dashboard)
 
