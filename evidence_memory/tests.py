@@ -435,14 +435,19 @@ class CreateMemoryFromAgentRunTests(TestCase):
 
 class SearchTests(TestCase):
     def setUp(self):
+        from django.contrib.auth import get_user_model
+        from gold_intelligence.models import GoldProject
+        self.user = get_user_model().objects.create_user('memory-search-staff', is_staff=True)
+        self.project = GoldProject.objects.create(name='Search project', slug='search-project')
+        self.context = {'project': self.project, 'user': self.user}
         self.heating_a = EvidenceMemory.objects.create(
-            text_chunk='Coal-fired district heating operator plans transition to gas by 2030', source_type='other',
+            text_chunk='Coal-fired district heating operator plans transition to gas by 2030', source_type='other', project=self.project,
         )
         self.heating_b = EvidenceMemory.objects.create(
-            text_chunk='District heating company will transition from coal to natural gas', source_type='other',
+            text_chunk='District heating company will transition from coal to natural gas', source_type='other', project=self.project,
         )
         self.unrelated = EvidenceMemory.objects.create(
-            text_chunk='Quarterly stock market report shows tech sector gains', source_type='other',
+            text_chunk='Quarterly stock market report shows tech sector gains', source_type='other', project=self.project,
         )
         for m in (self.heating_a, self.heating_b, self.unrelated):
             m.embedding = embeddings.compute_embedding(m.text_chunk)
@@ -450,18 +455,18 @@ class SearchTests(TestCase):
             m.save()
 
     def test_search_similar_ranks_related_text_first(self):
-        results = memory.search_similar('coal to gas heating transition', top_k=3)
+        results = memory.search_similar('coal to gas heating transition', top_k=3, **self.context)
         result_ids = [r.pk for r in results]
         self.assertIn(self.heating_a.pk, result_ids[:2])
         self.assertIn(self.heating_b.pk, result_ids[:2])
 
     def test_never_returns_unembedded_rows(self):
-        pending = EvidenceMemory.objects.create(text_chunk='not yet embedded', source_type='other')
-        results = memory.search_similar('not yet embedded')
+        pending = EvidenceMemory.objects.create(text_chunk='not yet embedded', source_type='other', project=self.project)
+        results = memory.search_similar('not yet embedded', **self.context)
         self.assertNotIn(pending.pk, [r.pk for r in results])
 
     def test_blank_query_returns_empty(self):
-        self.assertEqual(list(memory.search_similar('')), [])
+        self.assertEqual(list(memory.search_similar('', **self.context)), [])
 
     def test_search_company_memory_scopes_by_company(self):
         from companies.models import CompanyProfile
@@ -471,15 +476,15 @@ class SearchTests(TestCase):
         other_profile = CompanyProfile.objects.exclude(pk=profile.pk).first()
 
         scoped = EvidenceMemory.objects.create(
-            text_chunk='Coal-fired heating transition plan for this company', company=profile,
+            text_chunk='Coal-fired heating transition plan for this company', company=profile, project=self.project,
         )
         scoped.embedding = embeddings.compute_embedding(scoped.text_chunk)
         scoped.embedding_status = 'embedded'
         scoped.save()
 
-        results = memory.search_company_memory(profile, 'heating transition')
+        results = memory.search_company_memory(profile, 'heating transition', **self.context)
         self.assertIn(scoped.pk, [r.pk for r in results])
-        results_other = memory.search_company_memory(other_profile, 'heating transition')
+        results_other = memory.search_company_memory(other_profile, 'heating transition', **self.context)
         self.assertNotIn(scoped.pk, [r.pk for r in results_other])
 
     def test_search_country_memory_scopes_by_country(self):
@@ -490,14 +495,69 @@ class SearchTests(TestCase):
         self.assertIsNotNone(country)
 
         scoped = EvidenceMemory.objects.create(
-            text_chunk='Coal-fired heating transition plan for this country', country=country,
+            text_chunk='Coal-fired heating transition plan for this country', country=country, project=self.project,
         )
         scoped.embedding = embeddings.compute_embedding(scoped.text_chunk)
         scoped.embedding_status = 'embedded'
         scoped.save()
 
-        results = memory.search_country_memory(country, 'heating transition')
+        results = memory.search_country_memory(country, 'heating transition', **self.context)
         self.assertIn(scoped.pk, [r.pk for r in results])
+
+    def test_missing_or_unauthorised_context_never_reaches_ranking(self):
+        from django.contrib.auth.models import AnonymousUser
+        from django.contrib.auth import get_user_model
+        regular = get_user_model().objects.create_user('memory-regular')
+        inactive = get_user_model().objects.create_user('memory-inactive', is_staff=True, is_active=False)
+        for context in ({}, {'user': self.user}, {'project': self.project},
+                        {'project': self.project, 'user': AnonymousUser()},
+                        {'project': self.project, 'user': regular},
+                        {'project': self.project, 'user': inactive}):
+            with self.subTest(context=context), mock.patch.object(memory, '_rank_candidates') as rank:
+                self.assertEqual(memory.search_similar('heating', **context), [])
+                rank.assert_not_called()
+
+    def test_policy_filters_before_top_k_and_covers_every_visibility(self):
+        from gold_intelligence.models import GoldProject
+        other = GoldProject.objects.create(name='Other', slug='other-search', organisation='same org')
+        self.project.organisation = ' Same Org '
+        self.project.save()
+        cases = [
+            ({'project': other}, False),
+            ({'project': None}, False),
+            ({'visibility': 'restricted_unresolved'}, False),
+            ({'visibility': 'unexpected'}, False),
+            ({'verification_status': 'rejected'}, False),
+            ({'project': other, 'visibility': 'organisation_shared', 'organisation': ' Same Org '}, True),
+            ({'project': other, 'visibility': 'organisation_shared', 'organisation': 'unrelated'}, False),
+            ({'project': other, 'visibility': 'platform_learning_verified', 'verification_status': 'verified', 'review_tier': 'independently_verified'}, True),
+            ({'visibility': 'platform_learning_verified', 'verification_status': 'verified', 'review_tier': 'uploaded'}, False),
+            ({'visibility': 'platform_learning_verified', 'verification_status': 'rejected', 'review_tier': 'independently_verified'}, False),
+            ({'visibility': 'platform_learning_demo', 'is_demo': False}, False),
+            ({'visibility': 'platform_learning_demo', 'is_demo': True}, False),
+        ]
+        for changes, allowed in cases:
+            with self.subTest(changes=changes):
+                fields = dict(project=self.project, text_chunk='exact private retrieval target',
+                              embedding=embeddings.compute_embedding('exact private retrieval target'), embedding_status='embedded')
+                fields.update(changes)
+                candidate = EvidenceMemory.objects.create(**fields)
+                results = memory.search_similar('exact private retrieval target', top_k=1, **self.context)
+                self.assertEqual(candidate.pk in [r.pk for r in results], allowed)
+                self.assertEqual(len(results), 1)  # forbidden nearest neighbour never consumes the slot
+                candidate.delete()
+
+    def test_demo_requires_explicit_opt_in(self):
+        demo = EvidenceMemory.objects.create(
+            text_chunk='demo heating', embedding=embeddings.compute_embedding('demo heating'),
+            embedding_status='embedded', is_demo=True, visibility='platform_learning_demo',
+        )
+        self.assertNotIn(demo.pk, [r.pk for r in memory.search_similar('demo heating', **self.context)])
+        self.assertIn(demo.pk, [r.pk for r in memory.search_similar('demo heating', include_demo=True, **self.context)])
+
+    def test_missing_entity_does_not_broaden_wrapper_search(self):
+        self.assertEqual(memory.search_company_memory(None, 'heating', **self.context), [])
+        self.assertEqual(memory.search_country_memory(None, 'heating', **self.context), [])
 
 
 class BackendIntelligenceEngineIntegrationTests(TestCase):
@@ -510,27 +570,60 @@ class BackendIntelligenceEngineIntegrationTests(TestCase):
     def test_run_ai_analysis_retrieves_and_saves_memory(self):
         from backend_intelligence_engine.tasks import run_ai_analysis
         from companies.models import CompanyProfile
+        from django.contrib.auth import get_user_model
+        from gold_intelligence.models import GoldProject
 
+        user = get_user_model().objects.create_user('task-staff', is_staff=True)
+        project = GoldProject.objects.create(name='Analysis project', slug='analysis-project')
         profile = CompanyProfile.objects.first()
-        EvidenceMemory.objects.create(
+        allowed = EvidenceMemory.objects.create(
             text_chunk='This company reported strong emissions reduction progress in its latest filing.',
-            source_type='company_report', company=profile,
+            source_type='company_report', company=profile, project=project,
             embedding=embeddings.compute_embedding('This company reported strong emissions reduction progress in its latest filing.'),
             embedding_status='embedded',
+        )
+        denied = EvidenceMemory.objects.create(
+            text_chunk='PRIVATE UNRESOLVED COMPANY EVIDENCE', company=profile,
+            embedding=allowed.embedding, embedding_status='embedded',
         )
 
         result = run_ai_analysis.apply(
             args=['waste-leakage-agent'],
             kwargs={
                 'execution_mode': 'deterministic_test', 'company_profile_id': profile.pk,
+                'requesting_user_id': user.pk, 'project_id': project.pk,
                 'input_summary': 'What emissions progress has this company made?',
             },
         ).get()
 
         self.assertEqual(result['status'], 'completed')
-        self.assertGreater(len(result['memories_retrieved']), 0)
+        self.assertEqual(result['memories_retrieved'], [allowed.pk])
+        from agent_runtime_model_router.models import AgentRun
+        prompt = AgentRun.objects.get(pk=result['agent_run_id']).input_summary
+        self.assertIn(f'EvidenceMemory:{allowed.pk}', prompt)
+        self.assertNotIn(denied.text_chunk, prompt)
         self.assertIsNotNone(result['memory_saved_id'])
-        self.assertTrue(EvidenceMemory.objects.filter(pk=result['memory_saved_id']).exists())
+        saved = EvidenceMemory.objects.get(pk=result['memory_saved_id'])
+        self.assertEqual(saved.project_id, project.pk)
+        self.assertEqual(saved.visibility, 'project_private')
+
+    def test_run_ai_analysis_rejects_missing_targets_and_revoked_actor(self):
+        from backend_intelligence_engine.tasks import run_ai_analysis
+        from django.contrib.auth import get_user_model
+        from gold_intelligence.models import GoldProject
+        user = get_user_model().objects.create_user('revoked-task-staff', is_staff=False)
+        project = GoldProject.objects.create(name='Revoked project', slug='revoked-project')
+        cases = [
+            ({'company_profile_id': 999999999}, 'unknown_company'),
+            ({'country_slug': 'missing-country'}, 'unknown_country'),
+            ({'requesting_user_id': user.pk, 'project_id': project.pk}, 'invalid_retrieval_context'),
+            ({'project_id': project.pk}, 'invalid_retrieval_context'),
+        ]
+        for kwargs, reason in cases:
+            with self.subTest(kwargs=kwargs), mock.patch('evidence_memory.services.memory.search_similar') as search:
+                result = run_ai_analysis.apply(args=['waste-leakage-agent'], kwargs=kwargs).get()
+                self.assertEqual(result, {'status': 'failed', 'reason': reason})
+                search.assert_not_called()
 
     def test_refresh_evidence_memory_processes_company_evidence(self):
         from backend_intelligence_engine.tasks import refresh_evidence_memory

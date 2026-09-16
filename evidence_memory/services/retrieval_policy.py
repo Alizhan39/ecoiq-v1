@@ -31,12 +31,12 @@ ACCESS DECISIONS (is_record_accessible):
 Rejected records are excluded from retrieval entirely, in every scope —
 a rejected outcome is never "relevant historical evidence".
 
-USER GATE: retrieval is currently exposed only on staff-only pages
-(run_project_analysis / Command Centre). is_record_accessible still takes
-the user so the policy is enforced in one place when non-staff project
-access arrives: anonymous/None users are refused outright, non-staff users
-are refused (no non-staff project-membership model exists yet — see PR3
-report's known limitations).
+USER GATE: all retrieval entry points require an active authenticated staff
+actor and a persisted project. This includes generic semantic search used
+by background tasks and legacy consumers. Anonymous/None, inactive and
+non-staff users are refused (no non-staff project-membership model exists
+yet — see PR3 report's known limitations). Platform sharing grants project
+learning access, not public disclosure rights.
 
 RANKING (rank_for_project): semantic similarity remains the base signal
 (the same _rank_candidates engine used everywhere else — never a second
@@ -82,16 +82,52 @@ def _norm_org(value):
     return (value or '').strip().casefold()
 
 
+def _can_retrieve(project, user):
+    return (
+        project is not None and project.pk is not None
+        and user is not None and getattr(user, 'is_authenticated', False)
+        and getattr(user, 'is_active', False) and getattr(user, 'is_staff', False)
+    )
+
+
+def accessible_candidates(project, user, *, include_demo=True):
+    """Apply the shared access boundary BEFORE vector ranking, for all sources.
+
+    Company/country filters describe relevance, not permission. Callers without
+    an authenticated staff actor and a persisted project receive no candidates.
+    Keep is_record_accessible as the authoritative per-record recheck.
+    """
+    from django.db.models import Q
+    from django.db.models.functions import Trim
+    from evidence_memory.models import EvidenceMemory
+
+    if not _can_retrieve(project, user):
+        return EvidenceMemory.objects.none()
+
+    access_q = Q(project=project, visibility__in=('project_private', 'organisation_shared'))
+    project_org = (getattr(project, 'organisation', '') or '').strip()
+    if project_org:
+        access_q |= Q(visibility='organisation_shared', _retrieval_org__iexact=project_org)
+    access_q |= Q(
+        visibility='platform_learning_verified', is_demo=False,
+        verification_status='verified', review_tier='independently_verified',
+    )
+    if include_demo:
+        access_q |= Q(visibility='platform_learning_demo', is_demo=True)
+
+    candidates = EvidenceMemory.objects.alias(_retrieval_org=Trim('organisation')).filter(access_q)
+    candidates = candidates.exclude(verification_status='rejected')
+    if not include_demo:
+        candidates = candidates.filter(is_demo=False)
+    return candidates
+
+
 def is_record_accessible(memory, project, user=None):
     """May `project` (viewed by `user`) use this EvidenceMemory record?
     Pure policy — no queries beyond the passed objects' own fields."""
-    if user is None or not getattr(user, 'is_authenticated', False):
-        return False
-    if not getattr(user, 'is_staff', False):
+    if not _can_retrieve(project, user):
         # No non-staff project-membership model exists in this codebase yet;
         # until one does, non-staff users get nothing rather than everything.
-        return False
-    if project is None:
         return False
     if memory.verification_status == 'rejected':
         return False
@@ -221,32 +257,14 @@ def retrieve_for_project(project, user, query_text, *, limit=5):
     Returns a list of RetrievedEvidence, best first. Never raises for an
     unauthorised user — returns [] (the caller shows an honest empty state).
     """
-    from django.db.models import Q
-
-    from evidence_memory.models import EvidenceMemory
     from evidence_memory.services.memory import OUTCOME_SOURCE_PREFIX, _rank_candidates, _similarities_for
 
-    if user is None or not getattr(user, 'is_authenticated', False) or not getattr(user, 'is_staff', False):
+    if not _can_retrieve(project, user) or not query_text:
         return []
-    if project is None or not query_text:
-        return []
-
-    project_org = _norm_org(getattr(project, 'organisation', ''))
-    access_q = Q(project=project)
-    if project_org:
-        access_q |= Q(visibility='organisation_shared', organisation__iexact=(project.organisation or '').strip())
-    access_q |= Q(visibility='platform_learning_demo', is_demo=True)
-    access_q |= Q(
-        visibility='platform_learning_verified', is_demo=False,
-        verification_status='verified', review_tier='independently_verified',
-    )
 
     candidates = (
-        EvidenceMemory.objects
+        accessible_candidates(project, user)
         .filter(source_reference__startswith=OUTCOME_SOURCE_PREFIX)
-        .filter(access_q)
-        .exclude(visibility='restricted_unresolved')
-        .exclude(verification_status='rejected')
         .select_related('project', 'originating_outcome', 'originating_decision')
     )
 

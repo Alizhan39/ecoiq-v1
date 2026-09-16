@@ -62,6 +62,21 @@ class CompanyWorkflowTests(TestCase):
         result = run_orchestration(target_id=profile.pk, target_type='company')
         self.assertEqual(result['company']['id'], profile.pk)
 
+    def test_retrieval_without_actor_and_project_cannot_read_company_memory(self):
+        from evidence_memory.models import EvidenceMemory
+        from evidence_memory.services.embeddings import compute_embedding
+        from langgraph_orchestration.nodes import retrieve_evidence_memory
+        profile = CompanyProfile.objects.first()
+        text = 'Private company evidence must not reach the graph.'
+        EvidenceMemory.objects.create(
+            company=profile, text_chunk=text, embedding=compute_embedding(text), embedding_status='embedded',
+        )
+        state = new_state(user_request=text)
+        state['company'] = {'id': profile.pk, 'name': 'Company'}
+        result = retrieve_evidence_memory(state)
+        self.assertEqual(result['evidence_context']['memories'], [])
+        self.assertTrue(result['evidence_context']['weak'])
+
     def test_company_workflow_produces_traceable_recommendations(self):
         profile = CompanyProfile.objects.filter(ecoiq_total_score__isnull=False).first()
         result = run_orchestration(user_request='Which project deserves funding first?', target_id=profile.pk, target_type='company')
@@ -141,7 +156,7 @@ class WeakEvidenceRoutingTests(TestCase):
         self.assertTrue(result['evidence_context']['weak'])
         self.assertTrue(any('Evidence Memory is weak' in n for n in result['verification_notes']))
 
-    def test_strong_evidence_is_not_flagged_weak(self):
+    def test_high_confidence_private_evidence_without_context_is_still_weak(self):
         from evidence_memory.models import EvidenceMemory
         from evidence_memory.services.embeddings import compute_embedding
 
@@ -153,7 +168,9 @@ class WeakEvidenceRoutingTests(TestCase):
                 embedding=compute_embedding(text), embedding_status='embedded',
             )
         result = run_orchestration(user_request='verified evidence record about this company', target_id=profile.pk, target_type='company')
-        self.assertFalse(result['evidence_context']['weak'])
+        self.assertTrue(result['evidence_context']['weak'])
+        self.assertFalse(result['evidence_context']['available'])
+        self.assertEqual(result['evidence_context']['memories'], [])
 
 
 class MissingDataHandlingTests(TestCase):
@@ -249,7 +266,7 @@ class EvidenceMemoryIntegrationTests(TestCase):
     def setUpTestData(cls):
         _seed_base()
 
-    def test_retrieved_memory_reaches_agent_input_summary(self):
+    def test_private_memory_without_context_is_absent_from_result_and_agent_prompt(self):
         from evidence_memory.models import EvidenceMemory
         from evidence_memory.services.embeddings import compute_embedding
 
@@ -261,13 +278,11 @@ class EvidenceMemoryIntegrationTests(TestCase):
         )
 
         result = run_orchestration(user_request='emissions disclosure this company published', target_id=profile.pk, target_type='company')
-        self.assertTrue(result['evidence_context']['available'])
+        self.assertFalse(result['evidence_context']['available'])
         from agent_runtime_model_router.models import AgentRun
         run = AgentRun.objects.get(pk=result['agent_outputs'][0]['agent_run_id'])
-        # The node itself doesn't inject memory into the agent prompt (that's
-        # backend_intelligence_engine.run_ai_analysis's job) — verifies the
-        # retrieval result is genuinely available for the caller to use.
-        self.assertGreaterEqual(result['evidence_context']['count'], 1)
+        self.assertEqual(result['evidence_context']['count'], 0)
+        self.assertNotIn(memory_text, run.input_summary)
 
     def test_analysis_finding_is_saved_back_to_memory_via_recommend_for_company(self):
         # recommend_for_company (called inside run_intelligence_analytics)
