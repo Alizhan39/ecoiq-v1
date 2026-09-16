@@ -273,6 +273,61 @@ _ML = (
     ),
 )
 
+#: AI runtime infrastructure. These are real shared services, not agents.
+#: They are kept separate from `_AI` so the registry never turns an evidence
+#: store, telemetry recorder, or task runner into an "AI agent" by wording.
+_AI_INFRASTRUCTURE = (
+    Module(
+        key='agent_runtime.model_router', name='Agent Runtime & Model Router',
+        kind=INFRASTRUCTURE, status=BETA,
+        location='agent_runtime_model_router/',
+        entry_point='agent_runtime_model_router.services.execution.execute_agent',
+        consumers=('backend_intelligence_engine.tasks.run_ai_analysis', 'ai_agent_council'),
+        dependencies=('PostgreSQL', 'provider credentials for live mode'),
+        evaluation=NOT_MEASURED,
+        basis='A tested execution pipeline performs deterministic routing, schema '
+              'validation, safety assertions, bounded retry/fallback and human-approval '
+              'gating; live output quality has not been evaluated.',
+    ),
+    Module(
+        key='evidence.memory', name='Evidence Memory & Retrieval',
+        kind=INFRASTRUCTURE, status=BETA,
+        location='evidence_memory/',
+        entry_point='evidence_memory.services.memory.search_similar',
+        consumers=('backend_intelligence_engine.tasks.run_ai_analysis', 'capital_guardian'),
+        dependencies=('PostgreSQL', 'pgvector'),
+        evaluation=NOT_MEASURED,
+        basis='Real chunk storage, deterministic embeddings, access-policy filtering '
+              'and Postgres/vector retrieval are covered by tests, but retrieval '
+              'relevance has not been measured against a labelled evaluation set.',
+        notes='SQLite uses the tested Python similarity fallback; PostgreSQL uses pgvector.',
+    ),
+    Module(
+        key='ai.observatory', name='AI Observatory & Audit Telemetry',
+        kind=INFRASTRUCTURE, status=BETA,
+        location='ai_observatory/',
+        entry_point='ai_observatory.services.recorder',
+        consumers=('agent_runtime_model_router.services.execution', 'capital_guardian'),
+        dependencies=('PostgreSQL',),
+        evaluation=NOT_MEASURED,
+        basis='The shared recorder stores measured stages and physical model calls '
+              'without estimating missing usage, and is covered by isolation and '
+              'failure-path tests; observability coverage is not yet platform-wide.',
+    ),
+    Module(
+        key='backend.workflow', name='Background Workflow Execution',
+        kind=PIPELINE, status=EXPERIMENTAL,
+        location='backend_intelligence_engine/',
+        entry_point='backend_intelligence_engine.tasks',
+        consumers=('backend_intelligence_engine.views',),
+        dependencies=('Celery', 'Redis', 'worker process'),
+        evaluation=NOT_MEASURED,
+        basis='Real idempotent tasks reuse the existing scoring, retrieval, agent and '
+              'LangGraph services and have meaningful tests, but the production Render '
+              'blueprint declares neither Redis nor a worker.',
+    ),
+)
+
 #: LLM-backed modules. NONE is PRODUCTION, and none can be until evaluated:
 #: for a generative system, output quality is exactly what evaluation measures,
 #: so there is no "other strong basis" available.
@@ -404,17 +459,19 @@ _AI = (
     ),
     Module(
         key='langgraph.orchestration', name='LangGraph Orchestration',
-        kind=AGENT, status=EXPERIMENTAL,
+        kind=PIPELINE, status=EXPERIMENTAL,
         location='langgraph_orchestration/',
-        entry_point='langgraph_orchestration',
-        consumers=(),
+        entry_point='langgraph_orchestration.graph.run_orchestration',
+        consumers=('backend_intelligence_engine.tasks.run_langgraph_intelligence_workflow',),
         dependencies=('langgraph',),
         evaluation=NOT_MEASURED,
-        basis='Orchestration experiment with no production route.',
+        basis='A fail-closed graph coordinates existing services and is callable from '
+              'the background workflow layer, but that worker path is not deployed in '
+              'the production Render blueprint.',
     ),
 )
 
-MODULES: tuple = _ENGINES + _ML + _AI
+MODULES: tuple = _ENGINES + _ML + _AI_INFRASTRUCTURE + _AI
 
 REGISTRY = {m.key: m for m in MODULES}
 

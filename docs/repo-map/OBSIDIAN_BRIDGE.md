@@ -107,12 +107,20 @@ Vault: [[Intelligence Engine MOC]], `03-Ethical-Framework/`
 | concern | file |
 |---|---|
 | Canonical module registry | `platform_registry/agents.py` |
+| Canonical layered architecture | `platform_registry/architecture.py` |
 | Counter service (SSOT) | `platform_registry/stats.py` |
 | API | `api/v2_platform.py` |
 
 No count may be hard-coded anywhere else. `ai_agents/` is **documentation** —
 298 markdown files, zero Python — and is counted separately as
 `specification_packs`.
+
+The architecture registry maps existing modules into the request lifecycle and
+resolves their statuses from the module registry at runtime. It also records
+known gaps, including the fact that the general tools/MCP connector runtime is
+planned rather than implemented.
+
+**Architecture guide:** `docs/architecture/AI_DECISION_OS.md`
 
 ---
 

@@ -19,6 +19,30 @@ export interface PlatformCounter {
 export interface PlatformStats {
   counters: PlatformCounter[];
   modules: ModuleSummary[];
+  architecture: ArchitectureLayer[];
+}
+
+export type ArchitectureMaturity = 'ACTIVE' | 'PARTIAL' | 'PLANNED';
+
+export interface ArchitectureComponent {
+  key: string;
+  name: string;
+  kind: string;
+  status: ModuleStatus;
+  location: string;
+  entry_point: string;
+}
+
+export interface ArchitectureLayer {
+  key: string;
+  name: string;
+  responsibility: string;
+  maturity: ArchitectureMaturity;
+  basis: string;
+  cross_cutting: boolean;
+  implementation_paths: string[];
+  gaps: string[];
+  components: ArchitectureComponent[];
 }
 
 export type ModuleStatus =

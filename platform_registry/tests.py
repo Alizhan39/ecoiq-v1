@@ -14,6 +14,7 @@ from platform_registry.agents import (
     AGENT, BETA, ENGINE, EXPERIMENTAL, MODULES, NOT_MEASURED, PRODUCTION,
     REGISTRY, STATUS_ORDER, by_status, counts, production_ai_agents,
 )
+from platform_registry.architecture import LAYERS, LAYER_MATURITY, PLANNED, as_payload
 from platform_registry.stats import Counter, platform_stats, proof_counters
 
 
@@ -46,6 +47,45 @@ class RegistryShape(SimpleTestCase):
         for module in MODULES:
             with self.subTest(key=module.key):
                 self.assertTrue(module.location)
+
+
+class ArchitectureContract(SimpleTestCase):
+
+    def test_every_layer_has_a_unique_key(self):
+        keys = [layer.key for layer in LAYERS]
+
+        self.assertEqual(len(keys), len(set(keys)))
+
+    def test_every_layer_has_a_valid_maturity_and_basis(self):
+        for layer in LAYERS:
+            with self.subTest(key=layer.key):
+                self.assertIn(layer.maturity, LAYER_MATURITY)
+                self.assertTrue(layer.basis.strip())
+                self.assertTrue(layer.responsibility.strip())
+
+    def test_every_component_resolves_through_the_module_registry(self):
+        for layer in LAYERS:
+            for key in layer.module_keys:
+                with self.subTest(layer=layer.key, module=key):
+                    self.assertIn(key, REGISTRY)
+
+    def test_payload_never_copies_a_different_module_status(self):
+        for layer in as_payload():
+            for component in layer['components']:
+                with self.subTest(layer=layer['key'], module=component['key']):
+                    self.assertEqual(component['status'], REGISTRY[component['key']].status)
+
+    def test_planned_connector_layer_states_the_runtime_gap(self):
+        connectors = next(layer for layer in LAYERS if layer.key == 'tools_connectors')
+
+        self.assertEqual(connectors.maturity, PLANNED)
+        self.assertTrue(connectors.gaps)
+        self.assertEqual(connectors.module_keys, ())
+
+    def test_cross_cutting_layers_are_explicit(self):
+        keys = {layer.key for layer in LAYERS if layer.cross_cutting}
+
+        self.assertEqual(keys, {'trust_safety', 'observability_audit', 'institutional_memory'})
 
 
 class TheProductionClaim(SimpleTestCase):

@@ -21,23 +21,29 @@ the TypeScript types and a lint rule — not by convention.
 
 ## Architecture
 
+```mermaid
+flowchart TB
+    UI["React / TypeScript"] --> API["API v2 / Django"]
+    API --> ORCH["Orchestration & model routing"]
+    ORCH --> CORE["Decision intelligence core"]
+    ORCH --> KNOW["Evidence memory / retrieval"]
+    ORCH --> GATE["Multi-provider model gateway"]
+    CORE --> DATA["PostgreSQL / pgvector / R2"]
+    KNOW --> DATA
+    TOOLS["Tools / MCP / connectors — planned"] -. governed adapters .-> ORCH
 ```
-React / TypeScript            frontend/web — public product SPA
-        │                     Vite · React Router · strictNullChecks
-        ▼
-      API v2                  api/v2_* — the canonical contract
-        │                     score · score_status · evidence_coverage
-        │                     confidence · rank
-        ▼
-      Django 5.2              70 apps, session auth, DRF
-        │
-        ▼
-Decision / Evidence /         companies/{evidence,provenance,eligibility,
-Provenance engines            confidence,metric_registry,scoring}.py
-        │                     ethics/ · financing/ · qdf/ · mizan/ · ml/
-        ▼
-    PostgreSQL
-```
+
+Trust and safety, human approval, provenance, observability and institutional
+memory cut across every runtime layer. The important qualification is that the
+layers do **not** all have the same maturity: the deterministic decision core
+and API are active; orchestration, retrieval, model routing and observability
+are partial/beta; the general product connector/MCP runtime is planned.
+
+The code-owned map is `platform_registry/architecture.py`. It resolves each
+component's maturity from `platform_registry/agents.py` rather than copying
+status labels into documentation. `GET /api/v2/platform/` exposes the same map,
+including known gaps. See
+[`docs/architecture/AI_DECISION_OS.md`](docs/architecture/AI_DECISION_OS.md).
 
 Three frontend directories, **none** of which is a runtime dependency:
 
