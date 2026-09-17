@@ -193,7 +193,7 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
 
     Evidence Memory integration: requesting_user_id and project_id must be
     supplied by trusted server-side code, never taken from public form fields.
-    The actor is reloaded when the task executes so revoked staff access is
+    The actor is reloaded when the task executes so revoked project access is
     honoured. Missing context yields no memory. Relevant prior memory (also
     filtered by company_profile_id/country_slug when given) is appended to
     input_summary BEFORE execute_agent runs, so it genuinely reaches the
@@ -219,6 +219,7 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
             'agent_slug': agent_slug, 'case_slug': case_slug, 'execution_mode': execution_mode,
             'company_profile_id': company_profile_id, 'country_slug': country_slug,
             'requesting_user_id': requesting_user_id, 'project_id': project_id,
+            'input_summary': input_summary,
         },
     )
 
@@ -241,19 +242,20 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
             run.mark_failed('Requested country does not exist.')
             return {'status': 'failed', 'reason': 'unknown_country'}
 
-    from django.contrib.auth import get_user_model
-    from gold_intelligence.models import GoldProject
-
-    user = None
-    if requesting_user_id is not None:
-        user = get_user_model().objects.filter(pk=requesting_user_id, is_active=True, is_staff=True).first()
-    project = GoldProject.objects.filter(pk=project_id).first() if project_id is not None else None
-    if (requesting_user_id is not None or project_id is not None) and (user is None or project is None):
-        run.mark_failed('Evidence retrieval requires an active staff actor and an existing project.')
+    from django.core.exceptions import PermissionDenied
+    from gold_intelligence.access import resolve_context
+    try:
+        user, project = resolve_context(requesting_user_id, project_id)
+    except PermissionDenied:
+        run.mark_failed('Analysis requires an active project analysis permission.')
         return {'status': 'failed', 'reason': 'invalid_retrieval_context'}
 
     demo_case = demo_cases.get_demo_case(case_slug) if case_slug else None
     council_run = demo_cases.council_run_for_case(demo_case) if demo_case else None
+    if project is not None:
+        # Council cases do not yet have project ownership. Never publish
+        # private project context into a shared demonstration case.
+        council_run = None
 
     base_input = input_summary or f'Background analysis requested via Celery task {self.request.id}.'
     memory_query = input_summary or (demo_case['question'] if demo_case else agent_entry['name'])
@@ -273,7 +275,7 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
     task_type = f'background_analysis_{agent_slug}'
     agent_run = create_agent_run(
         agent_entry['name'], task_type, council_case=council_run, execution_mode=execution_mode,
-        input_summary=full_input_summary,
+        input_summary=full_input_summary, project=project, user=user,
     )
     agent_run = execute_agent(agent_run)
 
@@ -400,7 +402,8 @@ def recalculate_scores_background(self, company_profile_id=None, limit=25):
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
              max_retries=2, retry_jitter=True)
 def run_langgraph_intelligence_workflow(self, user_request='', target_id=None, target_type=None,
-                                         latitude=None, longitude=None, execution_mode='deterministic_test'):
+                                         latitude=None, longitude=None, execution_mode='deterministic_test',
+                                         requesting_user_id=None, project_id=None):
     """
     LangGraph Intelligence Workflow — reuses langgraph_orchestration.graph.
     run_orchestration() exactly; this task's only job is Celery-level
@@ -425,17 +428,27 @@ def run_langgraph_intelligence_workflow(self, user_request='', target_id=None, t
         task_kwargs={
             'user_request': user_request, 'target_id': target_id, 'target_type': target_type,
             'latitude': latitude, 'longitude': longitude, 'execution_mode': execution_mode,
+            'requesting_user_id': requesting_user_id, 'project_id': project_id,
         },
     )
 
+    from django.core.exceptions import PermissionDenied
+    from gold_intelligence.access import resolve_context
+    try:
+        _, project = resolve_context(requesting_user_id, project_id)
+    except PermissionDenied:
+        run.mark_failed('Analysis requires an active project analysis permission.')
+        return {'status': 'failed', 'reason': 'invalid_retrieval_context'}
+
     orchestration_run = OrchestrationRun.objects.create(
         user_request=user_request, target_type=target_type or 'unknown',
-        target_reference=target_reference, celery_task_id=self.request.id or '',
+        target_reference=target_reference, celery_task_id=self.request.id or '', project=project,
     )
 
     final_state = run_orchestration(
         user_request=user_request, target_id=target_id, target_type=target_type,
         latitude=latitude, longitude=longitude, execution_mode=execution_mode,
+        requesting_user_id=requesting_user_id, project_id=project_id,
     )
 
     target_repr = (final_state.get('company') or final_state.get('country') or {}).get('name', final_state.get('target_type', ''))

@@ -8,18 +8,24 @@
   <h1 class="ds-title">What decision are you trying to make?</h1>
   <p class="ds-subtitle">EcoIQ routes your question through the intelligence modules it actually needs — evidence, scoring, analytics, specialised agents and Council synthesis — and returns an explainable, evidence-backed answer with visible confidence and uncertainty.</p>
 
-  <form method="post" action="{% url 'decision_studio:ask' %}" class="ds-ask-form">
+  <form id="ds-question-form" method="post" action="{% url 'decision_studio:ask' %}" class="ds-ask-form">
     {% csrf_token %}
+    {% if available_projects %}
+    <label for="ds-project">Project</label>
+    <select id="ds-project" name="project_id" class="ds-ask-input">
+      <option value="">General question — no project documents</option>
+      {% for project in available_projects %}
+      <option value="{{ project.pk }}" {% if selected_project.pk == project.pk %}selected{% endif %}>{{ project.name }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
     <input type="text" name="question" class="ds-ask-input" placeholder="e.g. Which companies have the strongest investment opportunity and modernisation potential?" maxlength="500" required value="{{ prefill_question }}">
     <button type="submit" class="ds-btn">Ask →</button>
   </form>
 
   <div class="ds-suggested-row">
     {% for q in suggested_questions %}
-    <button type="submit" form="ds-suggested-form-{{ forloop.counter }}" class="ds-suggested-chip" style="border:1px solid var(--ds-border);background:var(--ds-bg2);cursor:pointer;">{{ q }}</button>
-    <form id="ds-suggested-form-{{ forloop.counter }}" method="post" action="{% url 'decision_studio:ask' %}" style="display:none;">
-      {% csrf_token %}<input type="hidden" name="question" value="{{ q }}">
-    </form>
+    <button type="submit" form="ds-question-form" name="suggested_question" value="{{ q }}" formnovalidate class="ds-suggested-chip" style="border:1px solid var(--ds-border);background:var(--ds-bg2);cursor:pointer;">{{ q }}</button>
     {% endfor %}
   </div>
 

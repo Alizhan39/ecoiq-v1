@@ -34,13 +34,16 @@ def queries_visible_to(request, *, queryset=None):
 
     qs = DecisionQuery.objects.all() if queryset is None else queryset
     user = getattr(request, 'user', None)
-    if user is not None and user.is_authenticated and user.is_staff:
+    from gold_intelligence.access import visible_results, is_active_user
+    qs = visible_results(qs, user)
+    if is_active_user(user) and user.is_staff:
         return qs
 
     owner = Q(pk__in=[])          # matches nothing until an owner is proven
     session_key = request.session.session_key
     if session_key:
-        owner |= Q(session_key=session_key)
-    if user is not None and user.is_authenticated:
+        # A shared browser session alone never grants access to project work.
+        owner |= Q(session_key=session_key, project__isnull=True)
+    if is_active_user(user):
         owner |= Q(user=user)
     return qs.filter(owner)

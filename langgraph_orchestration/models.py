@@ -12,6 +12,7 @@ from django.db import models
 
 
 class OrchestrationRun(models.Model):
+    project = models.ForeignKey('gold_intelligence.GoldProject', null=True, blank=True, on_delete=models.PROTECT)
     STATUS_CHOICES = [
         ('running', 'Running'),
         ('completed', 'Completed'),

@@ -996,7 +996,7 @@ class RetrieveRelevantVerifiedOutcomesTests(TestCase):
 
     def test_platform_shared_verified_evidence_visible_cross_project(self):
         from evidence_memory.services import retrieval_policy
-        retrieval_policy.set_visibility(self.verified_memory, 'platform_learning_verified')
+        _share_as_staff(self.verified_memory, 'platform_learning_verified')
         results = memory.retrieve_relevant_verified_outcomes(self.new_project, user=self.staff)
         self.assertIn(self.verified_memory, self._memories(results))
 
@@ -1006,7 +1006,7 @@ class RetrieveRelevantVerifiedOutcomesTests(TestCase):
         self.project_a.save(update_fields=['organisation'])
         self.verified_memory.organisation = 'Stoke Share Ltd'
         self.verified_memory.save(update_fields=['organisation'])
-        retrieval_policy.set_visibility(self.verified_memory, 'organisation_shared')
+        _share_as_staff(self.verified_memory, 'organisation_shared')
 
         # Different (blank) organisation on the requesting project: denied.
         results = memory.retrieve_relevant_verified_outcomes(self.new_project, user=self.staff)
@@ -1058,7 +1058,7 @@ class RetrieveRelevantVerifiedOutcomesTests(TestCase):
         self.project_a.save(update_fields=['is_demo'])
         demo_memory = self.make_outcome(self.project_a, 'Demo pilot heating loss', 'baseline_only')
         self.assertTrue(demo_memory.is_demo)
-        retrieval_policy.set_visibility(demo_memory, 'platform_learning_demo')
+        _share_as_staff(demo_memory, 'platform_learning_demo')
         results = memory.retrieve_relevant_verified_outcomes(self.new_project, user=self.staff, limit=10)
         target = next(r for r in results if r.memory == demo_memory)
         self.assertIn('demo evidence', target.explanation)
@@ -1228,31 +1228,31 @@ class SetVisibilityTests(TestCase):
         from evidence_memory.services import retrieval_policy
         m = self._memory(verification_status='verified', review_tier='human_reviewed')
         with self.assertRaises(retrieval_policy.VisibilityNotAllowedError):
-            retrieval_policy.set_visibility(m, 'platform_learning_verified')
+            _share_as_staff(m, 'platform_learning_verified')
 
     def test_demo_cannot_be_shared_as_verified(self):
         from evidence_memory.services import retrieval_policy
         m = self._memory(verification_status='verified', review_tier='independently_verified', is_demo=True)
         with self.assertRaises(retrieval_policy.VisibilityNotAllowedError):
-            retrieval_policy.set_visibility(m, 'platform_learning_verified')
+            _share_as_staff(m, 'platform_learning_verified')
 
     def test_real_evidence_cannot_be_shared_under_demo_label(self):
         from evidence_memory.services import retrieval_policy
         m = self._memory(is_demo=False)
         with self.assertRaises(retrieval_policy.VisibilityNotAllowedError):
-            retrieval_policy.set_visibility(m, 'platform_learning_demo')
+            _share_as_staff(m, 'platform_learning_demo')
 
     def test_rejected_cannot_be_shared_at_all(self):
         from evidence_memory.services import retrieval_policy
         m = self._memory(verification_status='rejected', is_demo=True)
         for target in ('platform_learning_demo', 'platform_learning_verified', 'organisation_shared'):
             with self.assertRaises(retrieval_policy.VisibilityNotAllowedError):
-                retrieval_policy.set_visibility(m, target)
+                _share_as_staff(m, target)
 
     def test_organisation_share_fills_org_from_project(self):
         from evidence_memory.services import retrieval_policy
         m = self._memory(organisation='')
-        retrieval_policy.set_visibility(m, 'organisation_shared')
+        _share_as_staff(m, 'organisation_shared')
         m.refresh_from_db()
         self.assertEqual(m.organisation, 'Org Share')
         self.assertEqual(m.visibility, 'organisation_shared')
@@ -1263,21 +1263,21 @@ class SetVisibilityTests(TestCase):
         orgless = GoldProject.objects.create(name='Orgless', slug='orgless-project', commodity='other')
         m = self._memory(project=orgless, organisation='')
         with self.assertRaises(retrieval_policy.VisibilityNotAllowedError):
-            retrieval_policy.set_visibility(m, 'organisation_shared')
+            _share_as_staff(m, 'organisation_shared')
 
     def test_unknown_visibility_refused(self):
         from evidence_memory.services import retrieval_policy
         m = self._memory()
         with self.assertRaises(retrieval_policy.VisibilityNotAllowedError):
-            retrieval_policy.set_visibility(m, 'everyone_forever')
+            _share_as_staff(m, 'everyone_forever')
 
     def test_valid_share_and_unshare_roundtrip(self):
         from evidence_memory.services import retrieval_policy
         m = self._memory(verification_status='verified', review_tier='independently_verified', is_demo=False)
-        retrieval_policy.set_visibility(m, 'platform_learning_verified')
+        _share_as_staff(m, 'platform_learning_verified')
         m.refresh_from_db()
         self.assertEqual(m.visibility, 'platform_learning_verified')
-        retrieval_policy.set_visibility(m, 'project_private')
+        _share_as_staff(m, 'project_private')
         m.refresh_from_db()
         self.assertEqual(m.visibility, 'project_private')
 
@@ -1363,7 +1363,7 @@ class SyncHardeningTests(TestCase):
         from evidence_memory.services import retrieval_policy
         outcome = self._record_outcome(mrv_status='verified', evidence_quality='strong')
         m = memory.create_memory_from_verified_outcome(outcome)
-        retrieval_policy.set_visibility(m, 'platform_learning_verified')
+        _share_as_staff(m, 'platform_learning_verified')
         resynced = memory.create_memory_from_verified_outcome(outcome)
         self.assertEqual(resynced.visibility, 'platform_learning_verified')
 
@@ -1371,7 +1371,7 @@ class SyncHardeningTests(TestCase):
         from evidence_memory.services import retrieval_policy
         outcome = self._record_outcome(mrv_status='verified', evidence_quality='strong')
         m = memory.create_memory_from_verified_outcome(outcome)
-        retrieval_policy.set_visibility(m, 'platform_learning_verified')
+        _share_as_staff(m, 'platform_learning_verified')
 
         # The decision is later rejected — the record must not stay shared.
         self.decision.approval_status = 'rejected'
@@ -1395,3 +1395,11 @@ class SyncHardeningTests(TestCase):
         )
         self.assertEqual(m.project, self.project)
         self.assertEqual(m.visibility, 'project_private')
+
+
+def _share_as_staff(memory, visibility):
+    """Sharing-state fixtures still require an explicitly authorised actor."""
+    from django.contrib.auth import get_user_model
+    from evidence_memory.services.retrieval_policy import set_visibility
+    actor, _ = get_user_model().objects.get_or_create(username='sharing-fixture-staff', defaults={'is_staff': True})
+    return set_visibility(memory, visibility, actor=actor)

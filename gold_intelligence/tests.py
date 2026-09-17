@@ -358,6 +358,8 @@ class ViewTests(SignedIn, TestCase):
         self.project = GoldProject.objects.create(
             name='View Test Project', slug='view-test-project', country=self.kz, is_demo=True, **BASE_CASE_KWARGS,
         )
+        from gold_intelligence.models import ProjectMembership
+        ProjectMembership.objects.create(project=self.project, user=self.signed_in_user, role='viewer')
 
     def _all_project_urls(self):
         return [
@@ -399,6 +401,8 @@ class ViewTests(SignedIn, TestCase):
 
     def test_honest_data_source_required_shown_for_missing_fields(self):
         bare_project = GoldProject.objects.create(name='Bare', slug='bare-view-project')
+        from gold_intelligence.models import ProjectMembership
+        ProjectMembership.objects.create(project=bare_project, user=self.signed_in_user, role='viewer')
         r = self.client.get(reverse('gold_intelligence:investment_dashboard', args=[bare_project.slug]))
         self.assertContains(r, 'Data source required')
 

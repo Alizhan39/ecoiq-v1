@@ -49,7 +49,8 @@ def evidence_for_project(project):
     ).values_list('verified_outcome__pk', flat=True)
     refs += [f'waste_to_value_capital_allocation_engine.VerifiedCapitalOutcome:{pk}' for pk in outcome_ids]
 
-    return EvidenceMemory.objects.filter(source_reference__in=refs)
+    from django.db.models import Q
+    return EvidenceMemory.objects.filter(Q(project=project) | Q(project__isnull=True, source_reference__in=refs))
 
 
 def verification_summary(evidence_qs):

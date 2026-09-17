@@ -31,6 +31,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from gold_intelligence.models import GoldProject
+from gold_intelligence.access import projects_for, can, READ, ANALYSE, SHARE, APPROVE, project_permission_required
 
 from capital_guardian.services import ai_director as ai_director_service
 from capital_guardian.services import equipment_health
@@ -86,17 +87,17 @@ PROCESS_STAGES = [
 
 def _decision_studio_links(project):
     return [
-        {'question': q, 'href': f'/decision-studio/?q={quote(q + " — " + project.name)}'}
+        {'question': q, 'href': f'/decision-studio/?q={quote(q + " — " + project.name)}&project_id={project.pk}'}
         for q in DECISION_INTELLIGENCE_QUESTIONS
     ]
 
 
-def _project_or_404(slug):
-    return get_object_or_404(GoldProject.objects.select_related('country'), slug=slug)
+def _project_or_404(slug, user):
+    return get_object_or_404(projects_for(user).select_related('country'), slug=slug)
 
 
 def directory(request):
-    projects = GoldProject.objects.select_related('country').all()
+    projects = projects_for(request.user).select_related('country')
     return render(request, 'capital_guardian/directory.html', {'projects': projects})
 
 
@@ -105,7 +106,7 @@ def portfolio_view(request):
     platform is included (not just capital_guardian-flagged ones): a
     GoldProject with no Capital Guardian data yet simply shows honest
     'Data source required' cells, matching the rest of the app's convention."""
-    projects = list(GoldProject.objects.select_related('country').all())
+    projects = list(projects_for(request.user).select_related('country'))
     rows = portfolio_service.build_portfolio(projects)
 
     country = request.GET.get('country') or ''
@@ -132,7 +133,7 @@ def portfolio_view(request):
 
 
 def investor_dashboard(request, slug):
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     context = investor_dashboard_service.build_dashboard_context(project)
     committed = context['capital_committed_usd']
     deployed = context['capital_deployed_usd']
@@ -173,7 +174,7 @@ def investor_dashboard(request, slug):
 
 
 def capital_trace_view(request, slug):
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     entries = list(project.capital_trace_entries.select_related('budget_category', 'related_equipment', 'related_milestone').all())
     return render(request, 'capital_guardian/capital_trace.html', {'project': project, 'entries': entries})
 
@@ -186,7 +187,7 @@ def capital_trace_entry_detail_view(request, slug, entry_id):
     either exists; never a stock photo or fabricated coordinate."""
     from capital_guardian.services import capital_trace as capital_trace_service
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     entry = get_object_or_404(
         project.capital_trace_entries.select_related('budget_category', 'related_equipment', 'related_milestone'),
         pk=entry_id,
@@ -201,7 +202,7 @@ def capital_trace_entry_detail_view(request, slug, entry_id):
 
 
 def governance_view(request, slug):
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     governance = getattr(project, 'governance', None)
     controls = []
     ownership_donut = None
@@ -238,7 +239,7 @@ def governance_view(request, slug):
 
 
 def equipment_insurance_view(request, slug):
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     equipment = list(project.equipment_specs.all())
     return render(request, 'capital_guardian/equipment_insurance.html', {'project': project, 'equipment': equipment})
 
@@ -250,7 +251,7 @@ def equipment_detail_view(request, slug, equipment_id):
     readings or stock imagery. The 'AI Prediction / Expected Failure Date'
     field is a deterministic remaining-useful-life estimate (see
     services/equipment_health.py), never a black-box ML prediction."""
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     equipment = get_object_or_404(project.equipment_specs, pk=equipment_id)
     maintenance_history = project.audit_log_entries.filter(source_reference=f'gold_intelligence.EquipmentSpec:{equipment.pk}')
     return render(request, 'capital_guardian/equipment_detail.html', {
@@ -279,7 +280,7 @@ def live_cameras_view(request, slug):
     """Phase 3 — honest empty state. No real camera/drone/satellite feed
     exists yet; this is the UI shell a future integration would populate,
     never a fake video or stock photo presented as live."""
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     zones = [
         'Open Pit', 'Crusher', 'Mill', 'Processing Plant', 'Gold Room', 'Warehouse',
         'Control Room', 'Drone View', 'Satellite View',
@@ -292,7 +293,7 @@ def govern_hub_view(request, slug):
     that already exist, plus real rollups (insurance, approvals) computed
     here, plus honestly-stubbed sections (Legal/Compliance/ESG/Licences)
     for which no real data source is connected yet."""
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     entries = list(project.capital_trace_entries.all())
     pending_investor_approvals = [e for e in entries if e.investor_approval_status == 'pending']
     uninsured_entries = [e for e in entries if e.insurance_status == 'uninsured']
@@ -310,7 +311,7 @@ def ai_director_view(request, slug):
     """Phase 3 — AI Project Director Morning Briefing. A deterministic
     narrative template over real data already computed elsewhere — never a
     second AI/LLM system. See services/ai_director.py."""
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     return render(request, 'capital_guardian/ai_director.html', {
         'project': project, 'briefing': ai_director_service.build_morning_briefing(project),
         'decision_studio_links': _decision_studio_links(project)[:4],
@@ -318,7 +319,7 @@ def ai_director_view(request, slug):
 
 
 def digital_twin_view(request, slug):
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     latest_snapshot = project.operational_snapshots.order_by('-date').first()
 
     equipment_by_type = {}
@@ -372,20 +373,20 @@ def digital_twin_view(request, slug):
 
 
 def milestone_control_view(request, slug):
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     milestones = list(project.timeline_milestones.all())
     return render(request, 'capital_guardian/milestone_control.html', {'project': project, 'milestones': milestones})
 
 
 def red_flag_view(request, slug):
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     flags = red_flag_engine.detect_red_flags(project)
     all_flags = list(project.red_flags.all())
     return render(request, 'capital_guardian/red_flags.html', {'project': project, 'flags': all_flags, 'refreshed_count': len(flags)})
 
 
 def decision_intelligence_view(request, slug):
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     return render(request, 'capital_guardian/decision_intelligence.html', {
         'project': project, 'links': _decision_studio_links(project),
     })
@@ -395,7 +396,7 @@ def evidence_centre_view(request, slug):
     """Phase 2 — every real EvidenceMemory row attached to anything
     belonging to this project, with an honest verification-status
     breakdown. Never marks anything verified itself."""
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     evidence_qs = evidence_service.evidence_for_project(project).select_related('reviewer')
     status_filter = request.GET.get('status') or ''
     if status_filter:
@@ -418,23 +419,23 @@ def evidence_centre_view(request, slug):
         # RENDERED for staff; the actual authorization check lives on
         # add_project_evidence below, never in the template.
         'intake_form': ProjectEvidenceIntakeForm() if request.user.is_staff else None,
-        # Vertical-slice PR 2 — "Run Project Analysis" button, staff-only display.
-        'can_run_analysis': request.user.is_staff,
+        # Display follows the same project grant as the execution endpoint.
+        'can_run_analysis': can(request.user, project, ANALYSE),
         'workflow_nav': build_project_workflow_nav(project, 'evidence'),
     })
 
 
-@staff_member_required(login_url='/login/')
+@project_permission_required(ANALYSE)
 def run_project_analysis(request, slug):
     """
-    Vertical-slice PR 2 — staff-only, POST-only trigger for the real
+    Vertical-slice PR 2 — project-analysis-authorised, POST-only trigger for the real
     mizan.project.score_project() analysis over this project's real
     evidence. Nothing is persisted: this is a deterministic, real-time
     computation over already-stored data, not a live AI call, so re-running
     it (e.g. on refresh) is harmless and never creates duplicate records.
     The project is independently re-resolved from the URL slug.
     """
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     if request.method != 'POST':
         return redirect('capital_guardian:evidence_centre', slug=slug)
 
@@ -515,7 +516,7 @@ def investigation_view(request, slug):
     from capital_guardian.services.command_centre import build_project_workflow_nav
     from evidence_memory.services.memory import retrieve_relevant_verified_outcomes
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     try:
         result = analyse_project(project)
         review = review_resource_purpose(project, result)
@@ -558,7 +559,7 @@ def create_value_loss_confirm(request, slug):
     trusts anything carried over from the analysis page) so the eligibility
     check (a genuine misuse/value-loss condition) is always current.
     """
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
 
     from capital_guardian.services.project_analysis import analyse_project
     from capital_guardian.services.resource_purpose_review import review_resource_purpose
@@ -584,7 +585,7 @@ def create_value_loss_execute(request, slug):
     loss_intake.create_operational_loss() — no loss-creation logic is
     duplicated here.
     """
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     if request.method != 'POST':
         return redirect('capital_guardian:evidence_centre', slug=slug)
 
@@ -688,7 +689,7 @@ def _loss_or_404(project, loss_id):
     from waste_to_value_capital_allocation_engine.models import OperationalLoss
 
     loss = get_object_or_404(OperationalLoss, pk=loss_id)
-    if loss.project != project.name:
+    if loss.project != project.name or GoldProject.objects.filter(name=project.name).count() != 1:
         raise Http404('No operational loss found for this project.')
     return loss
 
@@ -704,7 +705,7 @@ def operational_loss_detail(request, slug, loss_id):
     from capital_guardian.services.intervention_safety_gate import classify_intervention_safety
     from capital_guardian.services.better_way import extract_classification
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     loss = _loss_or_404(project, loss_id)
 
     options = list(loss.interventions.all())
@@ -731,7 +732,7 @@ def _build_intervention_option_form(data=None):
 @staff_member_required(login_url='/login/')
 def create_intervention_option_confirm(request, slug, loss_id):
     """GET-only, staff-only. Read-only form render — nothing is created here."""
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     loss = _loss_or_404(project, loss_id)
     form = _build_intervention_option_form()
     return render(request, 'capital_guardian/create_intervention_option_confirm.html', {
@@ -751,7 +752,7 @@ def create_intervention_option_execute(request, slug, loss_id):
     genuinely different titles (e.g. two heat-pump options from different
     suppliers) remain distinct rows, which is correct.
     """
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     loss = _loss_or_404(project, loss_id)
     if request.method != 'POST':
         return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
@@ -815,7 +816,7 @@ def run_better_way_comparison(request, slug, loss_id):
     re-running it is harmless. Reuses capital_guardian.services.better_way,
     which itself reuses the existing scoring/ranking services unmodified.
     """
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     loss = _loss_or_404(project, loss_id)
     if request.method != 'POST':
         return redirect('capital_guardian:operational_loss_detail', slug=slug, loss_id=loss_id)
@@ -881,7 +882,7 @@ def better_way_view(request, slug, loss_id):
     from capital_guardian.services.better_way import compare_interventions
     from capital_guardian.services.command_centre import build_project_workflow_nav
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     loss = _loss_or_404(project, loss_id)
     try:
         result = compare_interventions(project, loss)
@@ -916,7 +917,7 @@ def create_capital_decision_confirm(request, slug, loss_id, option_id):
     """GET-only, staff-only. Read-only preview — nothing is created here."""
     from capital_guardian.services.better_way import compare_interventions
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     loss = _loss_or_404(project, loss_id)
     option = _option_or_404(loss, option_id)
     result = compare_interventions(project, loss)
@@ -939,7 +940,7 @@ def create_capital_decision_execute(request, slug, loss_id, option_id):
     anything about safety/ranking carried over from the confirmation page.
     A blocked intervention can never reach CapitalAllocationDecision.
     """
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     loss = _loss_or_404(project, loss_id)
     option = _option_or_404(loss, option_id)
     if request.method != 'POST':
@@ -1028,7 +1029,7 @@ def _decision_or_404_for_project(project, decision_id):
         ),
         pk=decision_id,
     )
-    if decision.project != project.name:
+    if decision.project != project.name or GoldProject.objects.filter(name=project.name).count() != 1:
         raise Http404('No capital allocation decision found for this project.')
     return decision
 
@@ -1071,20 +1072,22 @@ def _human_decision_gate_context(project, decision):
     }
 
 
-@staff_member_required(login_url='/login/')
+@project_permission_required(READ)
 def human_decision_gate_view(request, slug, decision_id):
-    """GET-only, staff-only. The real EcoIQ Human Approval review page —
+    """GET-only, project-readable. The real EcoIQ Human Approval review page —
     every section (project/origin/safety/evidence/capital/decision history)
     is read-only; only the linked confirm pages below can change anything."""
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     decision = _decision_or_404_for_project(project, decision_id)
     context = _human_decision_gate_context(project, decision)
+    if not can(request.user, project, APPROVE):
+        context['legal_actions'] = []
     return render(request, 'capital_guardian/human_decision_gate.html', context)
 
 
-@staff_member_required(login_url='/login/')
+@project_permission_required(APPROVE)
 def human_decision_gate_action_confirm(request, slug, decision_id, action):
-    """GET-only, staff-only. Read-only confirmation step before any review
+    """GET-only, approval-authorised. Read-only confirmation step before any review
     action — never mutates anything. 404s on an action string outside the
     real, fixed action set (never renders a form for an invalid action)."""
     from django.http import Http404
@@ -1094,7 +1097,7 @@ def human_decision_gate_action_confirm(request, slug, decision_id, action):
     if action not in human_decision_gate.ACTIONS:
         raise Http404('Unknown review action.')
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     decision = _decision_or_404_for_project(project, decision_id)
 
     if action not in human_decision_gate.legal_actions_for(decision):
@@ -1112,10 +1115,10 @@ def human_decision_gate_action_confirm(request, slug, decision_id, action):
     return render(request, 'capital_guardian/human_decision_gate_confirm.html', context)
 
 
-@staff_member_required(login_url='/login/')
+@project_permission_required(APPROVE)
 def human_decision_gate_action_execute(request, slug, decision_id, action):
     """
-    POST-only, staff-only. Independently re-resolves project/decision from
+    POST-only, approval-authorised. Independently re-resolves project/decision from
     the URL and re-validates the action is legal from the decision's
     CURRENT state (never trusts the confirm page's snapshot) before handing
     off entirely to human_decision_gate.submit_review() — no transition or
@@ -1129,7 +1132,7 @@ def human_decision_gate_action_execute(request, slug, decision_id, action):
     if action not in human_decision_gate.ACTIONS:
         raise Http404('Unknown review action.')
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     decision = _decision_or_404_for_project(project, decision_id)
 
     if request.method != 'POST':
@@ -1187,7 +1190,7 @@ def add_project_evidence(request, slug):
     The project is independently re-resolved from the URL slug — nothing
     about identity or authorization is trusted from the submitted form.
     """
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     if request.method != 'POST':
         return redirect('capital_guardian:evidence_centre', slug=slug)
 
@@ -1241,7 +1244,7 @@ def audit_history_view(request, slug):
     """Phase 2 — 'Audit History'/'Change History', not a claim of
     cryptographic immutability. Every row was written automatically by
     capital_guardian/signals.py when a real tracked field actually changed."""
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     event_type_filter = request.GET.get('event_type') or ''
     entries = project.audit_log_entries.select_related('changed_by').all()
     if event_type_filter:
@@ -1300,7 +1303,7 @@ def project_monitoring_view(request, slug):
     """
     from capital_guardian.forms import CapitalTraceEntryForm, ImplementationEvidenceForm, MilestoneForm
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     context = _monitoring_context(
         request, project,
         trace_form=CapitalTraceEntryForm(project=project),
@@ -1318,7 +1321,7 @@ def add_capital_trace_entry(request, slug):
     from capital_guardian.forms import CapitalTraceEntryForm, ImplementationEvidenceForm, MilestoneForm
     from capital_guardian.models import CapitalTraceEntry
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     if request.method != 'POST':
         return redirect('capital_guardian:project_monitoring', slug=slug)
 
@@ -1349,7 +1352,7 @@ def add_milestone(request, slug):
     from capital_guardian.forms import CapitalTraceEntryForm, ImplementationEvidenceForm, MilestoneForm
     from gold_intelligence.models import MineTimelineMilestone
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     if request.method != 'POST':
         return redirect('capital_guardian:project_monitoring', slug=slug)
 
@@ -1385,7 +1388,7 @@ def update_milestone(request, slug, milestone_id):
     the same MilestoneForm.clean() guard applies."""
     from capital_guardian.forms import MilestoneForm
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     milestone = _milestone_or_404(project, milestone_id)
     if request.method != 'POST':
         return redirect('capital_guardian:project_monitoring', slug=slug)
@@ -1411,7 +1414,7 @@ def add_implementation_evidence(request, slug):
 
     from capital_guardian.forms import CapitalTraceEntryForm, ImplementationEvidenceForm, MilestoneForm
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     if request.method != 'POST':
         return redirect('capital_guardian:project_monitoring', slug=slug)
 
@@ -1455,7 +1458,7 @@ def _monitoring_decision_or_404(project, decision_id):
     decision = get_object_or_404(
         CapitalAllocationDecision.objects.select_related('intervention', 'verified_outcome'), pk=decision_id,
     )
-    if decision.project != project.name:
+    if decision.project != project.name or GoldProject.objects.filter(name=project.name).count() != 1:
         raise Http404('No capital allocation decision found for this project.')
     return decision
 
@@ -1511,18 +1514,17 @@ def _record_outcome_context(project, decision, outcome_form):
     }
 
 
-@staff_member_required(login_url='/login/')
+@project_permission_required(READ)
 def record_outcome_confirm(request, slug, decision_id):
-    """GET-only, staff-only. Read-only preview of the expected-vs-actual
+    """GET-only, project-readable. Read-only preview of the expected-vs-actual
     comparison and the outcome-recording form — nothing is persisted here."""
     from capital_guardian.forms import OutcomeMonitoringForm
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     decision = _monitoring_decision_or_404(project, decision_id)
-    return render(
-        request, 'capital_guardian/record_outcome_confirm.html',
-        _record_outcome_context(project, decision, OutcomeMonitoringForm()),
-    )
+    context = _record_outcome_context(project, decision, OutcomeMonitoringForm())
+    context['can_share'] = can(request.user, project, SHARE)
+    return render(request, 'capital_guardian/record_outcome_confirm.html', context)
 
 
 @staff_member_required(login_url='/login/')
@@ -1538,7 +1540,7 @@ def record_outcome_execute(request, slug, decision_id):
     from capital_guardian.forms import OutcomeMonitoringForm
     from capital_guardian.services import execution_monitoring
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     decision = _monitoring_decision_or_404(project, decision_id)
     if request.method != 'POST':
         return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
@@ -1602,7 +1604,7 @@ def sync_outcome_to_evidence_memory(request, slug, decision_id):
     """
     from evidence_memory.services.memory import create_memory_from_verified_outcome
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     decision = _monitoring_decision_or_404(project, decision_id)
     if request.method != 'POST':
         return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
@@ -1642,10 +1644,10 @@ def sync_outcome_to_evidence_memory(request, slug, decision_id):
     return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
 
 
-@staff_member_required(login_url='/login/')
+@project_permission_required(SHARE)
 def share_outcome_evidence(request, slug, decision_id):
     """
-    feat/evidence-memory-hardening — staff-only, POST-only, explicit human
+    feat/evidence-memory-hardening — sharing-authorised, POST-only, explicit human
     sharing action for one outcome-derived EvidenceMemory record. The only
     write path is retrieval_policy.set_visibility(), which validates that
     the record's own state honestly supports the requested scope (demo
@@ -1656,7 +1658,7 @@ def share_outcome_evidence(request, slug, decision_id):
     from evidence_memory.models import EvidenceMemory
     from evidence_memory.services import retrieval_policy
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     decision = _monitoring_decision_or_404(project, decision_id)
     if request.method != 'POST':
         return redirect('capital_guardian:record_outcome_confirm', slug=slug, decision_id=decision_id)
@@ -1699,7 +1701,7 @@ def project_command_centre(request, slug):
     """
     from capital_guardian.services.command_centre import build_command_centre_context
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     try:
         context = build_command_centre_context(project, user=request.user)
     except Exception:
@@ -1728,7 +1730,7 @@ def project_overview_view(request, slug):
     """
     from capital_guardian.services.command_centre import build_command_centre_context, build_project_workflow_nav
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     try:
         context = build_command_centre_context(project, user=request.user)
     except Exception:
@@ -1763,7 +1765,7 @@ def explain_recommendation_view(request, slug, decision_id=None):
     from capital_guardian.services.command_centre import _primary_decision, build_project_workflow_nav
     from capital_guardian.services.decision_trace import build_decision_trace
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     if decision_id is not None:
         decision = _decision_or_404_for_project(project, decision_id)
     else:

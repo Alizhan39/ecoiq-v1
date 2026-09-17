@@ -23,6 +23,7 @@ state['status'] = 'failed' + state['failed_node'] = <node name>, and every
 conditional router checks that flag first and short-circuits to END.
 """
 from langgraph.graph import END, StateGraph
+from django.core.exceptions import PermissionDenied
 
 from langgraph_orchestration import nodes
 from langgraph_orchestration.state import OrchestratorState, new_state
@@ -40,8 +41,19 @@ def _safe_node(name):
     """
     def wrapped(state):
         try:
+            # Refresh permissions at every node, including resumed/queued work.
+            from gold_intelligence.access import resolve_context
+            resolve_context(state.get('requesting_user_id'), state.get('project_id'))
             fn = getattr(nodes, name)
             return fn(state)
+        except PermissionDenied:
+            # A grant may have been revoked after retrieval. Do not return its
+            # cached context or advance to a provider call after that failure.
+            state.update(evidence_context={}, agent_outputs=[], final_recommendations=[],
+                         analytics_context={}, scoring_context={}, geo_context={},
+                         status='failed', failed_node=name,
+                         verification_notes=['Project access is no longer available.'])
+            return state
         except Exception as exc:
             state['status'] = 'failed'
             state['failed_node'] = name
@@ -121,7 +133,7 @@ def _get_compiled_graph():
 
 
 def run_orchestration(user_request='', target_id=None, target_type=None, latitude=None, longitude=None,
-                       execution_mode='deterministic_test'):
+                       execution_mode='deterministic_test', *, requesting_user_id=None, project_id=None):
     """
     The one entrypoint every caller (Celery task, tests, a future view)
     should use. target_type must be 'company' or 'country' when target_id
@@ -131,6 +143,7 @@ def run_orchestration(user_request='', target_id=None, target_type=None, latitud
     initial_state = new_state(
         user_request=user_request, target_id=target_id, target_type_hint=target_type,
         latitude=latitude, longitude=longitude, execution_mode=execution_mode,
+        requesting_user_id=requesting_user_id, project_id=project_id,
     )
     compiled = _get_compiled_graph()
     final_state = compiled.invoke(initial_state)

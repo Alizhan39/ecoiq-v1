@@ -147,13 +147,18 @@ def _compute_idempotency_key(council_case_id, agent_id, task_type, input_evidenc
 
 
 def create_agent_run(agent_name, task_type, council_case=None, execution_mode='live',
-                      input_summary='', evidence_provenance=None, rerun_reason=''):
+                      input_summary='', evidence_provenance=None, rerun_reason='', *, project=None, user=None):
     """
     Idempotent: returns the existing completed run for the same
     (case, agent, task_type, evidence, training-pack version, mode) unless
     an explicit rerun_reason is given, in which case a new run is created
     and linked via `rerun_of`.
     """
+    if project is not None:
+        from gold_intelligence.access import require, ANALYSE
+        require(user, project, ANALYSE)
+        if council_case is not None:
+            raise ValueError('Project analysis cannot publish to an unscoped Council case.')
     agent = AgentRegistryEntry.objects.get(agent_name=agent_name)
     evidence_provenance = evidence_provenance or []
 
@@ -169,14 +174,14 @@ def create_agent_run(agent_name, task_type, council_case=None, execution_mode='l
     )
 
     existing = AgentRun.objects.filter(
-        idempotency_key=idempotency_key, status='completed',
+        idempotency_key=idempotency_key, status='completed', project=project,
     ).order_by('-created_at').first()
 
     if existing and not rerun_reason:
         return existing
 
     return AgentRun.objects.create(
-        council_case=council_case, agent=agent, task_type=task_type,
+        council_case=council_case, agent=agent, task_type=task_type, project=project,
         execution_mode_requested=execution_mode, input_summary=input_summary,
         evidence_provenance=evidence_provenance, idempotency_key=idempotency_key,
         rerun_of=existing if (existing and rerun_reason) else None,
@@ -238,7 +243,7 @@ def check_no_evidence_upgrade(evidence_provenance, prior_evidence_by_id):
 
 
 def _prior_evidence_by_id(agent_run):
-    prior_runs = AgentRun.objects.filter(council_case=agent_run.council_case)
+    prior_runs = AgentRun.objects.filter(council_case=agent_run.council_case, project=agent_run.project)
     if agent_run.pk:
         prior_runs = prior_runs.exclude(pk=agent_run.pk)
     by_id = {}
@@ -466,6 +471,8 @@ def submit_agent_position_to_council(agent_run, collaboration_mode='council', or
     become a Council AgentTask. If `action_type` names one of the 8
     approval-gated actions, human approval is enforced before proceeding.
     """
+    if agent_run.project_id is not None:
+        raise ValueError('Project analysis cannot publish to an unscoped Council case.')
     if agent_run.status != 'completed' or not agent_run.schema_valid or agent_run.safety_status == 'blocking':
         raise ValueError(
             f'AgentRun {agent_run.pk} is not trustworthy enough to enter Council reasoning '

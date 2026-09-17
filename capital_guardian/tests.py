@@ -299,6 +299,8 @@ class ViewTests(SignedIn, TestCase):
             total_committed_capital_usd=100_000_000, total_capex_usd=86_000_000,
         )
         ProjectGovernance.objects.create(project=self.project, founder_holdco_pct=50, investor_spv_pct=50)
+        from gold_intelligence.models import ProjectMembership
+        ProjectMembership.objects.create(project=self.project, user=self.signed_in_user, role='viewer')
 
     def _all_project_urls(self):
         return [
@@ -334,6 +336,8 @@ class ViewTests(SignedIn, TestCase):
 
     def test_honest_data_source_required_shown_for_missing_fields(self):
         bare_project = GoldProject.objects.create(name='Bare', slug='cg-bare-view-project')
+        from gold_intelligence.models import ProjectMembership
+        ProjectMembership.objects.create(project=bare_project, user=self.signed_in_user, role='viewer')
         r = self.client.get(reverse('capital_guardian:investor_dashboard', args=[bare_project.slug]))
         self.assertContains(r, 'Data source required')
 
@@ -885,6 +889,8 @@ class Phase2ViewTests(SignedIn, TestCase):
             name='Phase2 View Test Project', slug='cg-p2-view-test-project', country=self.kz, is_demo=True,
             total_committed_capital_usd=100_000_000,
         )
+        from gold_intelligence.models import ProjectMembership
+        ProjectMembership.objects.create(project=self.project, user=self.signed_in_user, role='viewer')
 
     def test_portfolio_view_returns_200(self):
         r = self.client.get(reverse('capital_guardian:portfolio'))
@@ -1247,6 +1253,8 @@ class Phase3ViewTests(SignedIn, TestCase):
         ProjectGovernance.objects.create(project=self.project, founder_holdco_pct=50, investor_spv_pct=50)
         self.equipment = EquipmentSpec.objects.create(project=self.project, equipment_type='crusher', label='Crusher')
         self.entry = CapitalTraceEntry.objects.create(project=self.project, date=datetime.date.today(), amount_usd=100, purpose='Test Payment')
+        from gold_intelligence.models import ProjectMembership
+        ProjectMembership.objects.create(project=self.project, user=self.signed_in_user, role='viewer')
 
     def test_capital_trace_entry_detail_returns_200(self):
         r = self.client.get(reverse('capital_guardian:capital_trace_entry_detail', args=[self.project.slug, self.entry.pk]))
@@ -1418,6 +1426,8 @@ class AddProjectEvidenceViewTests(TestCase):
         self.assertContains(r, 'Add Evidence Record')
 
     def test_non_staff_user_does_not_see_intake_form(self):
+        from gold_intelligence.models import ProjectMembership
+        ProjectMembership.objects.create(project=self.project, user=self.normal, role='viewer')
         self.client.force_login(self.normal)
         r = self.client.get(self._centre_url())
         self.assertEqual(r.status_code, 200)
@@ -1737,13 +1747,12 @@ class RunProjectAnalysisViewTests(TestCase):
     def test_non_staff_cannot_trigger_analysis(self):
         self.client.force_login(self.normal)
         r = self.client.post(self._run_url())
-        self.assertEqual(r.status_code, 302)
-        self.assertIn('/login', r['Location'])
+        self.assertEqual(r.status_code, 403)
 
     def test_idor_normal_user_with_known_slug_blocked(self):
         self.client.force_login(self.normal)
         r = self.client.post(self._run_url(), follow=True)
-        self.assertNotContains(r, 'Final Mizan Score')
+        self.assertNotContains(r, 'Final Mizan Score', status_code=403)
 
     def test_staff_can_access_and_button_visible(self):
         self.client.force_login(self.staff)
@@ -1751,6 +1760,8 @@ class RunProjectAnalysisViewTests(TestCase):
         self.assertContains(r, 'Run Project Analysis')
 
     def test_non_staff_does_not_see_run_button(self):
+        from gold_intelligence.models import ProjectMembership
+        ProjectMembership.objects.create(project=self.project, user=self.normal, role='viewer')
         self.client.force_login(self.normal)
         r = self.client.get(self._centre_url())
         self.assertNotContains(r, 'Run Project Analysis')
@@ -2494,6 +2505,8 @@ class BetterWayViewTests(SignedIn, TestCase):
             operational_loss=self.loss, title='Insulation', intervention_type='prevention',
             capex_estimate=2000, estimated_annual_savings=1500, estimated_loss_avoided=3000,
         )
+        from gold_intelligence.models import ProjectMembership
+        ProjectMembership.objects.create(project=self.project, user=self.signed_in_user, role='viewer')
 
     def _detail_url(self):
         return reverse('capital_guardian:operational_loss_detail', args=[self.project.slug, self.loss.pk])
@@ -3464,6 +3477,8 @@ class RedFlagsHeatingProjectTests(SignedIn, TestCase):
         self.project = GoldProject.objects.create(
             name='Almaty Clean Heating Pilot — 200 Homes', slug='almaty-clean-heating-pilot-200-homes', commodity='other',
         )
+        from gold_intelligence.models import ProjectMembership
+        ProjectMembership.objects.create(project=self.project, user=self.signed_in_user, role='viewer')
 
     def test_capex_variance_rule_still_works_for_heating_project(self):
         budget = CapitalBudgetLine.objects.create(project=self.project, category='other', label='Heating budget', planned_usd=10000, committed_usd=12000)
@@ -3770,7 +3785,7 @@ class ProjectAnalysisRetrievalTests(TestCase):
 
     def test_shared_evidence_appears_on_analysis_page(self):
         from evidence_memory.services import retrieval_policy
-        retrieval_policy.set_visibility(self.memory, 'platform_learning_verified')
+        _share_as_staff(self.memory, 'platform_learning_verified')
         r = self.client.post(reverse('capital_guardian:run_project_analysis', args=[self.new_project.slug]))
         self.assertContains(r, 'Prior insulation')
         self.assertContains(r, 'Why this ranked here:')
@@ -4055,7 +4070,7 @@ class CommandCentreAggregationTests(TestCase):
         self.assertEqual(len(ctx['relevant_outcomes']), 0)
 
         # Explicitly shared: retrievable, with an explanation.
-        retrieval_policy.set_visibility(other_memory, 'platform_learning_verified')
+        _share_as_staff(other_memory, 'platform_learning_verified')
         ctx = self._build_context()
         self.assertTrue(len(ctx['relevant_outcomes']) >= 1)
         self.assertTrue(ctx['relevant_outcomes'][0].explanation)
@@ -4747,8 +4762,7 @@ class HumanDecisionGateViewTests(TestCase):
     def test_non_staff_cannot_view_review_page(self):
         self.client.force_login(self.normal)
         r = self.client.get(self._review_url())
-        self.assertEqual(r.status_code, 302)
-        self.assertIn('/login', r['Location'])
+        self.assertEqual(r.status_code, 403)
 
     def test_staff_can_view_review_page(self):
         self.client.force_login(self.staff)
@@ -4766,7 +4780,7 @@ class HumanDecisionGateViewTests(TestCase):
     def test_non_staff_cannot_execute_action(self):
         self.client.force_login(self.normal)
         r = self.client.post(self._execute_url('approve'))
-        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.status_code, 403)
         self.decision.refresh_from_db()
         self.assertEqual(self.decision.approval_status, 'pending')
 
@@ -5102,7 +5116,7 @@ class EvidenceMemoryHardeningIntegrationTests(TestCase):
 
     def test_command_centre_shows_shared_platform_evidence_cross_project(self):
         from evidence_memory.services import retrieval_policy
-        retrieval_policy.set_visibility(self.memory, 'platform_learning_verified')
+        _share_as_staff(self.memory, 'platform_learning_verified')
         self.client.force_login(self.staff)
         r = self.client.get(reverse('capital_guardian:project_command_centre', args=[self.project_b.slug]))
         self.assertContains(r, 'EMH Retrofit')
@@ -5145,7 +5159,7 @@ class EvidenceMemoryHardeningIntegrationTests(TestCase):
     def test_non_staff_cannot_share(self):
         self.client.force_login(self.normal)
         r = self.client.post(self._share_url(), {'visibility': 'platform_learning_verified'})
-        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r.status_code, 403)
         self.memory.refresh_from_db()
         self.assertEqual(self.memory.visibility, 'project_private')
 
@@ -6025,3 +6039,11 @@ class ExplainRecommendationViewTests(TestCase):
         self.client.force_login(self.staff)
         r = self.client.get(reverse('capital_guardian:project_overview', args=[empty.slug]))
         self.assertContains(r, 'No Recommendation Yet')
+
+
+def _share_as_staff(memory, visibility):
+    """Sharing-state fixtures still require an explicitly authorised actor."""
+    from django.contrib.auth import get_user_model
+    from evidence_memory.services.retrieval_policy import set_visibility
+    actor, _ = get_user_model().objects.get_or_create(username='sharing-fixture-staff', defaults={'is_staff': True})
+    return set_visibility(memory, visibility, actor=actor)
