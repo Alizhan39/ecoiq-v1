@@ -223,8 +223,8 @@ class DecisionEngineTests(TestCase):
         if outcome['result']['ranking']:
             self.assertEqual(outcome['result']['ranking'][0]['dimension'], 'climate_risk_score')
 
-    def test_evidence_retrieval_is_bounded_and_deduplicated(self):
-        from decision_studio.services.decision_engine import MAX_EVIDENCE_PER_ENTITY, _retrieve_evidence
+    def test_evidence_retrieval_without_project_context_is_empty(self):
+        from decision_studio.services.decision_engine import _retrieve_evidence
         from evidence_memory.models import EvidenceMemory
         from evidence_memory.services.embeddings import compute_embedding
 
@@ -235,19 +235,35 @@ class DecisionEngineTests(TestCase):
                 embedding=compute_embedding(f'Evidence item number {i}.'), embedding_status='embedded',
             )
         items = _retrieve_evidence('evidence item', [profile], [])
-        self.assertLessEqual(len(items), MAX_EVIDENCE_PER_ENTITY)
+        self.assertEqual(items, [])
+
+    def test_platform_sharing_is_not_publication_permission(self):
+        from decision_studio.services.decision_engine import _retrieve_evidence
+        from evidence_memory.models import EvidenceMemory
+        from evidence_memory.services.embeddings import compute_embedding
+        text = 'Platform-shared evidence is restricted to authorised project analysis.'
+        EvidenceMemory.objects.create(
+            text_chunk=text, embedding=compute_embedding(text), embedding_status='embedded',
+            visibility='platform_learning_verified', verification_status='verified',
+            review_tier='independently_verified',
+        )
+        self.assertEqual(_retrieve_evidence(text, [], []), [])
 
     def test_evidence_deduplication_removes_identical_excerpts(self):
+        from unittest.mock import patch
         from decision_studio.services.decision_engine import _retrieve_evidence
         from evidence_memory.models import EvidenceMemory
         from evidence_memory.services.embeddings import compute_embedding
 
         profile = CompanyProfile.objects.first()
         text = 'This exact evidence text appears twice.'
-        EvidenceMemory.objects.create(text_chunk=text, company=profile, embedding=compute_embedding(text), embedding_status='embedded')
-        EvidenceMemory.objects.create(text_chunk=text, company=profile, embedding=compute_embedding(text), embedding_status='embedded')
-        items = _retrieve_evidence(text, [profile], [])
+        records = [EvidenceMemory.objects.create(text_chunk=text, company=profile, embedding=compute_embedding(text), embedding_status='embedded') for _ in range(2)]
+        # Exercise formatting of already-authorised results independently of
+        # the access boundary, which this legacy caller has no context to open.
+        with patch('evidence_memory.services.memory.search_company_memory', return_value=records):
+            items = _retrieve_evidence(text, [profile], [])
         excerpts = [i['excerpt'] for i in items]
+        self.assertEqual(excerpts, [text])
         self.assertEqual(len(excerpts), len(set(excerpts)))
 
     def test_analytics_integration_investigate_flags_outliers(self):

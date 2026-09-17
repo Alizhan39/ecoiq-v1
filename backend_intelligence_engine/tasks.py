@@ -176,7 +176,7 @@ def geo_intelligence_refresh(self, city_name=None):
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=10, retry_backoff_max=60,
              max_retries=2, retry_jitter=True)
 def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='deterministic_test', input_summary='',
-                     company_profile_id=None, country_slug=None):
+                     company_profile_id=None, country_slug=None, requesting_user_id=None, project_id=None):
     """
     AI Analysis Background Task — reuses the existing, already-complete
     execution pipeline exactly as-is:
@@ -191,8 +191,11 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
     credentials, not fabricated success) — see agent_runtime_model_router's
     own adapters, which this task does not modify.
 
-    Evidence Memory integration: relevant prior memory (scoped to
-    company_profile_id/country_slug when given) is retrieved and appended to
+    Evidence Memory integration: requesting_user_id and project_id must be
+    supplied by trusted server-side code, never taken from public form fields.
+    The actor is reloaded when the task executes so revoked staff access is
+    honoured. Missing context yields no memory. Relevant prior memory (also
+    filtered by company_profile_id/country_slug when given) is appended to
     input_summary BEFORE execute_agent runs, so it genuinely reaches the
     agent's prompt (see build_agent_instruction, which builds the prompt
     directly from input_summary) — not decoration, real context. On success,
@@ -215,6 +218,7 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
         task_kwargs={
             'agent_slug': agent_slug, 'case_slug': case_slug, 'execution_mode': execution_mode,
             'company_profile_id': company_profile_id, 'country_slug': country_slug,
+            'requesting_user_id': requesting_user_id, 'project_id': project_id,
         },
     )
 
@@ -226,20 +230,42 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
     if company_profile_id is not None:
         from companies.models import CompanyProfile
         company = CompanyProfile.objects.filter(pk=company_profile_id).first()
+        if company is None:
+            run.mark_failed('Requested company does not exist.')
+            return {'status': 'failed', 'reason': 'unknown_company'}
     country = None
     if country_slug:
         from countries.models import CountryProfile
         country = CountryProfile.objects.filter(slug=country_slug).first()
+        if country is None:
+            run.mark_failed('Requested country does not exist.')
+            return {'status': 'failed', 'reason': 'unknown_country'}
+
+    from django.contrib.auth import get_user_model
+    from gold_intelligence.models import GoldProject
+
+    user = None
+    if requesting_user_id is not None:
+        user = get_user_model().objects.filter(pk=requesting_user_id, is_active=True, is_staff=True).first()
+    project = GoldProject.objects.filter(pk=project_id).first() if project_id is not None else None
+    if (requesting_user_id is not None or project_id is not None) and (user is None or project is None):
+        run.mark_failed('Evidence retrieval requires an active staff actor and an existing project.')
+        return {'status': 'failed', 'reason': 'invalid_retrieval_context'}
 
     demo_case = demo_cases.get_demo_case(case_slug) if case_slug else None
     council_run = demo_cases.council_run_for_case(demo_case) if demo_case else None
 
     base_input = input_summary or f'Background analysis requested via Celery task {self.request.id}.'
     memory_query = input_summary or (demo_case['question'] if demo_case else agent_entry['name'])
-    relevant_memories = search_similar(memory_query, top_k=3, company=company, country=country)
+    relevant_memories = search_similar(
+        memory_query, top_k=3, company=company, country=country, project=project, user=user,
+    )
     memory_ids = [m.pk for m in relevant_memories]
     if relevant_memories:
-        memory_context = '\n'.join(f'- {m.text_chunk}' for m in relevant_memories)
+        memory_context = '\n'.join(
+            f'- [EvidenceMemory:{m.pk}; source={m.source_reference or "unspecified"}] {m.text_chunk}'
+            for m in relevant_memories
+        )
         full_input_summary = f'{base_input}\n\nRelevant prior evidence (from EcoIQ memory):\n{memory_context}'
     else:
         full_input_summary = base_input
@@ -259,7 +285,7 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
 
     memory_saved_id = None
     if agent_run.status in ('completed', 'needs_human_review') and agent_run.parsed_output:
-        memory_saved_id = create_memory_from_agent_run(agent_run, company=company, country=country).pk
+        memory_saved_id = create_memory_from_agent_run(agent_run, company=company, country=country, project=project).pk
 
     result_summary = {
         'agent_run_id': agent_run.pk, 'agent_run_status': agent_run.status,

@@ -41,12 +41,14 @@ def create_memory_from_evidence(evidence):
     return memory
 
 
-def create_memory_from_agent_run(agent_run, company=None, country=None):
+def create_memory_from_agent_run(agent_run, company=None, country=None, *, project=None):
     """
     agent_run: an agent_runtime_model_router.models.AgentRun instance.
     company/country: optional explicit scope — AgentRun itself has no direct
     company/country FK, so the caller (e.g. the run_ai_analysis Celery task,
     which knows which demo case/company it was analysing) supplies it.
+    project: optional authorised project context supplied by the caller;
+    newly created output keeps the default project_private visibility.
     Idempotent on (source_type='agent_output', source_reference).
     """
     output = agent_run.parsed_output or {}
@@ -60,6 +62,9 @@ def create_memory_from_agent_run(agent_run, company=None, country=None):
     memory.text_chunk = text_chunk
     memory.company = company
     memory.country = country
+    if project is not None:
+        memory.project = project
+        memory.organisation = project.organisation or ''
     memory.agent_name = agent_run.agent.agent_name
     memory.confidence = agent_run.calibrated_confidence if agent_run.calibrated_confidence is not None else agent_run.raw_confidence
     memory.date_collected = agent_run.created_at.date()
@@ -490,27 +495,45 @@ def _similarities_for(query_text, memories):
     return similarities
 
 
-def search_similar(query_text, top_k=DEFAULT_TOP_K, company=None, country=None):
+def search_similar(query_text, top_k=DEFAULT_TOP_K, company=None, country=None, *,
+                   project=None, user=None, include_demo=False):
     """
     Returns up to top_k EvidenceMemory rows most similar to query_text,
-    optionally scoped to a company and/or country. Rows without a real
+    authorised for the explicit project/user, optionally filtered by company
+    and/or country. Missing access context fails closed. Demo evidence must
+    be explicitly requested and labelled by the caller. Rows without a real
     embedding yet (embedding_status != 'embedded') are never returned — an
     un-embedded row has nothing meaningful to compare against.
     """
-    candidates = EvidenceMemory.objects.all()
+    from evidence_memory.services.retrieval_policy import accessible_candidates, is_record_accessible
+
+    candidates = accessible_candidates(project, user, include_demo=include_demo)
     if company is not None:
         candidates = candidates.filter(company=company)
     if country is not None:
         candidates = candidates.filter(country=country)
-    return _rank_candidates(query_text, candidates, top_k)
+    if top_k <= 0 or not candidates.exists():
+        return []
+    return [
+        record for record in _rank_candidates(query_text, candidates, top_k)
+        if is_record_accessible(record, project, user=user)
+    ]
 
 
-def search_company_memory(company, query_text, top_k=DEFAULT_TOP_K):
-    return search_similar(query_text, top_k=top_k, company=company)
+def search_company_memory(company, query_text, top_k=DEFAULT_TOP_K, *,
+                          project=None, user=None, include_demo=False):
+    if company is None:
+        return []
+    return search_similar(query_text, top_k=top_k, company=company,
+                          project=project, user=user, include_demo=include_demo)
 
 
-def search_country_memory(country, query_text, top_k=DEFAULT_TOP_K):
-    return search_similar(query_text, top_k=top_k, country=country)
+def search_country_memory(country, query_text, top_k=DEFAULT_TOP_K, *,
+                          project=None, user=None, include_demo=False):
+    if country is None:
+        return []
+    return search_similar(query_text, top_k=top_k, country=country,
+                          project=project, user=user, include_demo=include_demo)
 
 
 # Vertical-slice PR 7 — RETRIEVAL FOR FUTURE DECISIONS. "Learning" here means

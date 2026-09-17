@@ -81,16 +81,28 @@ therefore reuses:
 
 ## Prioritised gaps
 
-1. **Evaluate retrieval.** Build a labelled query/evidence set and measure
+1. **Propagate retrieval identity.** Generic memory search requires an active
+   staff actor and a persisted project, using the same policy as outcome
+   retrieval. Company/country filters do not grant access. Background AI
+   analysis accepts server-supplied `requesting_user_id` and `project_id` and
+   reloads both at execution time; returned evidence IDs are recorded in its
+   result and source references accompany prompt context. New output remains
+   project-private. Legacy LangGraph and public Decision Studio calls currently
+   lack this access context and therefore receive **no memory evidence**, even
+   platform-shared records. Wire authenticated project context before enabling
+   retrieval there; platform sharing is not permission to publish publicly.
+   Generic search excludes demo rows by default; labelled demo consumers may
+   explicitly opt in. Background AI analysis uses the non-demo default.
+2. **Evaluate retrieval.** Build a labelled query/evidence set and measure
    precision, recall and citation coverage.
-2. **Make workflow deployment real.** Add a deliberately operated Redis and
+3. **Make workflow deployment real.** Add a deliberately operated Redis and
    Celery worker only when the production cost/operations decision is made.
-3. **Implement governed connectors.** Create a server-side registry with typed
+4. **Implement governed connectors.** Create a server-side registry with typed
    schemas, per-tool permissions, timeouts, idempotency and audit events. MCP
    may be an adapter protocol; it is not itself the permission model.
-4. **Consolidate model policy.** Put `ai_gateway` and the agent runtime behind
+5. **Consolidate model policy.** Put `ai_gateway` and the agent runtime behind
    one compatible routing contract without breaking existing consumers.
-5. **Close observability gaps.** Migrate or instrument legacy direct model
+6. **Close observability gaps.** Migrate or instrument legacy direct model
    calls so every physical invocation is visible in one place.
 
 Kubernetes, Kafka, an additional vector database and multiple new agent
