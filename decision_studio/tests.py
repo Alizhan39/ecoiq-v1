@@ -148,6 +148,11 @@ class DataAvailabilityTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_baseline()
+        from django.contrib.auth import get_user_model
+        from gold_intelligence.models import GoldProject, ProjectMembership
+        cls.project = GoldProject.objects.create(name='Availability project', slug='availability-project')
+        cls.user = get_user_model().objects.create_user('availability-analyst')
+        ProjectMembership.objects.create(project=cls.project, user=cls.user, role='analyst')
 
     def test_no_profiles_returns_unknown(self):
         result = data_availability.check_data_availability([])
@@ -155,7 +160,7 @@ class DataAvailabilityTests(TestCase):
 
     def test_unscored_profile_is_insufficient(self):
         profile = CompanyProfile.objects.first()
-        result = data_availability.check_data_availability([profile])
+        result = data_availability.check_data_availability([profile], project=self.project, user=self.user)
         self.assertEqual(result['status'], 'INSUFFICIENT')
         self.assertTrue(result['missing_data'])
 
@@ -168,10 +173,10 @@ class DataAvailabilityTests(TestCase):
         scores = compute_company_intelligence_score(profile)
         CompanyScoreSnapshot.create_from_profile(profile, trigger='manual', intelligence_scores=scores)
         EvidenceMemory.objects.create(
-            text_chunk='Real evidence.', company=profile,
+            project=self.project, text_chunk='Real evidence.', company=profile,
             embedding=compute_embedding('Real evidence.'), embedding_status='embedded',
         )
-        result = data_availability.check_data_availability([profile])
+        result = data_availability.check_data_availability([profile], project=self.project, user=self.user)
         self.assertEqual(result['status'], 'AVAILABLE')
 
     def test_mixed_readiness_is_partial(self):
@@ -183,10 +188,10 @@ class DataAvailabilityTests(TestCase):
         scores = compute_company_intelligence_score(profiles[0])
         CompanyScoreSnapshot.create_from_profile(profiles[0], trigger='manual', intelligence_scores=scores)
         EvidenceMemory.objects.create(
-            text_chunk='Real evidence.', company=profiles[0],
+            project=self.project, text_chunk='Real evidence.', company=profiles[0],
             embedding=compute_embedding('Real evidence.'), embedding_status='embedded',
         )
-        result = data_availability.check_data_availability(profiles)
+        result = data_availability.check_data_availability(profiles, project=self.project, user=self.user)
         self.assertEqual(result['status'], 'PARTIAL')
 
 

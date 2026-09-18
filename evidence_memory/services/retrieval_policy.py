@@ -31,12 +31,11 @@ ACCESS DECISIONS (is_record_accessible):
 Rejected records are excluded from retrieval entirely, in every scope —
 a rejected outcome is never "relevant historical evidence".
 
-USER GATE: all retrieval entry points require an active authenticated staff
-actor and a persisted project. This includes generic semantic search used
-by background tasks and legacy consumers. Anonymous/None, inactive and
-non-staff users are refused (no non-staff project-membership model exists
-yet — see PR3 report's known limitations). Platform sharing grants project
-learning access, not public disclosure rights.
+USER GATE: retrieval requires an active authenticated actor with project read
+permission and a persisted project. Active staff retain access; other users
+need an active ProjectMembership. Anonymous, inactive and unassigned users
+are refused. Platform sharing grants project learning access, not public
+disclosure rights.
 
 RANKING (rank_for_project): semantic similarity remains the base signal
 (the same _rank_candidates engine used everywhere else — never a second
@@ -83,18 +82,15 @@ def _norm_org(value):
 
 
 def _can_retrieve(project, user):
-    return (
-        project is not None and project.pk is not None
-        and user is not None and getattr(user, 'is_authenticated', False)
-        and getattr(user, 'is_active', False) and getattr(user, 'is_staff', False)
-    )
+    from gold_intelligence.access import can, READ
+    return can(user, project, READ)
 
 
 def accessible_candidates(project, user, *, include_demo=True):
     """Apply the shared access boundary BEFORE vector ranking, for all sources.
 
     Company/country filters describe relevance, not permission. Callers without
-    an authenticated staff actor and a persisted project receive no candidates.
+    project read permission and a persisted project receive no candidates.
     Keep is_record_accessible as the authoritative per-record recheck.
     """
     from django.db.models import Q
@@ -124,10 +120,8 @@ def accessible_candidates(project, user, *, include_demo=True):
 
 def is_record_accessible(memory, project, user=None):
     """May `project` (viewed by `user`) use this EvidenceMemory record?
-    Pure policy — no queries beyond the passed objects' own fields."""
+    Rechecks the current project grant before applying record visibility."""
     if not _can_retrieve(project, user):
-        # No non-staff project-membership model exists in this codebase yet;
-        # until one does, non-staff users get nothing rather than everything.
         return False
     if memory.verification_status == 'rejected':
         return False
@@ -304,6 +298,9 @@ def set_visibility(memory, visibility, actor=None):
       (set from its project when missing);
     - rejected records can never be shared beyond project_private.
     """
+    from gold_intelligence.access import require, SHARE, is_active_user
+    if not (is_active_user(actor) and actor.is_staff):
+        require(actor, memory.project, SHARE)
     valid = {choice for choice, _ in memory.VISIBILITY_CHOICES}
     if visibility not in valid:
         raise VisibilityNotAllowedError(f'Unknown visibility {visibility!r}.')
@@ -341,8 +338,8 @@ def is_company_record_accessible(memory, company):
     to is_record_accessible() above. Deliberately separate rather than a
     branch inside that function: `visibility`'s existing states
     (project_private/organisation_shared/...) were designed entirely around
-    Capital Guardian's staff-only, project-scoped pages, and that function's
-    fail-closed default REQUIRES a real authenticated staff user. Company
+    Capital Guardian's permission-checked, project-scoped pages, and that function's
+    fail-closed default REQUIRES an authenticated actor with project read permission. Company
     research pages (companies.company_detail and everything this app adds
     to it) are, by established repo convention, fully public with no login
     (see companies/views.py::company_detail — no @staff_member_required
@@ -362,6 +359,10 @@ def is_company_record_accessible(memory, company):
     never accessible here even if somehow also company-linked.
     """
     if memory is None or company is None:
+        return False
+    # A company link is a relevance hint, never permission to publish a
+    # project's documents or derived agent output on a company research page.
+    if memory.project_id is not None:
         return False
     if memory.verification_status == 'rejected':
         return False

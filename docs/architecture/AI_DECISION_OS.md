@@ -81,18 +81,16 @@ therefore reuses:
 
 ## Prioritised gaps
 
-1. **Propagate retrieval identity.** Generic memory search requires an active
-   staff actor and a persisted project, using the same policy as outcome
-   retrieval. Company/country filters do not grant access. Background AI
-   analysis accepts server-supplied `requesting_user_id` and `project_id` and
-   reloads both at execution time; returned evidence IDs are recorded in its
-   result and source references accompany prompt context. New output remains
-   project-private. Legacy LangGraph and public Decision Studio calls currently
-   lack this access context and therefore receive **no memory evidence**, even
-   platform-shared records. Wire authenticated project context before enabling
-   retrieval there; platform sharing is not permission to publish publicly.
-   Generic search excludes demo rows by default; labelled demo consumers may
-   explicitly opt in. Background AI analysis uses the non-demo default.
+1. **Roll out project roles.** Retrieval now requires an active staff actor or
+   a project read grant. Decision Studio derives the actor from the session;
+   LangGraph and background tasks reload server-supplied actor/project IDs.
+   Project-scoped answers and runs retain their project and recheck read access.
+   Calls without context remain memory-free; partial or revoked execution
+   context fails closed. Apply the additive migrations and assign memberships
+   in Django admin before enabling non-staff project workflows. See
+   [project access](PROJECT_ACCESS.md) for the role matrix and remaining limits.
+   Generic search excludes demo rows by default; platform sharing is not
+   permission to publish publicly.
 2. **Evaluate retrieval.** Build a labelled query/evidence set and measure
    precision, recall and citation coverage.
 3. **Make workflow deployment real.** Add a deliberately operated Redis and

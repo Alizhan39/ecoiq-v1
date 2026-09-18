@@ -122,6 +122,15 @@ class CountryWorkflowTests(TestCase):
 
 
 class GeoWorkflowTests(TestCase):
+    def setUp(self):
+        # Graph routing tests must not wait for the remote weather provider.
+        from unittest.mock import patch
+        from geo_intelligence.services.weather import _empty_result
+        weather = patch('geo_intelligence.services.weather.get_city_climate_summary',
+                        return_value=_empty_result('No weather data in this routing fixture.'))
+        weather.start()
+        self.addCleanup(weather.stop)
+
     @classmethod
     def setUpTestData(cls):
         _seed_base()

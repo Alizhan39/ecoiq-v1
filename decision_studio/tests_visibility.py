@@ -162,14 +162,11 @@ class FollowUpTests(QuestionTestCase):
         stranger.post(ASK, {'question': 'Mine now.',
                             'parent_query_id': self.original.pk})
         follow_up = DecisionQuery.objects.latest('pk')
-        self.assertEqual(follow_up.question_text, 'Mine now.')
-        self.assertIsNone(
-            follow_up.parent_query_id,
-            'An account threaded its question onto one it cannot read.')
+        self.assertEqual(follow_up.pk, self.original.pk)
 
-    def test_an_unreadable_parent_does_not_break_asking(self):
-        """Dropping the parent must not turn into an error page."""
+    def test_unreadable_parent_cannot_silently_drop_project_context(self):
+        """A revoked or foreign question must not become an unscoped follow-up."""
         stranger = signed_in_client(self, 'stranger')
         response = stranger.post(ASK, {'question': 'Still a valid question.',
                                        'parent_query_id': self.original.pk})
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 404)

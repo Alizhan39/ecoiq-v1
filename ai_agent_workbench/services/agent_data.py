@@ -80,7 +80,7 @@ def _golden_test_count(folder):
 
 
 def _agent_run_stats(agent_entry):
-    runs = AgentRun.objects.filter(agent=agent_entry)
+    runs = AgentRun.objects.filter(project__isnull=True).filter(agent=agent_entry)
     total = runs.count()
     if total == 0:
         return {
@@ -181,7 +181,7 @@ def agent_profile_context(slug):
     for row in agent_directory_rows():
         if row['slug'] == slug:
             registry_entry = row['registry_entry']
-            recent_runs = AgentRun.objects.filter(agent=registry_entry).select_related(
+            recent_runs = AgentRun.objects.filter(project__isnull=True).filter(agent=registry_entry).select_related(
                 'council_case',
             ).order_by('-created_at')[:8]
             row['recent_runs'] = recent_runs

@@ -68,18 +68,19 @@ def _evidence_to_dict(memory):
     }
 
 
-def _retrieve_evidence(question_text, profiles, countries):
+def _retrieve_evidence(question_text, profiles, countries, *, user=None, project=None):
     from evidence_memory.services.memory import search_company_memory, search_country_memory, search_similar
 
     items = []
+    context = {'user': user, 'project': project}
     for profile in profiles:
-        for memory in search_company_memory(profile, question_text, top_k=MAX_EVIDENCE_PER_ENTITY):
+        for memory in search_company_memory(profile, question_text, top_k=MAX_EVIDENCE_PER_ENTITY, **context):
             items.append(_evidence_to_dict(memory))
     for country in countries:
-        for memory in search_country_memory(country, question_text, top_k=MAX_EVIDENCE_PER_ENTITY):
+        for memory in search_country_memory(country, question_text, top_k=MAX_EVIDENCE_PER_ENTITY, **context):
             items.append(_evidence_to_dict(memory))
-    if not profiles and not countries:
-        for memory in search_similar(question_text, top_k=MAX_EVIDENCE_PER_ENTITY):
+    if project is not None or (not profiles and not countries):
+        for memory in search_similar(question_text, top_k=MAX_EVIDENCE_PER_ENTITY, **context):
             items.append(_evidence_to_dict(memory))
     # Deduplicate on excerpt text — the same finding retrieved via two paths should appear once.
     seen, deduped = set(), []
@@ -111,7 +112,7 @@ def _build_ranking(profiles, scope):
     return ranked + unranked
 
 
-def _run_agent_analysis(profiles, execution_mode):
+def _run_agent_analysis(profiles, execution_mode, *, user=None, project=None):
     from langgraph_orchestration.graph import run_orchestration
 
     agent_runs = []
@@ -119,6 +120,8 @@ def _run_agent_analysis(profiles, execution_mode):
         final_state = run_orchestration(
             user_request=f'Decision Studio analysis for {profile.company.name if profile.company_id else profile.pk}',
             target_id=profile.pk, target_type='company', execution_mode=execution_mode,
+            requesting_user_id=user.pk if project is not None else None,
+            project_id=project.pk if project is not None else None,
         )
         agent_runs.append({
             'company_id': profile.pk, 'name': profile.company.name if profile.company_id else f'Profile #{profile.pk}',
@@ -175,13 +178,16 @@ def _build_follow_up_questions(ranking, intent):
     return questions
 
 
-def answer_question(question_text, execution_mode='deterministic_test'):
+def answer_question(question_text, execution_mode='deterministic_test', *, user=None, project=None):
     """
     Returns {'intent', 'scope', 'entities', 'capability_plan',
     'data_availability', 'result': {...Decision Result...}}. Never raises
     for a normal "no data" case — that's an honest INSUFFICIENT result, not
     an exception.
     """
+    if project is not None:
+        from gold_intelligence.access import require, ANALYSE
+        require(user, project, ANALYSE)
     intent = query_understanding.classify_intent(question_text)
     scope = query_understanding.extract_scope(question_text)
     entities = query_understanding.resolve_entities(question_text, scope)
@@ -198,13 +204,13 @@ def answer_question(question_text, execution_mode='deterministic_test'):
     # named entities — a general "compare available companies" question
     # resolves a real bounded scope with zero named entities and deserves a
     # genuine availability verdict, not a default UNKNOWN.
-    availability = data_availability.check_data_availability(profiles)
+    availability = data_availability.check_data_availability(profiles, user=user, project=project)
 
     for step in plan:
         cap = step['capability']
 
         if cap == 'EVIDENCE_MEMORY':
-            evidence_items = _retrieve_evidence(question_text, profiles, countries)
+            evidence_items = _retrieve_evidence(question_text, profiles, countries, user=user, project=project)
             step['executed'] = True
             modules_used.append('Evidence Memory')
 
@@ -219,12 +225,9 @@ def answer_question(question_text, execution_mode='deterministic_test'):
 
         elif cap == 'ANALYTICS':
             if step['reason'].startswith('Question is about evidence quality'):
-                from intelligence_analytics_engine.services.evidence_distribution import evidence_quality_distribution
-                distribution = evidence_quality_distribution()
-                if not distribution['available']:
-                    uncertainty_notes.append('No evidence records exist yet to assess evidence quality distribution.')
-                else:
-                    uncertainty_notes.append(f"Platform-wide evidence confidence averages {distribution['mean']}% across {distribution['count']} record(s).")
+                # Only the evidence authorised for this request may inform its
+                # availability/confidence statement; never global private counts.
+                uncertainty_notes.append(f'{len(evidence_items)} permitted evidence record(s) retrieved for this question.')
             else:
                 ranking = _build_ranking(profiles, scope)
                 if intent == 'INVESTIGATE':
@@ -240,7 +243,7 @@ def answer_question(question_text, execution_mode='deterministic_test'):
 
         elif cap == 'AI_AGENTS':
             top_profiles = [p for p in profiles if p.pk in {r['company_id'] for r in ranking[:MAX_ENTITIES_FOR_AGENTS]}] or profiles[:MAX_ENTITIES_FOR_AGENTS]
-            agent_runs = _run_agent_analysis(top_profiles, execution_mode)
+            agent_runs = _run_agent_analysis(top_profiles, execution_mode, user=user, project=project)
             step['executed'] = True
             modules_used.append('Agent Runtime & Model Router')
             agents_used.extend({name for run in agent_runs for o in run['agent_outputs'] for name in [o.get('agent_name')] if name})

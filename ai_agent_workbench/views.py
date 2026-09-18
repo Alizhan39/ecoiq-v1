@@ -38,7 +38,7 @@ def _run_context_for_agent(council_run, agent_name):
         return None
     agent_run = (
         AgentRun.objects
-        .filter(council_case=council_run, agent__agent_name=agent_name)
+        .filter(council_case=council_run, agent__agent_name=agent_name, project__isnull=True)
         .select_related('agent', 'council_position')
         .order_by('-created_at')
         .first()
@@ -134,5 +134,6 @@ def orchestration_detail(request, run_id):
 
     from langgraph_orchestration.models import OrchestrationRun
 
-    run = get_object_or_404(OrchestrationRun, pk=run_id)
+    from gold_intelligence.access import visible_results
+    run = get_object_or_404(visible_results(OrchestrationRun.objects.all(), request.user), pk=run_id)
     return render(request, 'ai_agent_workbench/orchestration_detail.html', {'run': run})

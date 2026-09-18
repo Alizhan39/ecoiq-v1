@@ -9,13 +9,21 @@ change to a real user (never guessed) rather than leaving it blank."""
 from django.contrib import admin
 
 from gold_intelligence.models import (
-    CapitalBudgetLine, EquipmentSpec, GoldProject, MineTimelineMilestone, ScenarioAssumption,
+    CapitalBudgetLine, EquipmentSpec, GoldProject, MineTimelineMilestone, ScenarioAssumption, ProjectMembership,
 )
 
 
 class CapitalBudgetLineInline(admin.TabularInline):
     model = CapitalBudgetLine
     extra = 0
+
+
+@admin.register(ProjectMembership)
+class ProjectMembershipAdmin(admin.ModelAdmin):
+    list_display = ('project', 'user', 'role', 'is_active', 'updated_at')
+    list_filter = ('role', 'is_active', 'project')
+    search_fields = ('project__name', 'user__username')
+    readonly_fields = ('created_at', 'updated_at')
 
 
 class MineTimelineMilestoneInline(admin.TabularInline):

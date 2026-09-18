@@ -17,6 +17,8 @@ class OrchestratorState(TypedDict, total=False):
     country: Optional[dict]     # {id, name} once resolved
     location: Optional[dict]    # {latitude, longitude} when given directly
     execution_mode: str         # passed through to run_agent_analysis — never defaults to 'live'
+    requesting_user_id: Optional[int]
+    project_id: Optional[int]
 
     # Node outputs
     evidence_context: dict
@@ -41,7 +43,7 @@ class OrchestratorState(TypedDict, total=False):
 
 
 def new_state(user_request='', target_id=None, target_type_hint=None, latitude=None, longitude=None,
-              execution_mode='deterministic_test') -> OrchestratorState:
+              execution_mode='deterministic_test', requesting_user_id=None, project_id=None) -> OrchestratorState:
     """The one place an initial state is constructed, so every entrypoint
     (Celery task, tests, a future view) starts from an identical shape."""
     location = {'latitude': latitude, 'longitude': longitude} if latitude is not None and longitude is not None else None
@@ -51,6 +53,7 @@ def new_state(user_request='', target_id=None, target_type_hint=None, latitude=N
         target_id=target_id,
         company=None, country=None, location=location,
         execution_mode=execution_mode,
+        requesting_user_id=requesting_user_id, project_id=project_id,
         evidence_context={}, geo_context={}, scoring_context={}, analytics_context={},
         agent_outputs=[],
         verification_notes=[], confidence=None, human_review_required=False,

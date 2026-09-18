@@ -19,4 +19,4 @@ class AgentRunAdmin(admin.ModelAdmin):
     )
     list_filter = ('execution_mode_requested', 'execution_mode_used', 'status', 'safety_status')
     search_fields = ('task_type', 'model_provider', 'model_name', 'idempotency_key')
-    readonly_fields = ('created_at',)
+    readonly_fields = ('created_at', 'project')
