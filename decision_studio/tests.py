@@ -254,7 +254,7 @@ class DecisionEngineTests(TestCase):
         )
         self.assertEqual(_retrieve_evidence(text, [], []), [])
 
-    def test_evidence_deduplication_removes_identical_excerpts(self):
+    def test_evidence_deduplication_preserves_distinct_source_records(self):
         from unittest.mock import patch
         from decision_studio.services.decision_engine import _retrieve_evidence
         from evidence_memory.models import EvidenceMemory
@@ -268,8 +268,9 @@ class DecisionEngineTests(TestCase):
         with patch('evidence_memory.services.memory.search_company_memory', return_value=records):
             items = _retrieve_evidence(text, [profile], [])
         excerpts = [i['excerpt'] for i in items]
-        self.assertEqual(excerpts, [text])
-        self.assertEqual(len(excerpts), len(set(excerpts)))
+        self.assertEqual(excerpts, [text, text])
+        self.assertEqual({item['memory_id'] for item in items}, {record.pk for record in records})
+        self.assertEqual(len({item['citation']['citation_id'] for item in items}), 2)
 
     def test_analytics_integration_investigate_flags_outliers(self):
         outcome = answer_question('Investigate unusual risk patterns across companies.')

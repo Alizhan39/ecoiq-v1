@@ -57,6 +57,7 @@ withheld.
 | Confidence bands | `companies/confidence.py` |
 | Provenance store, lineage, defensibility | `companies/provenance.py` |
 | Metric definitions (material vs derived) | `companies/metric_registry.py` |
+| Retrieval controls and versioned citations | `evidence_memory/evaluation/benchmark.py`, `evidence_memory/services/citations.py`, `docs/evaluation/RETRIEVAL_AND_CITATIONS.md` |
 | Project roles and execution context | `gold_intelligence/access.py`, `docs/architecture/PROJECT_ACCESS.md` |
 | Analyst declaration workflow | `companies/analyst.py` |
 | Unknown semantics — the single authority | `core/unknown.py` |

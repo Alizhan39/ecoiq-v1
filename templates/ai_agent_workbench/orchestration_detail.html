@@ -38,6 +38,7 @@
     {% for rec in run.result.final_recommendations %}
     <div class="aiwb-panel">
       <p class="aiwb-p" style="color:#fff;">{{ rec.summary }}</p>
+      {% if rec.support_note %}<p class="aiwb-p">{{ rec.support_note }}</p>{% endif %}
       {% if rec.basis %}<p class="aiwb-p">Basis: {{ rec.basis }}</p>{% endif %}
       {% if rec.source %}<div class="aiwb-chip-row"><span class="aiwb-chip">{{ rec.source }}</span></div>{% endif %}
     </div>

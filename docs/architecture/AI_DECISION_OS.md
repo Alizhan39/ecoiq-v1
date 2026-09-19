@@ -91,8 +91,12 @@ therefore reuses:
    [project access](PROJECT_ACCESS.md) for the role matrix and remaining limits.
    Generic search excludes demo rows by default; platform sharing is not
    permission to publish publicly.
-2. **Evaluate retrieval.** Build a labelled query/evidence set and measure
-   precision, recall and citation coverage.
+2. **Validate retrieval on real cases.** A reproducible synthetic comparison
+   and versioned quotation contract now exist; see
+   [retrieval evaluation](../evaluation/RETRIEVAL_AND_CITATIONS.md). Obtain
+   independently reviewed project examples and calibrate abstention before
+   replacing the production hashing index. Exact quotations do not prove
+   that material recommendations follow from their sources.
 3. **Make workflow deployment real.** Add a deliberately operated Redis and
    Celery worker only when the production cost/operations decision is made.
 4. **Implement governed connectors.** Create a server-side registry with typed

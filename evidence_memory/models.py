@@ -1,7 +1,7 @@
 """
 evidence_memory/models.py — EcoIQ Evidence Memory + Vector Search (Phase 1).
 
-One model, not several: `EvidenceMemory` covers both "evidence memory" and
+The searchable model `EvidenceMemory` covers both "evidence memory" and
 "intelligence memory" from the spec — a company report chunk, a country
 report chunk, and an AgentRun finding are all the same shape (a real text
 chunk, optionally scoped to a company/country, optionally produced by an
@@ -282,3 +282,23 @@ class EvidenceMemory(models.Model):
             return False
         from django.utils import timezone
         return self.expiry_date < timezone.now().date()
+
+
+class EvidenceCitationSnapshot(models.Model):
+    """An append-only copy of the indexed text and its recorded source metadata.
+
+    Hashes establish which stored bytes were cited, not the truth of the source.
+    Existing SourceDocument remains the authority for original documents.
+    """
+    memory = models.ForeignKey(EvidenceMemory, on_delete=models.PROTECT, related_name='citation_snapshots')
+    digest = models.CharField(max_length=64)
+    payload = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['memory', 'digest'], name='unique_memory_citation_snapshot')]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValueError('Citation snapshots are append-only; capture a new version.')
+        super().save(*args, **kwargs)
