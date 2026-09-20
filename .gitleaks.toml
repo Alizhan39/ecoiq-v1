@@ -1,10 +1,9 @@
 # Gitleaks configuration for EcoIQ.
 #
 # Extends the upstream default rule set — nothing is disabled, no rule is
-# relaxed, and no path, regex or stopword is exempted. The allowlist below
-# contains exactly one entry, pinned to a single finding by fingerprint
-# (commit : file : rule : line), so it cannot hide anything else: a different
-# commit, file, line or rule still fails the scan.
+# relaxed. Allowlist entries are deliberately narrow and individually
+# documented so known non-secret fixtures/checksums do not weaken detection
+# for unrelated content.
 
 [extend]
 useDefault = true
@@ -45,4 +44,22 @@ commits = [
 ]
 fingerprints = [
   "ea6244aedc8fba8f6d25014585c3b2123bfb57ee:core/tests_no_hardcoded_secrets.py:generic-api-key:173",
+]
+
+[[allowlists]]
+description = """
+Known SHA-256 checksum for the tokenizer artifact in the retrieval benchmark.
+
+Gitleaks' generic-api-key rule treats the combination of the JSON key
+"tokenizer.json" and its 64-character hexadecimal digest as credential-shaped
+content. The value is a published artifact checksum, not a token or API key.
+
+The workflow scans full pull-request history, so changing the current JSON alone
+would not remove the finding from commit
+889e9023d5c05f5dca4dcbb398710ce27346407b. This allowlist matches only this
+exact benign digest value; it does not exempt the file, commit, token-like keys,
+or other high-entropy strings.
+"""
+regexes = [
+  '''^2c3387be76557bd40970cec13153b3bbf80407865484b209e655e5e4729076b8$''',
 ]
