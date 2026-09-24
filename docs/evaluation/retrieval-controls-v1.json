@@ -1,0 +1,2104 @@
+{
+  "dataset": "EcoIQ synthetic retrieval controls v1",
+  "dataset_sha256": "a8eee8c1d8d7100a4a7c2127dea9ca2583807c4eeac0b3007b64a89cc011d140",
+  "document_count": 18,
+  "question_count": 35,
+  "scope": "Synthetic diagnostic set; not a production accuracy estimate or a calibrated confidence score.",
+  "lexical": {
+    "status": "measured",
+    "encoder": {
+      "name": "production HashingVectorizer",
+      "sklearn": "1.9.1"
+    },
+    "dimensions": 256,
+    "encode_and_rank_seconds": 3.8866,
+    "answerable": {
+      "precision_at_1": 0.433333,
+      "precision_at_3": 0.233333,
+      "recall_at_3": 0.633333,
+      "mrr_at_5": 0.559444,
+      "ndcg_at_5": 0.582406
+    },
+    "by_category": {
+      "lexical": {
+        "precision_at_1": 0.75,
+        "precision_at_3": 0.333333,
+        "recall_at_3": 1.0,
+        "mrr_at_5": 0.875,
+        "ndcg_at_5": 0.907732
+      },
+      "multi_source": {
+        "precision_at_1": 0.666667,
+        "precision_at_3": 0.444444,
+        "recall_at_3": 0.666667,
+        "mrr_at_5": 0.833333,
+        "ndcg_at_5": 0.666667
+      },
+      "negation": {
+        "precision_at_1": 1.0,
+        "precision_at_3": 0.333333,
+        "recall_at_3": 1.0,
+        "mrr_at_5": 1.0,
+        "ndcg_at_5": 1.0
+      },
+      "no_answer": {},
+      "paraphrase": {
+        "precision_at_1": 0.142857,
+        "precision_at_3": 0.142857,
+        "recall_at_3": 0.428571,
+        "mrr_at_5": 0.261905,
+        "ndcg_at_5": 0.304419
+      },
+      "russian": {
+        "precision_at_1": 0.0,
+        "precision_at_3": 0.083333,
+        "recall_at_3": 0.25,
+        "mrr_at_5": 0.18125,
+        "ndcg_at_5": 0.259924
+      },
+      "version": {
+        "precision_at_1": 1.0,
+        "precision_at_3": 0.333333,
+        "recall_at_3": 1.0,
+        "mrr_at_5": 1.0,
+        "ndcg_at_5": 1.0
+      }
+    },
+    "no_answer_count": 5,
+    "no_answer_with_candidates": 5,
+    "abstention_note": "Raw top-k retrieval has no answerability threshold; candidates are not evidence that a question is answerable.",
+    "queries": [
+      {
+        "query_id": "q01",
+        "category": "lexical",
+        "question": "When does the operating permit expire?",
+        "relevant_ids": [
+          "permit"
+        ],
+        "ranked_ids": [
+          "heat-meter",
+          "permit",
+          "safety",
+          "audit",
+          "supplier"
+        ],
+        "scores": [
+          0.303239,
+          0.303239,
+          0.288675,
+          0.280976,
+          0.280976
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 0.5,
+          "ndcg_at_5": 0.6309297535714575
+        }
+      },
+      {
+        "query_id": "q02",
+        "category": "paraphrase",
+        "question": "Has permission to keep the plant running been extended?",
+        "relevant_ids": [
+          "permit"
+        ],
+        "ranked_ids": [
+          "ethics",
+          "safety",
+          "permit",
+          "maintenance",
+          "warranty"
+        ],
+        "scores": [
+          0.32686,
+          0.294628,
+          0.247594,
+          0.235702,
+          0.235702
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 0.3333333333333333,
+          "ndcg_at_5": 0.5
+        }
+      },
+      {
+        "query_id": "q03",
+        "category": "russian",
+        "question": "До какой даты действует разрешение на эксплуатацию?",
+        "relevant_ids": [
+          "permit"
+        ],
+        "ranked_ids": [
+          "supplier",
+          "water",
+          "heat-meter",
+          "safety",
+          "audit"
+        ],
+        "scores": [
+          0.086711,
+          0.074125,
+          0.070186,
+          0.066815,
+          0.0
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.0,
+          "recall_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "ndcg_at_5": 0.0
+        }
+      },
+      {
+        "query_id": "q04",
+        "category": "lexical",
+        "question": "What heat loss was actually measured?",
+        "relevant_ids": [
+          "heat-meter"
+        ],
+        "ranked_ids": [
+          "heat-meter",
+          "heat-plan",
+          "insurance",
+          "maintenance",
+          "solar"
+        ],
+        "scores": [
+          0.303239,
+          0.178174,
+          0.109109,
+          0.096225,
+          0.087039
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q05",
+        "category": "paraphrase",
+        "question": "What change in wasted thermal energy was observed after monitoring?",
+        "relevant_ids": [
+          "heat-meter"
+        ],
+        "ranked_ids": [
+          "heat-plan",
+          "maintenance",
+          "solar",
+          "loan",
+          "water"
+        ],
+        "scores": [
+          0.20702,
+          0.074536,
+          0.06742,
+          0.065938,
+          0.062017
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.0,
+          "recall_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "ndcg_at_5": 0.0
+        }
+      },
+      {
+        "query_id": "q06",
+        "category": "russian",
+        "question": "Какие теплопотери измерили, а не запланировали?",
+        "relevant_ids": [
+          "heat-meter"
+        ],
+        "ranked_ids": [
+          "solar",
+          "heat-meter",
+          "loan",
+          "ethics",
+          "water"
+        ],
+        "scores": [
+          0.190693,
+          0.166091,
+          0.09325,
+          0.087706,
+          0.087706
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 0.5,
+          "ndcg_at_5": 0.6309297535714575
+        }
+      },
+      {
+        "query_id": "q07",
+        "category": "negation",
+        "question": "Were construction funds approved for release?",
+        "relevant_ids": [
+          "approval"
+        ],
+        "ranked_ids": [
+          "approval",
+          "budget",
+          "emissions",
+          "tender-v2",
+          "tender-v1"
+        ],
+        "scores": [
+          0.267261,
+          0.15162,
+          0.149071,
+          0.096225,
+          0.091287
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q08",
+        "category": "russian",
+        "question": "Комитет уже разрешил выдачу денег на строительство?",
+        "relevant_ids": [
+          "approval"
+        ],
+        "ranked_ids": [
+          "water",
+          "approval",
+          "audit",
+          "emissions",
+          "heat-meter"
+        ],
+        "scores": [
+          0.074125,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 0.5,
+          "ndcg_at_5": 0.6309297535714575
+        }
+      },
+      {
+        "query_id": "q09",
+        "category": "version",
+        "question": "Under the current 2026 procurement policy, how many supplier quotations are needed above 50000 units?",
+        "relevant_ids": [
+          "tender-v2"
+        ],
+        "ranked_ids": [
+          "tender-v2",
+          "tender-v1",
+          "maintenance",
+          "budget",
+          "permit"
+        ],
+        "scores": [
+          0.486864,
+          0.46188,
+          0.243432,
+          0.191785,
+          0.191785
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q10",
+        "category": "paraphrase",
+        "question": "How many independent bids must be collected under the latest purchasing rules?",
+        "relevant_ids": [
+          "tender-v2"
+        ],
+        "ranked_ids": [
+          "safety",
+          "water",
+          "audit",
+          "supplier",
+          "ethics"
+        ],
+        "scores": [
+          0.306186,
+          0.283069,
+          0.264906,
+          0.264906,
+          0.226455
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.0,
+          "recall_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "ndcg_at_5": 0.0
+        }
+      },
+      {
+        "query_id": "q11",
+        "category": "russian",
+        "question": "Сколько предложений поставщиков нужно по действующей политике закупок?",
+        "relevant_ids": [
+          "tender-v2"
+        ],
+        "ranked_ids": [
+          "heat-plan",
+          "loan",
+          "budget",
+          "tender-v2",
+          "audit"
+        ],
+        "scores": [
+          0.154303,
+          0.147442,
+          0.131306,
+          0.083333,
+          0.081111
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.0,
+          "recall_at_3": 0.0,
+          "mrr_at_5": 0.25,
+          "ndcg_at_5": 0.43067655807339306
+        }
+      },
+      {
+        "query_id": "q12",
+        "category": "negation",
+        "question": "Does the equipment policy insure against flood damage?",
+        "relevant_ids": [
+          "insurance"
+        ],
+        "ranked_ids": [
+          "insurance",
+          "loan",
+          "ethics",
+          "safety",
+          "tender-v2"
+        ],
+        "scores": [
+          0.472456,
+          0.294884,
+          0.27735,
+          0.25,
+          0.25
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q13",
+        "category": "paraphrase",
+        "question": "Will the insurer pay if rising water damages the machinery?",
+        "relevant_ids": [
+          "insurance"
+        ],
+        "ranked_ids": [
+          "safety",
+          "warranty",
+          "audit",
+          "water",
+          "ethics"
+        ],
+        "scores": [
+          0.375,
+          0.25,
+          0.243332,
+          0.208013,
+          0.208013
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.0,
+          "recall_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "ndcg_at_5": 0.0
+        }
+      },
+      {
+        "query_id": "q14",
+        "category": "lexical",
+        "question": "How long is the pump warranty?",
+        "relevant_ids": [
+          "warranty"
+        ],
+        "ranked_ids": [
+          "maintenance",
+          "warranty",
+          "budget",
+          "solar",
+          "safety"
+        ],
+        "scores": [
+          0.416667,
+          0.416667,
+          0.328266,
+          0.301511,
+          0.25
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 0.5,
+          "ndcg_at_5": 0.6309297535714575
+        }
+      },
+      {
+        "query_id": "q15",
+        "category": "multi_source",
+        "question": "Can we assume the pump warranty is valid after the missed service?",
+        "relevant_ids": [
+          "warranty",
+          "maintenance"
+        ],
+        "ranked_ids": [
+          "maintenance",
+          "warranty",
+          "approval",
+          "audit",
+          "safety"
+        ],
+        "scores": [
+          0.440959,
+          0.377964,
+          0.349927,
+          0.30657,
+          0.283473
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.6666666666666666,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q16",
+        "category": "multi_source",
+        "question": "What prevents the first funding drawdown?",
+        "relevant_ids": [
+          "loan",
+          "approval"
+        ],
+        "ranked_ids": [
+          "solar",
+          "loan",
+          "water",
+          "safety",
+          "supplier"
+        ],
+        "scores": [
+          0.348155,
+          0.340503,
+          0.320256,
+          0.288675,
+          0.280976
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 0.5,
+          "mrr_at_5": 0.5,
+          "ndcg_at_5": 0.38685280723454163
+        }
+      },
+      {
+        "query_id": "q17",
+        "category": "russian",
+        "question": "Договор финансирования уже подписан?",
+        "relevant_ids": [
+          "loan"
+        ],
+        "ranked_ids": [
+          "approval",
+          "audit",
+          "budget",
+          "emissions",
+          "ethics"
+        ],
+        "scores": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.0,
+          "recall_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "ndcg_at_5": 0.0
+        }
+      },
+      {
+        "query_id": "q18",
+        "category": "lexical",
+        "question": "How much solar electricity was generated in the first quarter?",
+        "relevant_ids": [
+          "solar"
+        ],
+        "ranked_ids": [
+          "solar",
+          "maintenance",
+          "safety",
+          "loan",
+          "water"
+        ],
+        "scores": [
+          0.53936,
+          0.298142,
+          0.279508,
+          0.263752,
+          0.248069
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q19",
+        "category": "paraphrase",
+        "question": "Did the photovoltaic installation deliver its planned output?",
+        "relevant_ids": [
+          "solar"
+        ],
+        "ranked_ids": [
+          "safety",
+          "maintenance",
+          "warranty",
+          "audit",
+          "supplier"
+        ],
+        "scores": [
+          0.25,
+          0.166667,
+          0.166667,
+          0.162221,
+          0.162221
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.0,
+          "recall_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "ndcg_at_5": 0.0
+        }
+      },
+      {
+        "query_id": "q20",
+        "category": "russian",
+        "question": "Почему вырос забор пресной воды?",
+        "relevant_ids": [
+          "water"
+        ],
+        "ranked_ids": [
+          "warranty",
+          "loan",
+          "tender-v1",
+          "approval",
+          "audit"
+        ],
+        "scores": [
+          0.105409,
+          0.09325,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.0,
+          "recall_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "ndcg_at_5": 0.0
+        }
+      },
+      {
+        "query_id": "q21",
+        "category": "lexical",
+        "question": "What unresolved conflict of interest did Supplier North disclose?",
+        "relevant_ids": [
+          "supplier"
+        ],
+        "ranked_ids": [
+          "supplier",
+          "maintenance",
+          "tender-v2",
+          "warranty",
+          "tender-v1"
+        ],
+        "scores": [
+          0.458831,
+          0.078567,
+          0.078567,
+          0.078567,
+          0.074536
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q22",
+        "category": "paraphrase",
+        "question": "Is there a personal financial connection between the bidder and the purchasing adviser?",
+        "relevant_ids": [
+          "supplier"
+        ],
+        "ranked_ids": [
+          "safety",
+          "supplier",
+          "water",
+          "audit",
+          "approval"
+        ],
+        "scores": [
+          0.377964,
+          0.367884,
+          0.314485,
+          0.30657,
+          0.291606
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 0.5,
+          "ndcg_at_5": 0.6309297535714575
+        }
+      },
+      {
+        "query_id": "q23",
+        "category": "negation",
+        "question": "Has this project received Shariah approval?",
+        "relevant_ids": [
+          "ethics"
+        ],
+        "ranked_ids": [
+          "ethics",
+          "loan",
+          "permit",
+          "insurance",
+          "maintenance"
+        ],
+        "scores": [
+          0.40032,
+          0.170251,
+          0.15162,
+          0.109109,
+          0.096225
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q24",
+        "category": "russian",
+        "question": "Есть ли подтверждение шариатского одобрения проекта?",
+        "relevant_ids": [
+          "ethics"
+        ],
+        "ranked_ids": [
+          "tender-v1",
+          "permit",
+          "approval",
+          "audit",
+          "budget"
+        ],
+        "scores": [
+          0.182574,
+          0.07581,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.0,
+          "recall_at_3": 0.0,
+          "mrr_at_5": 0.0,
+          "ndcg_at_5": 0.0
+        }
+      },
+      {
+        "query_id": "q25",
+        "category": "lexical",
+        "question": "What must be removed before the next shift?",
+        "relevant_ids": [
+          "safety"
+        ],
+        "ranked_ids": [
+          "safety",
+          "ethics",
+          "water",
+          "maintenance",
+          "loan"
+        ],
+        "scores": [
+          0.625,
+          0.346688,
+          0.27735,
+          0.25,
+          0.221163
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q26",
+        "category": "paraphrase",
+        "question": "Why could workers have difficulty escaping the site?",
+        "relevant_ids": [
+          "safety"
+        ],
+        "ranked_ids": [
+          "safety",
+          "supplier",
+          "approval",
+          "water",
+          "maintenance"
+        ],
+        "scores": [
+          0.25,
+          0.243332,
+          0.231455,
+          0.208013,
+          0.166667
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q27",
+        "category": "lexical",
+        "question": "What is actual capital expenditure compared with the approved budget?",
+        "relevant_ids": [
+          "budget"
+        ],
+        "ranked_ids": [
+          "budget",
+          "water",
+          "warranty",
+          "insurance",
+          "maintenance"
+        ],
+        "scores": [
+          0.411054,
+          0.310087,
+          0.298142,
+          0.253546,
+          0.223607
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q28",
+        "category": "russian",
+        "question": "Есть ли перерасход капитального бюджета?",
+        "relevant_ids": [
+          "budget"
+        ],
+        "ranked_ids": [
+          "ethics",
+          "safety",
+          "approval",
+          "audit",
+          "budget"
+        ],
+        "scores": [
+          0.087706,
+          0.079057,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.0,
+          "recall_at_3": 0.0,
+          "mrr_at_5": 0.2,
+          "ndcg_at_5": 0.38685280723454163
+        }
+      },
+      {
+        "query_id": "q29",
+        "category": "multi_source",
+        "question": "Are the emissions figures independently assured or only awaiting an audit?",
+        "relevant_ids": [
+          "emissions",
+          "audit"
+        ],
+        "ranked_ids": [
+          "audit",
+          "safety",
+          "permit",
+          "maintenance",
+          "approval"
+        ],
+        "scores": [
+          0.276686,
+          0.266501,
+          0.223957,
+          0.213201,
+          0.197386
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 0.5,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 0.6131471927654584
+        }
+      },
+      {
+        "query_id": "q30",
+        "category": "lexical",
+        "question": "What were reported Scope 1 emissions?",
+        "relevant_ids": [
+          "emissions"
+        ],
+        "ranked_ids": [
+          "emissions",
+          "maintenance",
+          "warranty",
+          "audit",
+          "tender-v1"
+        ],
+        "scores": [
+          0.571548,
+          0.105409,
+          0.105409,
+          0.102598,
+          0.1
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q31",
+        "category": "no_answer",
+        "question": "What was the CEO salary in 2026?",
+        "relevant_ids": [],
+        "ranked_ids": [
+          "maintenance",
+          "safety",
+          "supplier",
+          "heat-plan",
+          "solar"
+        ],
+        "scores": [
+          0.267261,
+          0.267261,
+          0.260133,
+          0.247436,
+          0.241747
+        ],
+        "metrics": null
+      },
+      {
+        "query_id": "q32",
+        "category": "no_answer",
+        "question": "What is the certified gold reserve tonnage?",
+        "relevant_ids": [],
+        "ranked_ids": [
+          "maintenance",
+          "safety",
+          "audit",
+          "approval",
+          "water"
+        ],
+        "scores": [
+          0.267261,
+          0.267261,
+          0.260133,
+          0.247436,
+          0.222375
+        ],
+        "metrics": null
+      },
+      {
+        "query_id": "q33",
+        "category": "no_answer",
+        "question": "What is the signed interest rate on the project loan?",
+        "relevant_ids": [],
+        "ranked_ids": [
+          "safety",
+          "approval",
+          "permit",
+          "water",
+          "audit"
+        ],
+        "scores": [
+          0.408248,
+          0.377964,
+          0.375239,
+          0.339683,
+          0.331133
+        ],
+        "metrics": null
+      },
+      {
+        "query_id": "q34",
+        "category": "no_answer",
+        "question": "Кто выиграл тендер на поставку насосов?",
+        "relevant_ids": [],
+        "ranked_ids": [
+          "tender-v2",
+          "tender-v1",
+          "approval",
+          "audit",
+          "budget"
+        ],
+        "scores": [
+          0.096225,
+          0.091287,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "metrics": null
+      },
+      {
+        "query_id": "q35",
+        "category": "no_answer",
+        "question": "What causal carbon reduction can be attributed to the insulation?",
+        "relevant_ids": [],
+        "ranked_ids": [
+          "safety",
+          "warranty",
+          "ethics",
+          "water",
+          "maintenance"
+        ],
+        "scores": [
+          0.33541,
+          0.223607,
+          0.186052,
+          0.186052,
+          0.149071
+        ],
+        "metrics": null
+      }
+    ]
+  },
+  "semantic": {
+    "status": "measured",
+    "encoder": {
+      "model_id": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+      "revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42",
+      "artifact": "onnx/model_quint8_avx2.onnx",
+      "sha256": {
+        "model.onnx": "98a01d88b7de996cdea58c32ca71208c09968d143798814b2ea09d3439dc334f",
+        "tokenizer.json": "2c3387be76557bd40970cec13153b3bbf80407865484b209e655e5e4729076b8"
+      },
+      "onnxruntime": "1.30.0",
+      "tokenizers": "0.23.2",
+      "pooling": "attention-mask mean",
+      "max_tokens": 128
+    },
+    "dimensions": 384,
+    "encode_and_rank_seconds": 0.985,
+    "answerable": {
+      "precision_at_1": 0.933333,
+      "precision_at_3": 0.366667,
+      "recall_at_3": 1.0,
+      "mrr_at_5": 0.966667,
+      "ndcg_at_5": 0.972719
+    },
+    "by_category": {
+      "lexical": {
+        "precision_at_1": 1.0,
+        "precision_at_3": 0.333333,
+        "recall_at_3": 1.0,
+        "mrr_at_5": 1.0,
+        "ndcg_at_5": 1.0
+      },
+      "multi_source": {
+        "precision_at_1": 1.0,
+        "precision_at_3": 0.666667,
+        "recall_at_3": 1.0,
+        "mrr_at_5": 1.0,
+        "ndcg_at_5": 0.97324
+      },
+      "negation": {
+        "precision_at_1": 1.0,
+        "precision_at_3": 0.333333,
+        "recall_at_3": 1.0,
+        "mrr_at_5": 1.0,
+        "ndcg_at_5": 1.0
+      },
+      "no_answer": {},
+      "paraphrase": {
+        "precision_at_1": 0.857143,
+        "precision_at_3": 0.333333,
+        "recall_at_3": 1.0,
+        "mrr_at_5": 0.928571,
+        "ndcg_at_5": 0.947276
+      },
+      "russian": {
+        "precision_at_1": 0.875,
+        "precision_at_3": 0.333333,
+        "recall_at_3": 1.0,
+        "mrr_at_5": 0.9375,
+        "ndcg_at_5": 0.953866
+      },
+      "version": {
+        "precision_at_1": 1.0,
+        "precision_at_3": 0.333333,
+        "recall_at_3": 1.0,
+        "mrr_at_5": 1.0,
+        "ndcg_at_5": 1.0
+      }
+    },
+    "no_answer_count": 5,
+    "no_answer_with_candidates": 5,
+    "abstention_note": "Raw top-k retrieval has no answerability threshold; candidates are not evidence that a question is answerable.",
+    "queries": [
+      {
+        "query_id": "q01",
+        "category": "lexical",
+        "question": "When does the operating permit expire?",
+        "relevant_ids": [
+          "permit"
+        ],
+        "ranked_ids": [
+          "permit",
+          "warranty",
+          "maintenance",
+          "safety",
+          "audit"
+        ],
+        "scores": [
+          0.831887,
+          0.605686,
+          0.417653,
+          0.297051,
+          0.293536
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q02",
+        "category": "paraphrase",
+        "question": "Has permission to keep the plant running been extended?",
+        "relevant_ids": [
+          "permit"
+        ],
+        "ranked_ids": [
+          "permit",
+          "warranty",
+          "maintenance",
+          "approval",
+          "tender-v2"
+        ],
+        "scores": [
+          0.495772,
+          0.354617,
+          0.324227,
+          0.320196,
+          0.314404
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q03",
+        "category": "russian",
+        "question": "До какой даты действует разрешение на эксплуатацию?",
+        "relevant_ids": [
+          "permit"
+        ],
+        "ranked_ids": [
+          "warranty",
+          "permit",
+          "maintenance",
+          "approval",
+          "audit"
+        ],
+        "scores": [
+          0.556959,
+          0.550449,
+          0.428437,
+          0.319805,
+          0.311196
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 0.5,
+          "ndcg_at_5": 0.6309297535714575
+        }
+      },
+      {
+        "query_id": "q04",
+        "category": "lexical",
+        "question": "What heat loss was actually measured?",
+        "relevant_ids": [
+          "heat-meter"
+        ],
+        "ranked_ids": [
+          "heat-meter",
+          "heat-plan",
+          "emissions",
+          "water",
+          "solar"
+        ],
+        "scores": [
+          0.676429,
+          0.593919,
+          0.350789,
+          0.319823,
+          0.295334
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q05",
+        "category": "paraphrase",
+        "question": "What change in wasted thermal energy was observed after monitoring?",
+        "relevant_ids": [
+          "heat-meter"
+        ],
+        "ranked_ids": [
+          "heat-meter",
+          "water",
+          "heat-plan",
+          "emissions",
+          "solar"
+        ],
+        "scores": [
+          0.522302,
+          0.437726,
+          0.432127,
+          0.385838,
+          0.365867
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q06",
+        "category": "russian",
+        "question": "Какие теплопотери измерили, а не запланировали?",
+        "relevant_ids": [
+          "heat-meter"
+        ],
+        "ranked_ids": [
+          "heat-meter",
+          "heat-plan",
+          "emissions",
+          "solar",
+          "insurance"
+        ],
+        "scores": [
+          0.660059,
+          0.590561,
+          0.421591,
+          0.334883,
+          0.312583
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q07",
+        "category": "negation",
+        "question": "Were construction funds approved for release?",
+        "relevant_ids": [
+          "approval"
+        ],
+        "ranked_ids": [
+          "approval",
+          "loan",
+          "budget",
+          "audit",
+          "safety"
+        ],
+        "scores": [
+          0.577419,
+          0.485743,
+          0.368841,
+          0.340248,
+          0.325357
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q08",
+        "category": "russian",
+        "question": "Комитет уже разрешил выдачу денег на строительство?",
+        "relevant_ids": [
+          "approval"
+        ],
+        "ranked_ids": [
+          "approval",
+          "loan",
+          "audit",
+          "budget",
+          "maintenance"
+        ],
+        "scores": [
+          0.632642,
+          0.544324,
+          0.354819,
+          0.350092,
+          0.326773
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q09",
+        "category": "version",
+        "question": "Under the current 2026 procurement policy, how many supplier quotations are needed above 50000 units?",
+        "relevant_ids": [
+          "tender-v2"
+        ],
+        "ranked_ids": [
+          "tender-v2",
+          "tender-v1",
+          "warranty",
+          "solar",
+          "maintenance"
+        ],
+        "scores": [
+          0.747663,
+          0.601921,
+          0.341266,
+          0.324762,
+          0.32098
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q10",
+        "category": "paraphrase",
+        "question": "How many independent bids must be collected under the latest purchasing rules?",
+        "relevant_ids": [
+          "tender-v2"
+        ],
+        "ranked_ids": [
+          "tender-v2",
+          "tender-v1",
+          "warranty",
+          "audit",
+          "supplier"
+        ],
+        "scores": [
+          0.579139,
+          0.468277,
+          0.3637,
+          0.300628,
+          0.274734
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q11",
+        "category": "russian",
+        "question": "Сколько предложений поставщиков нужно по действующей политике закупок?",
+        "relevant_ids": [
+          "tender-v2"
+        ],
+        "ranked_ids": [
+          "tender-v2",
+          "tender-v1",
+          "supplier",
+          "warranty",
+          "maintenance"
+        ],
+        "scores": [
+          0.651267,
+          0.515695,
+          0.419643,
+          0.387133,
+          0.379279
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q12",
+        "category": "negation",
+        "question": "Does the equipment policy insure against flood damage?",
+        "relevant_ids": [
+          "insurance"
+        ],
+        "ranked_ids": [
+          "insurance",
+          "heat-plan",
+          "approval",
+          "safety",
+          "maintenance"
+        ],
+        "scores": [
+          0.675276,
+          0.388209,
+          0.370681,
+          0.368542,
+          0.348837
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q13",
+        "category": "paraphrase",
+        "question": "Will the insurer pay if rising water damages the machinery?",
+        "relevant_ids": [
+          "insurance"
+        ],
+        "ranked_ids": [
+          "water",
+          "insurance",
+          "maintenance",
+          "approval",
+          "safety"
+        ],
+        "scores": [
+          0.439609,
+          0.420617,
+          0.38432,
+          0.366382,
+          0.326909
+        ],
+        "metrics": {
+          "precision_at_1": 0.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 0.5,
+          "ndcg_at_5": 0.6309297535714575
+        }
+      },
+      {
+        "query_id": "q14",
+        "category": "lexical",
+        "question": "How long is the pump warranty?",
+        "relevant_ids": [
+          "warranty"
+        ],
+        "ranked_ids": [
+          "warranty",
+          "maintenance",
+          "permit",
+          "tender-v1",
+          "tender-v2"
+        ],
+        "scores": [
+          0.776684,
+          0.540664,
+          0.427419,
+          0.308799,
+          0.281526
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q15",
+        "category": "multi_source",
+        "question": "Can we assume the pump warranty is valid after the missed service?",
+        "relevant_ids": [
+          "warranty",
+          "maintenance"
+        ],
+        "ranked_ids": [
+          "maintenance",
+          "warranty",
+          "permit",
+          "approval",
+          "tender-v1"
+        ],
+        "scores": [
+          0.699558,
+          0.59451,
+          0.380932,
+          0.353948,
+          0.330953
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.6666666666666666,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q16",
+        "category": "multi_source",
+        "question": "What prevents the first funding drawdown?",
+        "relevant_ids": [
+          "loan",
+          "approval"
+        ],
+        "ranked_ids": [
+          "loan",
+          "budget",
+          "approval",
+          "heat-plan",
+          "safety"
+        ],
+        "scores": [
+          0.524955,
+          0.405044,
+          0.395746,
+          0.32611,
+          0.310294
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.6666666666666666,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 0.9197207891481876
+        }
+      },
+      {
+        "query_id": "q17",
+        "category": "russian",
+        "question": "Договор финансирования уже подписан?",
+        "relevant_ids": [
+          "loan"
+        ],
+        "ranked_ids": [
+          "loan",
+          "audit",
+          "approval",
+          "budget",
+          "warranty"
+        ],
+        "scores": [
+          0.487213,
+          0.292527,
+          0.282961,
+          0.273282,
+          0.261757
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q18",
+        "category": "lexical",
+        "question": "How much solar electricity was generated in the first quarter?",
+        "relevant_ids": [
+          "solar"
+        ],
+        "ranked_ids": [
+          "solar",
+          "emissions",
+          "budget",
+          "water",
+          "audit"
+        ],
+        "scores": [
+          0.690575,
+          0.383336,
+          0.274406,
+          0.215616,
+          0.210775
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q19",
+        "category": "paraphrase",
+        "question": "Did the photovoltaic installation deliver its planned output?",
+        "relevant_ids": [
+          "solar"
+        ],
+        "ranked_ids": [
+          "solar",
+          "maintenance",
+          "tender-v1",
+          "approval",
+          "tender-v2"
+        ],
+        "scores": [
+          0.505603,
+          0.300759,
+          0.295968,
+          0.273913,
+          0.271647
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q20",
+        "category": "russian",
+        "question": "Почему вырос забор пресной воды?",
+        "relevant_ids": [
+          "water"
+        ],
+        "ranked_ids": [
+          "water",
+          "loan",
+          "insurance",
+          "heat-meter",
+          "emissions"
+        ],
+        "scores": [
+          0.45364,
+          0.208608,
+          0.19571,
+          0.172061,
+          0.167138
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q21",
+        "category": "lexical",
+        "question": "What unresolved conflict of interest did Supplier North disclose?",
+        "relevant_ids": [
+          "supplier"
+        ],
+        "ranked_ids": [
+          "supplier",
+          "audit",
+          "tender-v1",
+          "maintenance",
+          "safety"
+        ],
+        "scores": [
+          0.708524,
+          0.34131,
+          0.339783,
+          0.316731,
+          0.316377
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q22",
+        "category": "paraphrase",
+        "question": "Is there a personal financial connection between the bidder and the purchasing adviser?",
+        "relevant_ids": [
+          "supplier"
+        ],
+        "ranked_ids": [
+          "supplier",
+          "tender-v1",
+          "loan",
+          "tender-v2",
+          "warranty"
+        ],
+        "scores": [
+          0.468413,
+          0.314085,
+          0.271714,
+          0.262727,
+          0.229896
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q23",
+        "category": "negation",
+        "question": "Has this project received Shariah approval?",
+        "relevant_ids": [
+          "ethics"
+        ],
+        "ranked_ids": [
+          "ethics",
+          "approval",
+          "audit",
+          "loan",
+          "heat-plan"
+        ],
+        "scores": [
+          0.645373,
+          0.244889,
+          0.244137,
+          0.230327,
+          0.172769
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q24",
+        "category": "russian",
+        "question": "Есть ли подтверждение шариатского одобрения проекта?",
+        "relevant_ids": [
+          "ethics"
+        ],
+        "ranked_ids": [
+          "ethics",
+          "approval",
+          "loan",
+          "audit",
+          "heat-plan"
+        ],
+        "scores": [
+          0.549922,
+          0.293281,
+          0.272005,
+          0.263713,
+          0.221687
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q25",
+        "category": "lexical",
+        "question": "What must be removed before the next shift?",
+        "relevant_ids": [
+          "safety"
+        ],
+        "ranked_ids": [
+          "safety",
+          "maintenance",
+          "approval",
+          "tender-v2",
+          "permit"
+        ],
+        "scores": [
+          0.561237,
+          0.266348,
+          0.23292,
+          0.205715,
+          0.202989
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q26",
+        "category": "paraphrase",
+        "question": "Why could workers have difficulty escaping the site?",
+        "relevant_ids": [
+          "safety"
+        ],
+        "ranked_ids": [
+          "safety",
+          "maintenance",
+          "water",
+          "insurance",
+          "approval"
+        ],
+        "scores": [
+          0.381282,
+          0.238197,
+          0.237602,
+          0.199391,
+          0.187659
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q27",
+        "category": "lexical",
+        "question": "What is actual capital expenditure compared with the approved budget?",
+        "relevant_ids": [
+          "budget"
+        ],
+        "ranked_ids": [
+          "budget",
+          "loan",
+          "solar",
+          "approval",
+          "heat-plan"
+        ],
+        "scores": [
+          0.67908,
+          0.279475,
+          0.260195,
+          0.255188,
+          0.242459
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q28",
+        "category": "russian",
+        "question": "Есть ли перерасход капитального бюджета?",
+        "relevant_ids": [
+          "budget"
+        ],
+        "ranked_ids": [
+          "budget",
+          "tender-v2",
+          "heat-plan",
+          "water",
+          "loan"
+        ],
+        "scores": [
+          0.548069,
+          0.403529,
+          0.330749,
+          0.31358,
+          0.313322
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q29",
+        "category": "multi_source",
+        "question": "Are the emissions figures independently assured or only awaiting an audit?",
+        "relevant_ids": [
+          "emissions",
+          "audit"
+        ],
+        "ranked_ids": [
+          "audit",
+          "emissions",
+          "approval",
+          "tender-v2",
+          "loan"
+        ],
+        "scores": [
+          0.670132,
+          0.612285,
+          0.387277,
+          0.348259,
+          0.347367
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.6666666666666666,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q30",
+        "category": "lexical",
+        "question": "What were reported Scope 1 emissions?",
+        "relevant_ids": [
+          "emissions"
+        ],
+        "ranked_ids": [
+          "emissions",
+          "audit",
+          "solar",
+          "water",
+          "approval"
+        ],
+        "scores": [
+          0.801515,
+          0.413171,
+          0.30078,
+          0.275471,
+          0.274544
+        ],
+        "metrics": {
+          "precision_at_1": 1.0,
+          "precision_at_3": 0.3333333333333333,
+          "recall_at_3": 1.0,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 1.0
+        }
+      },
+      {
+        "query_id": "q31",
+        "category": "no_answer",
+        "question": "What was the CEO salary in 2026?",
+        "relevant_ids": [],
+        "ranked_ids": [
+          "tender-v2",
+          "solar",
+          "permit",
+          "warranty",
+          "supplier"
+        ],
+        "scores": [
+          0.351749,
+          0.25007,
+          0.224785,
+          0.21001,
+          0.195585
+        ],
+        "metrics": null
+      },
+      {
+        "query_id": "q32",
+        "category": "no_answer",
+        "question": "What is the certified gold reserve tonnage?",
+        "relevant_ids": [],
+        "ranked_ids": [
+          "emissions",
+          "warranty",
+          "maintenance",
+          "audit",
+          "loan"
+        ],
+        "scores": [
+          0.256899,
+          0.238696,
+          0.2154,
+          0.149749,
+          0.146542
+        ],
+        "metrics": null
+      },
+      {
+        "query_id": "q33",
+        "category": "no_answer",
+        "question": "What is the signed interest rate on the project loan?",
+        "relevant_ids": [],
+        "ranked_ids": [
+          "loan",
+          "budget",
+          "solar",
+          "heat-plan",
+          "approval"
+        ],
+        "scores": [
+          0.451223,
+          0.354596,
+          0.34043,
+          0.32004,
+          0.302892
+        ],
+        "metrics": null
+      },
+      {
+        "query_id": "q34",
+        "category": "no_answer",
+        "question": "Кто выиграл тендер на поставку насосов?",
+        "relevant_ids": [],
+        "ranked_ids": [
+          "maintenance",
+          "tender-v1",
+          "water",
+          "warranty",
+          "heat-plan"
+        ],
+        "scores": [
+          0.382834,
+          0.373326,
+          0.31394,
+          0.26052,
+          0.222341
+        ],
+        "metrics": null
+      },
+      {
+        "query_id": "q35",
+        "category": "no_answer",
+        "question": "What causal carbon reduction can be attributed to the insulation?",
+        "relevant_ids": [],
+        "ranked_ids": [
+          "heat-plan",
+          "heat-meter",
+          "approval",
+          "safety",
+          "insurance"
+        ],
+        "scores": [
+          0.564039,
+          0.42474,
+          0.416487,
+          0.402422,
+          0.357808
+        ],
+        "metrics": null
+      }
+    ]
+  }
+}

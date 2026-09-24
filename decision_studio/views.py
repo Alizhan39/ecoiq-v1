@@ -131,4 +131,27 @@ def result_detail(request, query_id):
     companies/visibility.py.
     """
     query = get_object_or_404(queries_visible_to(request), pk=query_id)
-    return render(request, 'decision_studio/result.html', {'query': query, 'result': query.result})
+    from decision_studio.services.citation_support import result_for_reader
+    return render(request, 'decision_studio/result.html', {'query': query, 'result': result_for_reader(query, request.user)})
+
+
+def citation_detail(request, query_id, citation_id):
+    from django.core.exceptions import PermissionDenied
+    from django.http import Http404, JsonResponse
+    from evidence_memory.services.citations import resolve_citation
+    query = get_object_or_404(queries_visible_to(request), pk=query_id)
+    citation = next((item['citation'] for item in query.result.get('supporting_evidence', [])
+                     if isinstance(item, dict) and item.get('citation', {}).get('citation_id') == citation_id), None)
+    if citation is None:
+        raise Http404('Citation unavailable.')
+    try:
+        resolved = resolve_citation(citation, user=request.user, project=query.project, include_snapshot=True)
+    except PermissionDenied:
+        raise Http404('Citation unavailable.') from None
+    snapshot = resolved.pop('stored_snapshot')
+    if request.GET.get('format') == 'json':
+        response = JsonResponse({'citation': resolved, 'snapshot': snapshot})
+        response['Content-Disposition'] = f'attachment; filename="citation-{citation_id}.json"'
+        response['Cache-Control'] = 'private, no-store'
+        return response
+    return render(request, 'decision_studio/citation.html', {'query': query, 'citation': resolved, 'snapshot': snapshot})
