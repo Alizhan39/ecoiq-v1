@@ -278,6 +278,7 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
     agent_run = create_agent_run(
         agent_entry['name'], task_type, council_case=council_run, execution_mode=execution_mode,
         input_summary=full_input_summary, project=project, user=user,
+        evidence_provenance=citations,
     )
     agent_run = execute_agent(agent_run)
 
