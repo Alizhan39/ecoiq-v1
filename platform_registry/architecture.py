@@ -44,16 +44,6 @@ LAYERS: tuple[ArchitectureLayer, ...] = (
         implementation_paths=('frontend/web/', 'api/v2_urls.py', 'core/spa.py'),
     ),
     ArchitectureLayer(
-        key='orchestration',
-        name='AI Orchestration & Workflow',
-        responsibility='Classify requests, coordinate bounded workflows, route models and stop safely on failure.',
-        maturity=PARTIAL,
-        basis='The runtime, graph and Celery tasks are implemented and tested; the worker path is not deployed on Render.',
-        module_keys=('agent_runtime.model_router', 'langgraph.orchestration', 'backend.workflow'),
-        implementation_paths=('langgraph_orchestration/', 'backend_intelligence_engine/tasks.py'),
-        gaps=('Deploy and operate a Redis-backed Celery worker before describing background automation as live.',),
-    ),
-    ArchitectureLayer(
         key='os_kernel',
         name='EcoIQ Operating System Kernel',
         responsibility=(
@@ -82,6 +72,16 @@ LAYERS: tuple[ArchitectureLayer, ...] = (
             'Connect existing industrial and household analytics to domain adapters instead of duplicating logic.',
             'Feed measured MRV outcomes back into the same case lifecycle.',
         ),
+    ),
+    ArchitectureLayer(
+        key='orchestration',
+        name='AI Orchestration & Workflow',
+        responsibility='Classify requests, coordinate bounded workflows, route models and stop safely on failure.',
+        maturity=PARTIAL,
+        basis='The runtime, graph and Celery tasks are implemented and tested; the worker path is not deployed on Render.',
+        module_keys=('agent_runtime.model_router', 'langgraph.orchestration', 'backend.workflow'),
+        implementation_paths=('langgraph_orchestration/', 'backend_intelligence_engine/tasks.py'),
+        gaps=('Deploy and operate a Redis-backed Celery worker before describing background automation as live.',),
     ),
     ArchitectureLayer(
         key='decision_core',
