@@ -97,6 +97,11 @@ class ArchitectureContract(SimpleTestCase):
         self.assertIn('ecoiq.islah', kernel.module_keys)
         self.assertIn('ecoiq.domain_registry', kernel.module_keys)
 
+    def test_os_kernel_precedes_ai_orchestration(self):
+        order = [layer.key for layer in LAYERS]
+
+        self.assertLess(order.index('os_kernel'), order.index('orchestration'))
+
     def test_os_core_is_not_registered_as_a_catalogue_of_agents(self):
         os_keys = {
             'ecoiq.os_kernel',
