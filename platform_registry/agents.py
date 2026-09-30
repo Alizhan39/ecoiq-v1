@@ -207,6 +207,63 @@ _ENGINES = (
 #: not claims that a live autonomous workflow exists.
 _SYSTEMIC_CORE = (
     Module(
+        key='ecoiq.os_kernel', name='EcoIQ Operating System Kernel',
+        kind=ENGINE, status=BETA,
+        location='ecoiq_os/kernel.py',
+        entry_point='ecoiq_os.kernel.evaluate_case',
+        consumers=(),
+        dependencies=('mizan.system_balance', 'ecoiq.causal_evidence'),
+        evaluation='Deterministic stage-gating behaviour is covered by ecoiq_os.test_kernel.',
+        basis='A real deterministic kernel coordinates flow validity, Mizan balance '
+              'and causal evidence gates, but no production request path consumes it yet.',
+        notes='AI is optional behind the kernel; the kernel itself makes no model call.',
+    ),
+    Module(
+        key='ecoiq.universal_flow', name='Universal Flow Graph',
+        kind=INFRASTRUCTURE, status=BETA,
+        location='ecoiq_os/flow.py',
+        entry_point='ecoiq_os.flow.UniversalFlowGraph',
+        consumers=('ecoiq.os_kernel',),
+        dependencies=(),
+        evaluation='Deterministic validation is covered by OS kernel tests.',
+        basis='One typed graph represents resource, energy, water, money, labour, '
+              'time and service flows across all OS domains without silent imputation.',
+    ),
+    Module(
+        key='ecoiq.causal_evidence', name='Causal Evidence Gate',
+        kind=INFRASTRUCTURE, status=BETA,
+        location='ecoiq_os/evidence.py',
+        entry_point='ecoiq_os.evidence.intervention_permission',
+        consumers=('ecoiq.os_kernel', 'poverty_justice.contracts'),
+        dependencies=(),
+        evaluation='Deterministic evidence-to-action gates are covered by contract tests.',
+        basis='The shared evidence lifecycle prevents association-only findings from '
+              'unlocking systemic intervention or implementation proposals.',
+    ),
+    Module(
+        key='ecoiq.islah', name='Islah Change Contract',
+        kind=INFRASTRUCTURE, status=BETA,
+        location='ecoiq_os/islah.py',
+        entry_point='ecoiq_os.islah.IslahProposal',
+        consumers=('ecoiq.os_kernel',),
+        dependencies=('mizan.system_balance',),
+        evaluation='Deterministic schema contract; runtime outcome quality is not yet evaluated.',
+        basis='System change is represented explicitly as current rule to proposed '
+              'rule with expected behaviour/flow change and mandatory review gates.',
+    ),
+    Module(
+        key='ecoiq.domain_registry', name='EcoIQ OS Domain Registry',
+        kind=INFRASTRUCTURE, status=BETA,
+        location='ecoiq_os/domains.py',
+        entry_point='ecoiq_os.domains.get_domain',
+        consumers=('ecoiq.os_kernel',),
+        dependencies=('ecoiq.universal_flow',),
+        evaluation='Deterministic registry; domain uniqueness is covered by OS tests.',
+        basis='Mining, processing, manufacturing, energy, water, agriculture, '
+              'construction, transport, finance, government and households reuse '
+              'one OS kernel instead of duplicating decision logic.',
+    ),
+    Module(
         key='mizan.system_balance', name='Mizan System Balance Contract',
         kind=ENGINE, status=BETA,
         location='mizan/system_balance.py',
