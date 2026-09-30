@@ -202,6 +202,38 @@ _ENGINES = (
     ),
 )
 
+
+#: Cross-cutting systemic decision contracts. These are code-owned contracts,
+#: not claims that a live autonomous workflow exists.
+_SYSTEMIC_CORE = (
+    Module(
+        key='mizan.system_balance', name='Mizan System Balance Contract',
+        kind=ENGINE, status=BETA,
+        location='mizan/system_balance.py',
+        entry_point='mizan.system_balance.assess_balance',
+        consumers=(),
+        dependencies=(),
+        evaluation='Deterministic contract; behaviour pinned by mizan.test_system_balance.',
+        basis='Real code and tests preserve unknowns, surface hard constraints and '
+              'require human review for explicit trade-offs, but no production '
+              'workflow consumes the contract yet.',
+        notes='No master moral score: the worst known dimension or a breached hard constraint controls status.',
+    ),
+    Module(
+        key='poverty_justice.contracts', name='Poverty & Justice Causal Contracts',
+        kind=INFRASTRUCTURE, status=BETA,
+        location='poverty_justice/contracts.py',
+        entry_point='poverty_justice.contracts.CausalTestSpec',
+        consumers=(),
+        dependencies=(),
+        evaluation='Deterministic contract; intervention gates and validation are covered by tests.',
+        basis='Real typed contracts enforce explicit population/time scope and keep '
+              'association below the intervention gate, but no production analytics '
+              'pipeline consumes them yet.',
+    ),
+)
+
+
 #: Machine-learning modules. Statistical, not generative — but their output
 #: quality IS the thing evaluation would measure, and none has been measured.
 _ML = (
@@ -469,9 +501,22 @@ _AI = (
               'the background workflow layer, but that worker path is not deployed in '
               'the production Render blueprint.',
     ),
+    Module(
+        key='poverty_justice.hypothesis_killer', name='Poverty & Justice Hypothesis Killer',
+        kind=AGENT, status=SPECIFICATION,
+        location='poverty_justice/prompts.py',
+        entry_point='poverty_justice.prompts.HYPOTHESIS_KILLER_SYSTEM_PROMPT',
+        consumers=(),
+        dependencies=('governed model runtime', 'aggregated causal-test outputs'),
+        evaluation='Specification only; no runtime evaluation has been performed.',
+        basis='A bounded prompt contract exists for falsification-first analysis, '
+              'but there is no runtime caller, labelled evaluation set or production path.',
+        notes='Must receive aggregated test results rather than raw identifiable household rows.',
+    ),
+
 )
 
-MODULES: tuple = _ENGINES + _ML + _AI_INFRASTRUCTURE + _AI
+MODULES: tuple = _ENGINES + _SYSTEMIC_CORE + _ML + _AI_INFRASTRUCTURE + _AI
 
 REGISTRY = {m.key: m for m in MODULES}
 
