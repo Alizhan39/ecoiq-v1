@@ -85,7 +85,7 @@ class ArchitectureContract(SimpleTestCase):
     def test_cross_cutting_layers_are_explicit(self):
         keys = {layer.key for layer in LAYERS if layer.cross_cutting}
 
-        self.assertEqual(keys, {'trust_safety', 'observability_audit', 'institutional_memory'})
+        self.assertEqual(keys, {'mizan_system_balance', 'trust_safety', 'observability_audit', 'institutional_memory'})
 
 
 class TheProductionClaim(SimpleTestCase):
