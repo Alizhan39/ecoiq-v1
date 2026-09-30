@@ -28,6 +28,8 @@ flowchart TB
 
 Cross-cutting controls apply to the entire flow:
 
+- Mizan system balance: local optimisation must be checked against explicit resource, human, justice, resilience and intergenerational dimensions; hard constraints are not averaged away;
+- falsification-first causal justice: Poverty & Justice hypotheses stay below intervention gates until evidence status justifies modelling;
 - trust, safety and human approval;
 - provenance, observability and audit;
 - institutional memory with scoped retrieval.
@@ -39,6 +41,7 @@ Cross-cutting controls apply to the entire flow:
 | Experience & API | Active | `frontend/web/`, `api/v2_*`, `core/spa.py` | One origin; session authentication; API v2 is canonical for new work. |
 | Orchestration & workflow | Partial | `agent_runtime_model_router/`, `langgraph_orchestration/`, `backend_intelligence_engine/` | Code and tests exist; the Render blueprint has no Redis/worker process. |
 | Decision intelligence core | Active | `companies/`, `ethics/`, `financing/`, `qdf/`, `mizan/` | Deterministic engines are not evidence that generative AI is evaluated. |
+| Mizan system balance & causal justice | Partial | `mizan/system_balance.py`, `poverty_justice/` | Cross-cutting contracts exist; no autonomous policy runtime or HypothesisKiller evaluation exists yet. |
 | Knowledge & retrieval | Partial | `evidence_memory/`, `ingestion/` | Retrieval is real and access-filtered; relevance has no labelled evaluation set. |
 | Model gateway | Partial | `ai_gateway/`, `agent_runtime_model_router/services/model_router.py` | Two routing surfaces exist and must be consolidated only with compatibility evidence. |
 | Tools / MCP / connectors | Planned | `api_integration_layer/`, `.mcp.json` | The current integration page is a blueprint. Development MCP config is not a product runtime. |
@@ -106,6 +109,9 @@ therefore reuses:
 Kubernetes, Kafka, an additional vector database and multiple new agent
 frameworks are deliberately outside this phase. None resolves a current
 evidence, evaluation or deployment gap.
+
+The cross-cutting Mizan and Poverty & Justice contracts are documented in
+[`MIZAN_POVERTY_JUSTICE_CORE.md`](MIZAN_POVERTY_JUSTICE_CORE.md).
 
 ## API contract
 
