@@ -1,10 +1,11 @@
 from unittest import TestCase
 
-from ecoiq_os.domains import DOMAIN_REGISTRY
+from ecoiq_os.domains import DOMAINS, DOMAIN_REGISTRY
 from ecoiq_os.evidence import ASSOCIATION_ONLY, CAUSAL_SUPPORT, REPLICATED_CAUSAL_SUPPORT
 from ecoiq_os.flow import FlowEdge, FlowNode, UniversalFlowGraph
 from ecoiq_os.kernel import (
     HUMAN_REVIEW_FOR_IMPLEMENTATION,
+    HUMAN_REVIEW_REQUIRED,
     REPAIR_FLOW_GRAPH,
     RUN_FALSIFICATION,
     SIMULATE_ISLAH,
@@ -15,6 +16,7 @@ from mizan.system_balance import (
     HEALTHY,
     IMBALANCED,
     BalanceDimension,
+    MizanConflict,
     MizanConstraint,
     assess_balance,
 )
@@ -44,8 +46,11 @@ class EcoIQOSKernelTests(TestCase):
     def test_domains_share_one_kernel_registry(self):
         self.assertIn("mining", DOMAIN_REGISTRY)
         self.assertIn("energy", DOMAIN_REGISTRY)
+        self.assertIn("oil_gas", DOMAIN_REGISTRY)
+        self.assertIn("healthcare", DOMAIN_REGISTRY)
+        self.assertIn("education", DOMAIN_REGISTRY)
         self.assertIn("households", DOMAIN_REGISTRY)
-        self.assertEqual(len(DOMAIN_REGISTRY), len(set(DOMAIN_REGISTRY)))
+        self.assertEqual(len(DOMAINS), len(DOMAIN_REGISTRY))
 
     def test_association_only_runs_falsification_not_islah(self):
         case = EcoIQOSCase(
@@ -122,8 +127,36 @@ class EcoIQOSKernelTests(TestCase):
 
         self.assertEqual(
             evaluate_case(case).next_stage,
-            HUMAN_REVIEW_FOR_IMPLEMENTATION,
+            HUMAN_REVIEW_REQUIRED,
         )
+
+    def test_explicit_mizan_conflict_stops_automatic_progression(self):
+        case = EcoIQOSCase(
+            case_id="KZ-TEST-CONFLICT",
+            domain="water",
+            objective="Balance industrial and household water use.",
+            flow_graph=valid_graph(),
+            mizan=assess_balance(
+                scope_level="region",
+                dimensions=[
+                    BalanceDimension("economic", HEALTHY),
+                    BalanceDimension("water", HEALTHY),
+                ],
+                conflicts=[
+                    MizanConflict(
+                        key="industrial_vs_household_water",
+                        dimensions=("economic", "water"),
+                        description="Two legitimate uses require a human allocation decision.",
+                    )
+                ],
+            ),
+            hypothesis_status=REPLICATED_CAUSAL_SUPPORT,
+        )
+
+        decision = evaluate_case(case)
+
+        self.assertEqual(decision.next_stage, HUMAN_REVIEW_REQUIRED)
+        self.assertTrue(decision.requires_human_review)
 
     def test_invalid_flow_graph_stops_the_pipeline(self):
         graph = UniversalFlowGraph(
