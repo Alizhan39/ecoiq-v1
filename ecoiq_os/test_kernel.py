@@ -52,6 +52,13 @@ class EcoIQOSKernelTests(TestCase):
         self.assertIn("households", DOMAIN_REGISTRY)
         self.assertEqual(len(DOMAINS), len(DOMAIN_REGISTRY))
 
+    def test_domain_profiles_validate_against_shared_os_vocabularies(self):
+        for domain in DOMAINS:
+            with self.subTest(domain=domain.key):
+                self.assertTrue(domain.primary_resources)
+                self.assertTrue(domain.typical_scopes)
+                self.assertTrue(domain.core_questions)
+
     def test_association_only_runs_falsification_not_islah(self):
         case = EcoIQOSCase(
             case_id="KZ-TEST-1",
