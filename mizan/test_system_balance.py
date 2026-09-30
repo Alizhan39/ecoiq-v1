@@ -84,3 +84,24 @@ class MizanSystemBalanceTests(TestCase):
                 current_value=82,
                 threshold=90,
             )
+
+
+    def test_informational_conflict_does_not_force_human_review(self):
+        result = assess_balance(
+            scope_level="region",
+            dimensions=[
+                BalanceDimension("economic", HEALTHY),
+                BalanceDimension("water", WATCH),
+            ],
+            conflicts=[
+                MizanConflict(
+                    key="observed_tradeoff",
+                    dimensions=("economic", "water"),
+                    description="Recorded trade-off for monitoring only.",
+                    human_decision_required=False,
+                )
+            ],
+        )
+
+        self.assertFalse(result.human_decision_required)
+        self.assertEqual(result.review_conflicts, ())
