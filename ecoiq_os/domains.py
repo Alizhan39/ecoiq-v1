@@ -7,6 +7,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ecoiq_os.flow import RESOURCE_TYPES
+from mizan.system_balance import SCOPE_LEVELS
+
 
 @dataclass(frozen=True)
 class DomainProfile:
@@ -15,6 +18,20 @@ class DomainProfile:
     primary_resources: tuple[str, ...]
     typical_scopes: tuple[str, ...]
     core_questions: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        unknown_resources = set(self.primary_resources) - set(RESOURCE_TYPES)
+        if unknown_resources:
+            raise ValueError(
+                f"Unknown resources for domain {self.key}: {sorted(unknown_resources)}"
+            )
+        unknown_scopes = set(self.typical_scopes) - set(SCOPE_LEVELS)
+        if unknown_scopes:
+            raise ValueError(
+                f"Unknown Mizan scopes for domain {self.key}: {sorted(unknown_scopes)}"
+            )
+        if not self.key.strip() or not self.name.strip():
+            raise ValueError("Domain key and name are required.")
 
 
 DOMAINS: tuple[DomainProfile, ...] = (
