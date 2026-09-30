@@ -10,7 +10,7 @@ dimension states; this module never invents thresholds or fills missing values.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import Any, Iterable
 
 
