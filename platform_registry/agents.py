@@ -559,16 +559,16 @@ _AI = (
               'the production Render blueprint.',
     ),
     Module(
-        key='poverty_justice.hypothesis_killer', name='Poverty & Justice Hypothesis Killer',
-        kind=AGENT, status=SPECIFICATION,
-        location='poverty_justice/prompts.py',
-        entry_point='poverty_justice.prompts.HYPOTHESIS_KILLER_SYSTEM_PROMPT',
+        key='poverty_justice.falsification', name='Poverty & Justice Falsification Service',
+        kind=PIPELINE, status=SPECIFICATION,
+        location='poverty_justice/falsification.py',
+        entry_point='poverty_justice.falsification.FALSIFICATION_SERVICE_SYSTEM_PROMPT',
         consumers=(),
         dependencies=('governed model runtime', 'aggregated causal-test outputs'),
         evaluation='Specification only; no runtime evaluation has been performed.',
-        basis='A bounded prompt contract exists for falsification-first analysis, '
+        basis='A bounded service contract exists for falsification-first analysis, '
               'but there is no runtime caller, labelled evaluation set or production path.',
-        notes='Must receive aggregated test results rather than raw identifiable household rows.',
+        notes='A model may implement the service later; raw identifiable household rows remain outside the model boundary.',
     ),
 
 )
