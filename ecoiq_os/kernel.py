@@ -90,7 +90,7 @@ def evaluate_case(case: EcoIQOSCase) -> EcoIQOSDecision:
             reason="Mizan identified an explicit cross-dimension conflict that requires a human decision before the OS can progress.",
             intervention_permission=permission,
             requires_human_review=True,
-            blocked_by=tuple(conflict.key for conflict in case.mizan.conflicts),
+            blocked_by=tuple(conflict.key for conflict in case.mizan.review_conflicts),
         )
 
     if case.mizan.status == INSUFFICIENT_DATA:
