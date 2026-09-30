@@ -145,6 +145,10 @@ class MizanSystemAssessment:
         return tuple(item for item in self.constraints if item.breached)
 
     @property
+    def review_conflicts(self) -> tuple[MizanConflict, ...]:
+        return tuple(item for item in self.conflicts if item.human_decision_required)
+
+    @property
     def requires_islah(self) -> bool:
         return self.status in (IMBALANCED, CRITICAL)
 
@@ -156,6 +160,7 @@ class MizanSystemAssessment:
             "conflicts": [asdict(item) for item in self.conflicts],
             "constraints": [asdict(item) for item in self.constraints],
             "breached_constraints": [asdict(item) for item in self.breached_constraints],
+            "review_conflicts": [asdict(item) for item in self.review_conflicts],
             "time_horizons": list(self.time_horizons),
             "human_decision_required": self.human_decision_required,
             "requires_islah": self.requires_islah,
@@ -210,5 +215,7 @@ def assess_balance(
         conflicts=conflict_items,
         constraints=constraint_items,
         time_horizons=horizons,
-        human_decision_required=bool(conflict_items or breached),
+        human_decision_required=bool(
+            breached or any(item.human_decision_required for item in conflict_items)
+        ),
     )
