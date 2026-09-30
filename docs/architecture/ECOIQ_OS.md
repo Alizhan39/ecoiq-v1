@@ -142,6 +142,7 @@ simulation and consequential change requires human review.
 Current profiles:
 
 - Mining & Minerals
+- Oil & Gas
 - Processing & Metallurgy
 - Manufacturing & Assembly
 - Energy & Power
@@ -150,6 +151,8 @@ Current profiles:
 - Construction & Built Environment
 - Transport & Logistics
 - Finance & Capital
+- Healthcare Systems
+- Education Systems
 - Government & Public Systems
 - Households & Poverty / Justice
 
@@ -168,7 +171,8 @@ Examples:
 - robust association + imbalance → exploratory Islah design;
 - causal support + imbalance → simulate Islah;
 - replicated causal support → human review before implementation;
-- hard Mizan constraint → human review regardless of economic benefit.
+- hard Mizan constraint → block automated progression and require human review;
+- explicit Mizan trade-off conflict → require human allocation/review before continuing.
 
 This is deliberately deterministic.
 
