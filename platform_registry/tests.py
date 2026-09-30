@@ -87,6 +87,31 @@ class ArchitectureContract(SimpleTestCase):
 
         self.assertEqual(keys, {'mizan_system_balance', 'trust_safety', 'observability_audit', 'institutional_memory'})
 
+    def test_operating_system_kernel_is_explicit(self):
+        kernel = next(layer for layer in LAYERS if layer.key == 'os_kernel')
+
+        self.assertEqual(kernel.maturity, 'PARTIAL')
+        self.assertIn('ecoiq.os_kernel', kernel.module_keys)
+        self.assertIn('ecoiq.universal_flow', kernel.module_keys)
+        self.assertIn('ecoiq.causal_evidence', kernel.module_keys)
+        self.assertIn('ecoiq.islah', kernel.module_keys)
+        self.assertIn('ecoiq.domain_registry', kernel.module_keys)
+
+    def test_os_core_is_not_registered_as_a_catalogue_of_agents(self):
+        os_keys = {
+            'ecoiq.os_kernel',
+            'ecoiq.universal_flow',
+            'ecoiq.causal_evidence',
+            'ecoiq.islah',
+            'ecoiq.domain_registry',
+            'mizan.system_balance',
+            'poverty_justice.contracts',
+        }
+
+        for key in os_keys:
+            with self.subTest(key=key):
+                self.assertNotEqual(REGISTRY[key].kind, AGENT)
+
 
 class TheProductionClaim(SimpleTestCase):
     """
