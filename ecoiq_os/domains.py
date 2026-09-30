@@ -26,6 +26,13 @@ DOMAINS: tuple[DomainProfile, ...] = (
         ("recovery", "energy_intensity", "water_intensity", "tailings", "local_value_capture", "restoration"),
     ),
     DomainProfile(
+        "oil_gas",
+        "Oil & Gas",
+        ("material", "energy", "water", "land", "labour", "money", "emissions", "waste"),
+        ("asset", "process", "facility", "company", "supply_chain", "region", "country", "ecosystem"),
+        ("recovery", "methane_loss", "flaring", "energy_intensity", "water", "local_value_capture", "decommissioning"),
+    ),
+    DomainProfile(
         "processing",
         "Processing & Metallurgy",
         ("material", "energy", "water", "labour", "money", "emissions", "waste"),
@@ -87,6 +94,20 @@ DOMAINS: tuple[DomainProfile, ...] = (
         ("money", "data", "labour", "time", "service", "land"),
         ("public_system", "city", "region", "country"),
         ("public_value", "service_access", "procurement", "fiscal_resilience", "accountability", "future_liability"),
+    ),
+    DomainProfile(
+        "healthcare",
+        "Healthcare Systems",
+        ("money", "labour", "time", "data", "energy", "water", "material", "service"),
+        ("facility", "organisation", "city", "region", "country"),
+        ("access", "quality", "waiting_time", "capacity", "resource_use", "health_outcomes"),
+    ),
+    DomainProfile(
+        "education",
+        "Education Systems",
+        ("money", "labour", "time", "data", "energy", "service"),
+        ("facility", "organisation", "city", "region", "country"),
+        ("access", "learning_outcomes", "teacher_capacity", "skills_match", "mobility", "future_productivity"),
     ),
     DomainProfile(
         "households",
