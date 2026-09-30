@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from mizan.system_balance import MIZAN_DIMENSIONS
+
 
 INTERVENTION_LEVELS = (
     "behaviour",
@@ -46,6 +48,11 @@ class IslahProposal:
             raise ValueError("Islah proposal id and title are required.")
         if not self.current_rule.strip() or not self.proposed_rule.strip():
             raise ValueError("Current and proposed rules must be explicit.")
+        unknown_dimensions = set(self.affected_dimensions) - set(MIZAN_DIMENSIONS)
+        if unknown_dimensions:
+            raise ValueError(
+                f"Unknown Mizan dimensions in Islah proposal: {sorted(unknown_dimensions)}"
+            )
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
