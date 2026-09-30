@@ -260,7 +260,7 @@ _SYSTEMIC_CORE = (
         dependencies=('ecoiq.universal_flow',),
         evaluation='Deterministic registry; domain uniqueness is covered by OS tests.',
         basis='Mining, processing, manufacturing, energy, water, agriculture, '
-              'construction, transport, finance, government and households reuse '
+              'construction, transport, finance, healthcare, education, government and households reuse '
               'one OS kernel instead of duplicating decision logic.',
     ),
     Module(
