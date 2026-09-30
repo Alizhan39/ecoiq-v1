@@ -3,6 +3,7 @@ from unittest import TestCase
 from ecoiq_os.domains import DOMAINS, DOMAIN_REGISTRY
 from ecoiq_os.evidence import ASSOCIATION_ONLY, CAUSAL_SUPPORT, REPLICATED_CAUSAL_SUPPORT
 from ecoiq_os.flow import FlowEdge, FlowNode, UniversalFlowGraph
+from ecoiq_os.islah import IslahProposal
 from ecoiq_os.kernel import (
     HUMAN_REVIEW_FOR_IMPLEMENTATION,
     HUMAN_REVIEW_REQUIRED,
@@ -183,3 +184,18 @@ class EcoIQOSKernelTests(TestCase):
         )
 
         self.assertEqual(evaluate_case(case).next_stage, REPAIR_FLOW_GRAPH)
+
+
+    def test_islah_rejects_unknown_mizan_dimension(self):
+        with self.assertRaises(ValueError):
+            IslahProposal(
+                id="ISLAH-1",
+                title="Invalid proposal",
+                intervention_level="process",
+                target_mechanism="avoidable_loss",
+                current_rule="Discard residual heat.",
+                proposed_rule="Recover residual heat.",
+                expected_behaviour_change="Capture waste heat.",
+                expected_flow_change="Less energy loss.",
+                affected_dimensions=("not_a_mizan_dimension",),
+            )
