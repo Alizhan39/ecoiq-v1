@@ -67,6 +67,36 @@ LAYERS: tuple[ArchitectureLayer, ...] = (
         implementation_paths=('companies/', 'ethics/', 'financing/', 'qdf/', 'mizan/'),
     ),
     ArchitectureLayer(
+        key='mizan_system_balance',
+        name='Mizan System Balance & Causal Justice',
+        responsibility=(
+            'Check cross-system balance, hard constraints and distributional mechanisms '
+            'before local optimisation can progress to Islah or intervention modelling.'
+        ),
+        maturity=PARTIAL,
+        basis=(
+            'A deterministic Mizan system-balance contract and Poverty & Justice causal '
+            'contracts are implemented and tested; the HypothesisKiller remains a prompt '
+            'specification with no runtime caller or evaluation.'
+        ),
+        module_keys=(
+            'mizan.system_balance',
+            'poverty_justice.contracts',
+            'poverty_justice.hypothesis_killer',
+        ),
+        implementation_paths=(
+            'mizan/system_balance.py',
+            'poverty_justice/',
+            'docs/architecture/MIZAN_POVERTY_JUSTICE_CORE.md',
+        ),
+        gaps=(
+            'Connect evidence-backed sector workflows to the system-balance contract.',
+            'Build a labelled falsification evaluation set before executing HypothesisKiller in production.',
+            'Keep raw household microdata inside a secure analytics layer; expose only aggregated test outputs.',
+        ),
+        cross_cutting=True,
+    ),
+    ArchitectureLayer(
         key='knowledge_retrieval',
         name='Knowledge, Evidence Memory & Retrieval',
         responsibility='Ingest, scope, retrieve and cite evidence without crossing project or organisation boundaries.',
