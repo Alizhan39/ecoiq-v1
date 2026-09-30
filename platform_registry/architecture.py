@@ -54,6 +54,36 @@ LAYERS: tuple[ArchitectureLayer, ...] = (
         gaps=('Deploy and operate a Redis-backed Celery worker before describing background automation as live.',),
     ),
     ArchitectureLayer(
+        key='os_kernel',
+        name='EcoIQ Operating System Kernel',
+        responsibility=(
+            'Provide one deterministic lifecycle for flow validation, causal evidence '
+            'gating, system balance, Islah design and human-reviewed implementation.'
+        ),
+        maturity=PARTIAL,
+        basis=(
+            'Universal Flow Graph, shared causal evidence gates, Islah contracts, '
+            'domain registry and the deterministic OS stage gate are implemented and tested; '
+            'production request paths have not yet been migrated onto the kernel.'
+        ),
+        module_keys=(
+            'ecoiq.os_kernel',
+            'ecoiq.universal_flow',
+            'ecoiq.causal_evidence',
+            'ecoiq.islah',
+            'ecoiq.domain_registry',
+        ),
+        implementation_paths=(
+            'ecoiq_os/',
+            'docs/architecture/ECOIQ_OS.md',
+        ),
+        gaps=(
+            'Persist OS cases and evidence references before exposing a public OS case API.',
+            'Connect existing industrial and household analytics to domain adapters instead of duplicating logic.',
+            'Feed measured MRV outcomes back into the same case lifecycle.',
+        ),
+    ),
+    ArchitectureLayer(
         key='decision_core',
         name='Decision Intelligence Core',
         responsibility='Calculate evidence-backed scores, confidence and publication eligibility with explicit unknowns.',
