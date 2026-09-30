@@ -69,7 +69,8 @@ Nested scopes are supported:
 asset
 → process
 → facility
-→ company
+→ company / organisation
+→ household / market / public system
 → supply chain
 → city
 → region
