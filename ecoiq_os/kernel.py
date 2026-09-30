@@ -29,6 +29,7 @@ REPAIR_FLOW_GRAPH = "REPAIR_FLOW_GRAPH"
 RUN_FALSIFICATION = "RUN_FALSIFICATION"
 DESIGN_ISLAH = "DESIGN_ISLAH"
 SIMULATE_ISLAH = "SIMULATE_ISLAH"
+HUMAN_REVIEW_REQUIRED = "HUMAN_REVIEW_REQUIRED"
 HUMAN_REVIEW_FOR_IMPLEMENTATION = "HUMAN_REVIEW_FOR_IMPLEMENTATION"
 IHSAN_OPTIMISATION = "IHSAN_OPTIMISATION"
 
@@ -76,11 +77,20 @@ def evaluate_case(case: EcoIQOSCase) -> EcoIQOSDecision:
 
     if case.mizan.breached_constraints:
         return EcoIQOSDecision(
-            next_stage=HUMAN_REVIEW_FOR_IMPLEMENTATION,
-            reason="A hard Mizan constraint is breached; it cannot be averaged away by benefits elsewhere.",
+            next_stage=HUMAN_REVIEW_REQUIRED,
+            reason="A hard Mizan constraint is breached; it blocks automated progression and cannot be averaged away by benefits elsewhere.",
             intervention_permission=permission,
             requires_human_review=True,
             blocked_by=tuple(item.key for item in case.mizan.breached_constraints),
+        )
+
+    if case.mizan.human_decision_required:
+        return EcoIQOSDecision(
+            next_stage=HUMAN_REVIEW_REQUIRED,
+            reason="Mizan identified an explicit cross-dimension conflict that requires a human decision before the OS can progress.",
+            intervention_permission=permission,
+            requires_human_review=True,
+            blocked_by=tuple(conflict.key for conflict in case.mizan.conflicts),
         )
 
     if case.mizan.status == INSUFFICIENT_DATA:
