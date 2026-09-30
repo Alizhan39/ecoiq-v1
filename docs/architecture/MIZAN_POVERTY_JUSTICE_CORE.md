@@ -14,7 +14,7 @@ collapsing them into one arbitrary master score.
 
 The first Poverty & Justice implementation is intentionally narrower:
 `poverty_justice/contracts.py` defines causal-test and intervention gates, and
-`poverty_justice/prompts.py` defines the unevaluated HypothesisKiller prompt.
+`poverty_justice/falsification.py` defines the unevaluated falsification-service prompt contract.
 No public endpoint, raw-microdata LLM path or autonomous policy action is added
 in this phase.
 
@@ -214,7 +214,7 @@ Implemented in this change:
 - deterministic system-level Mizan contract;
 - tests for unknown propagation, hard constraints and trade-off review;
 - Poverty & Justice causal-test contracts and intervention gates;
-- HypothesisKiller prompt specification;
+- falsification-service prompt specification;
 - architecture registry integration.
 
 Not implemented yet:
@@ -225,6 +225,6 @@ Not implemented yet:
 - runtime LLM invocation;
 - public API/UI;
 - policy simulator;
-- production evaluation of HypothesisKiller.
+- production evaluation of the falsification service.
 
 Those remain separate, reviewable changes.
