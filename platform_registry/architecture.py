@@ -44,6 +44,36 @@ LAYERS: tuple[ArchitectureLayer, ...] = (
         implementation_paths=('frontend/web/', 'api/v2_urls.py', 'core/spa.py'),
     ),
     ArchitectureLayer(
+        key='os_kernel',
+        name='EcoIQ Operating System Kernel',
+        responsibility=(
+            'Provide one deterministic lifecycle for flow validation, causal evidence '
+            'gating, system balance, Islah design and human-reviewed implementation.'
+        ),
+        maturity=PARTIAL,
+        basis=(
+            'Universal Flow Graph, shared causal evidence gates, Islah contracts, '
+            'domain registry and the deterministic OS stage gate are implemented and tested; '
+            'production request paths have not yet been migrated onto the kernel.'
+        ),
+        module_keys=(
+            'ecoiq.os_kernel',
+            'ecoiq.universal_flow',
+            'ecoiq.causal_evidence',
+            'ecoiq.islah',
+            'ecoiq.domain_registry',
+        ),
+        implementation_paths=(
+            'ecoiq_os/',
+            'docs/architecture/ECOIQ_OS.md',
+        ),
+        gaps=(
+            'Persist OS cases and evidence references before exposing a public OS case API.',
+            'Connect existing industrial and household analytics to domain adapters instead of duplicating logic.',
+            'Feed measured MRV outcomes back into the same case lifecycle.',
+        ),
+    ),
+    ArchitectureLayer(
         key='orchestration',
         name='AI Orchestration & Workflow',
         responsibility='Classify requests, coordinate bounded workflows, route models and stop safely on failure.',
@@ -65,6 +95,36 @@ LAYERS: tuple[ArchitectureLayer, ...] = (
             'financing.readiness', 'qdf.decision_integrity', 'mizan.score',
         ),
         implementation_paths=('companies/', 'ethics/', 'financing/', 'qdf/', 'mizan/'),
+    ),
+    ArchitectureLayer(
+        key='mizan_system_balance',
+        name='Mizan System Balance & Causal Justice',
+        responsibility=(
+            'Check cross-system balance, hard constraints and distributional mechanisms '
+            'before local optimisation can progress to Islah or intervention modelling.'
+        ),
+        maturity=PARTIAL,
+        basis=(
+            'A deterministic Mizan system-balance contract and Poverty & Justice causal '
+            'contracts are implemented and tested; the falsification service remains a '
+            'specification with no runtime caller or evaluation.'
+        ),
+        module_keys=(
+            'mizan.system_balance',
+            'poverty_justice.contracts',
+            'poverty_justice.falsification',
+        ),
+        implementation_paths=(
+            'mizan/system_balance.py',
+            'poverty_justice/',
+            'docs/architecture/MIZAN_POVERTY_JUSTICE_CORE.md',
+        ),
+        gaps=(
+            'Connect evidence-backed sector workflows to the system-balance contract.',
+            'Build a labelled falsification evaluation set before enabling the falsification service in production.',
+            'Keep raw household microdata inside a secure analytics layer; expose only aggregated test outputs.',
+        ),
+        cross_cutting=True,
     ),
     ArchitectureLayer(
         key='knowledge_retrieval',
