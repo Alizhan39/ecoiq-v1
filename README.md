@@ -45,6 +45,11 @@ status labels into documentation. `GET /api/v2/platform/` exposes the same map,
 including known gaps. See
 [`docs/architecture/AI_DECISION_OS.md`](docs/architecture/AI_DECISION_OS.md).
 
+Mizan is also defined as a cross-cutting system-balance contract rather than only a
+company/project score. The falsification-first Poverty & Justice boundary and its
+intervention gates are documented in
+[`docs/architecture/MIZAN_POVERTY_JUSTICE_CORE.md`](docs/architecture/MIZAN_POVERTY_JUSTICE_CORE.md).
+
 Three frontend directories, **none** of which is a runtime dependency:
 
 | path | what | built to |
