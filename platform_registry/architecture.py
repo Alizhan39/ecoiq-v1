@@ -106,13 +106,13 @@ LAYERS: tuple[ArchitectureLayer, ...] = (
         maturity=PARTIAL,
         basis=(
             'A deterministic Mizan system-balance contract and Poverty & Justice causal '
-            'contracts are implemented and tested; the HypothesisKiller remains a prompt '
+            'contracts are implemented and tested; the falsification service remains a '
             'specification with no runtime caller or evaluation.'
         ),
         module_keys=(
             'mizan.system_balance',
             'poverty_justice.contracts',
-            'poverty_justice.hypothesis_killer',
+            'poverty_justice.falsification',
         ),
         implementation_paths=(
             'mizan/system_balance.py',
@@ -121,7 +121,7 @@ LAYERS: tuple[ArchitectureLayer, ...] = (
         ),
         gaps=(
             'Connect evidence-backed sector workflows to the system-balance contract.',
-            'Build a labelled falsification evaluation set before executing HypothesisKiller in production.',
+            'Build a labelled falsification evaluation set before enabling the falsification service in production.',
             'Keep raw household microdata inside a secure analytics layer; expose only aggregated test outputs.',
         ),
         cross_cutting=True,
