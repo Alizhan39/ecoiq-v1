@@ -1,11 +1,16 @@
 # EcoIQ
 
-**Evidence-backed decision intelligence for companies, investments and
-projects.**
+**An evidence-backed operating system for resources, industry, institutions
+and human outcomes.**
 
-EcoIQ assesses organisations and shows exactly how much evidence sits behind
-every answer — and how good that evidence is. When the evidence does not
-support a number, EcoIQ shows the gap instead of the number.
+EcoIQ OS traces how resources, energy, water, money, labour, time, risk and
+value move through a system; checks Mizan balance; tests causal explanations;
+designs Islah changes; and keeps consequential implementation behind evidence
+and human-review gates. AI is a capability inside the OS, not the product
+architecture itself.
+
+When evidence does not support a number or causal claim, EcoIQ keeps the gap
+explicit instead of inventing an answer.
 
 ---
 
@@ -24,30 +29,37 @@ the TypeScript types and a lint rule — not by convention.
 ```mermaid
 flowchart TB
     UI["React / TypeScript"] --> API["API v2 / Django"]
-    API --> ORCH["Orchestration & model routing"]
-    ORCH --> CORE["Decision intelligence core"]
-    ORCH --> KNOW["Evidence memory / retrieval"]
+    API --> OS["EcoIQ OS Kernel"]
+    OS --> FLOW["Universal Flow Graph"]
+    OS --> CORE["Deterministic decision core"]
+    OS --> MIZAN["Mizan system balance"]
+    OS --> CAUSAL["Causal evidence / falsification"]
+    OS --> ISLAH["Islah change contract"]
+    OS --> KNOW["Evidence memory / retrieval"]
+    OS --> ORCH["Optional AI orchestration"]
     ORCH --> GATE["Multi-provider model gateway"]
-    CORE --> DATA["PostgreSQL / pgvector / R2"]
+    FLOW --> DATA["PostgreSQL / pgvector / R2"]
+    CORE --> DATA
     KNOW --> DATA
-    TOOLS["Tools / MCP / connectors — planned"] -. governed adapters .-> ORCH
+    TOOLS["Governed tools / connectors — planned"] -. adapters .-> OS
 ```
 
-Trust and safety, human approval, provenance, observability and institutional
-memory cut across every runtime layer. The important qualification is that the
-layers do **not** all have the same maturity: the deterministic decision core
-and API are active; orchestration, retrieval, model routing and observability
-are partial/beta; the general product connector/MCP runtime is planned.
+The OS kernel is deliberately small and deterministic. Domain-specific code
+adapts mining, processing, manufacturing, energy, water, agriculture,
+construction, transport, finance, government and households onto the same
+contracts instead of creating parallel reasoning stacks. Trust and safety,
+human approval, provenance, observability and institutional memory cut across
+the whole OS.
 
 The code-owned map is `platform_registry/architecture.py`. It resolves each
 component's maturity from `platform_registry/agents.py` rather than copying
 status labels into documentation. `GET /api/v2/platform/` exposes the same map,
-including known gaps. See
-[`docs/architecture/AI_DECISION_OS.md`](docs/architecture/AI_DECISION_OS.md).
+including known gaps. The canonical product architecture is
+[`docs/architecture/ECOIQ_OS.md`](docs/architecture/ECOIQ_OS.md).
 
-Mizan is also defined as a cross-cutting system-balance contract rather than only a
-company/project score. The falsification-first Poverty & Justice boundary and its
-intervention gates are documented in
+AI-specific orchestration is a subordinate subsystem documented in
+[`docs/architecture/AI_DECISION_OS.md`](docs/architecture/AI_DECISION_OS.md).
+Mizan and the falsification-first Poverty & Justice boundary are documented in
 [`docs/architecture/MIZAN_POVERTY_JUSTICE_CORE.md`](docs/architecture/MIZAN_POVERTY_JUSTICE_CORE.md).
 
 Three frontend directories, **none** of which is a runtime dependency:
