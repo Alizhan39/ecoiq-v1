@@ -53,16 +53,21 @@ def fetch_feed(provider):
         raise ProviderUnavailable('No agreed feed configured for this provider.')
     validate_source_url(provider, url)
     # No redirects: a provider response cannot move the request to another host.
-    with requests.get(url, timeout=(3, 10), allow_redirects=False, stream=True) as response:
-        if response.status_code != 200:
-            raise ProviderUnavailable('Provider feed did not return HTTP 200.')
-        if 'application/json' not in response.headers.get('Content-Type', '').lower():
-            raise ProviderUnavailable('Provider feed must return JSON.')
-        data = bytearray()
-        for chunk in response.iter_content(chunk_size=8192):
-            data.extend(chunk)
-            if len(data) > MAX_FEED_BYTES:
-                raise ProviderUnavailable('Provider feed exceeds the import size limit.')
+    try:
+        with requests.get(url, timeout=(3, 10), allow_redirects=False, stream=True) as response:
+            if response.status_code != 200:
+                raise ProviderUnavailable('Provider feed did not return HTTP 200.')
+            media_type = response.headers.get('Content-Type', '').split(';', 1)[0].strip().lower()
+            if media_type != 'application/json':
+                raise ProviderUnavailable('Provider feed must return JSON.')
+            data = bytearray()
+            for chunk in response.iter_content(chunk_size=8192):
+                data.extend(chunk)
+                if len(data) > MAX_FEED_BYTES:
+                    raise ProviderUnavailable('Provider feed exceeds the import size limit.')
+    except requests.RequestException as exc:
+        # Callers get a stable error without echoing URLs or transport details.
+        raise ProviderUnavailable('Provider feed could not be retrieved.') from exc
     import json
     try:
         return json.loads(data)
