@@ -207,12 +207,27 @@ _ENGINES = (
 #: not claims that a live autonomous workflow exists.
 _SYSTEMIC_CORE = (
     Module(
+        key='islamic.knowledge', name='Islamic Knowledge & Wisdom / Justice Contracts',
+        kind=INFRASTRUCTURE, status=BETA,
+        location='islamic_knowledge/',
+        entry_point='islamic_knowledge.contracts.assess_definition',
+        consumers=('ecoiq.os_kernel',),
+        dependencies=(),
+        evaluation='Gates/catalogues: islamic_knowledge.test_contracts and ecoiq_os.test_knowledge. '
+                   'Provider/API/neural contracts: islamic_knowledge.test_integration; optional real offline encoder smoke.',
+        basis='Typed source separation, content-bound review and offline 114-surah / 99-name indexes exist; '
+              'Django exposes reference catalogues and editorially reviewed provider passages, with optional neural retrieval. '
+              'Interpretations remain draft; provider access/content is not configured automatically.',
+        notes='No reviewed religious corpus, reviewer-authentication adapter, fatwa or Shariah certification. '
+              'The name enumeration preserves its disputed authentication and pending review.',
+    ),
+    Module(
         key='ecoiq.os_kernel', name='EcoIQ Operating System Kernel',
         kind=ENGINE, status=BETA,
         location='ecoiq_os/kernel.py',
         entry_point='ecoiq_os.kernel.evaluate_case',
         consumers=(),
-        dependencies=('mizan.system_balance', 'ecoiq.causal_evidence'),
+        dependencies=('mizan.system_balance', 'ecoiq.causal_evidence', 'islamic.knowledge'),
         evaluation='Deterministic stage-gating behaviour is covered by ecoiq_os.test_kernel.',
         basis='A real deterministic kernel coordinates flow validity, Mizan balance '
               'and causal evidence gates, but no production request path consumes it yet.',

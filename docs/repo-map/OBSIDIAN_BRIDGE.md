@@ -73,6 +73,17 @@ Vault: [[Evidence Memory]], `02-Intelligence-Engine/Evidence/`
 
 ## Scoring
 
+For governed Qur'an references, the 114-surah / 99-name reference inventories,
+Hikmah / Adl draft definitions and content-bound review, start at
+`islamic_knowledge/contracts.py` and
+`docs/architecture/WISDOM_JUSTICE_KNOWLEDGE.md`. This layer supplies optional
+OS knowledge bindings; it does not introduce another scoring engine.
+
+For Sajda/Azan.kz source imports, editorial publication and the isolated neural
+search API, start at `islamic_knowledge/providers.py`, `models.py`, `neural.py`
+and `docs/architecture/ISLAMIC_PROVIDER_API.md`. Feed access is operator-configured;
+neural vectors do not approve principles or become religious evidence.
+
 | engine | file | entry point |
 |---|---|---|
 | Composite + pillars | `companies/scoring.py` | `recalculate_and_save` |

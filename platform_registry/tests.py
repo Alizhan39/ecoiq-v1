@@ -102,6 +102,15 @@ class ArchitectureContract(SimpleTestCase):
 
         self.assertLess(order.index('os_kernel'), order.index('orchestration'))
 
+    def test_islamic_knowledge_declares_contracts_and_review_gaps(self):
+        layer = next(layer for layer in LAYERS if layer.key == 'islamic_knowledge')
+        self.assertEqual(layer.maturity, 'PARTIAL')
+        self.assertEqual(layer.module_keys, ('islamic.knowledge',))
+        self.assertTrue(layer.gaps)
+        self.assertEqual(REGISTRY['islamic.knowledge'].status, BETA)
+        self.assertNotEqual(REGISTRY['islamic.knowledge'].kind, AGENT)
+        self.assertIn('unreviewed', layer.basis)
+
     def test_os_core_is_not_registered_as_a_catalogue_of_agents(self):
         os_keys = {
             'ecoiq.os_kernel',
