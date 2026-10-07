@@ -9,6 +9,7 @@ Search branches on `connection.vendor`:
   slower, but never fabricated, and exercised by every test in this app.
 """
 import numpy as np
+from heapq import nlargest
 from django.db import connection
 
 from evidence_memory.models import EvidenceMemory
@@ -461,6 +462,8 @@ def _rank_candidates(query_text, candidates, top_k):
     search_similar() and the retrieval-policy service (retrieval_policy.py)
     so outcome retrieval is a different candidate queryset over the SAME
     ranking logic, never a second vector-search engine."""
+    if top_k <= 0:
+        return []
     query_vector = compute_embedding(query_text)
     if query_vector is None:
         return EvidenceMemory.objects.none()
@@ -471,9 +474,20 @@ def _rank_candidates(query_text, candidates, top_k):
         from pgvector.django import CosineDistance
         return list(candidates.annotate(distance=CosineDistance('embedding', query_vector)).order_by('distance')[:top_k])
 
-    scored = [(_cosine_similarity(m.embedding, query_vector), m) for m in candidates if m.embedding]
-    scored.sort(key=lambda pair: pair[0], reverse=True)
-    return [memory for _, memory in scored[:top_k]]
+    # Stream ORM rows without populating the QuerySet cache and retain only
+    # top_k winners. The key-only comparison preserves input order on ties.
+    query_array = np.asarray(query_vector)
+    query_norm = np.linalg.norm(query_array)
+
+    def scored_rows():
+        for memory in candidates.iterator(chunk_size=256):
+            if not memory.embedding:
+                continue
+            vector = np.asarray(memory.embedding)
+            denom = (np.linalg.norm(vector) * query_norm) or 1e-9
+            yield float(np.dot(vector, query_array) / denom), memory
+
+    return [memory for _, memory in nlargest(top_k, scored_rows(), key=lambda pair: pair[0])]
 
 
 def _similarities_for(query_text, memories):
@@ -482,15 +496,19 @@ def _similarities_for(query_text, memories):
     _rank_candidates() attached (similarity = 1 - distance); on SQLite it
     recomputes the same cosine the ranking itself used. Rows with no
     embedding are simply absent — similarity is never fabricated."""
-    query_vector = compute_embedding(query_text)
-    if query_vector is None:
+    if not query_text or not query_text.strip():
         return {}
+    query_vector = None
     similarities = {}
     for m in memories:
         distance = getattr(m, 'distance', None)
         if distance is not None:
             similarities[m.pk] = 1.0 - float(distance)
         elif m.embedding is not None and len(m.embedding):
+            if query_vector is None:
+                query_vector = compute_embedding(query_text)
+                if query_vector is None:
+                    return {}
             similarities[m.pk] = _cosine_similarity(m.embedding, query_vector)
     return similarities
 
