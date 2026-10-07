@@ -176,6 +176,17 @@ Examples:
 
 This is deliberately deterministic.
 
+Optional `EcoIQOSCase.knowledge` bindings are re-assessed through
+`islamic_knowledge.contracts` on every evaluation. Missing, changed, revoked,
+unlicensed or disputed religious sources and missing scholarly approval require
+human review. Bindings are trusted internal inputs, not request/LLM approval
+fields. No binding upgrades the causal evidence state. See
+[Wisdom & Justice Knowledge](WISDOM_JUSTICE_KNOWLEDGE.md).
+
+An explicitly unknown Mizan dimension blocks progression even when another
+known dimension gives the descriptive assessment a healthy status. Measured
+zero remains valid; NaN, infinity and booleans are rejected as quantities.
+
 ## Efficiency principle
 
 EcoIQ should avoid parallel architectures.

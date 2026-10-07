@@ -11,6 +11,8 @@ dimension states; this module never invents thresholds or fills missing values.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from collections import Counter
+from math import isfinite
 from typing import Any, Iterable
 
 
@@ -89,6 +91,12 @@ class BalanceDimension:
             raise ValueError(f"Unknown Mizan dimension status: {self.status}")
         if self.threshold is not None and not self.threshold_source:
             raise ValueError("A numeric threshold must name its source.")
+        for value in (self.current_value, self.threshold):
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, (int, float))
+                or not isfinite(value)
+            ):
+                raise ValueError('Known Mizan values and thresholds must be finite numbers.')
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -194,7 +202,7 @@ def assess_balance(
     conflict_items = tuple(conflicts)
     horizons = tuple(time_horizons) or ("now",)
 
-    duplicate_keys = {d.key for d in dims if sum(x.key == d.key for x in dims) > 1}
+    duplicate_keys = {key for key, count in Counter(d.key for d in dims).items() if count > 1}
     if duplicate_keys:
         raise ValueError(f"Duplicate Mizan dimensions: {sorted(duplicate_keys)}")
 
