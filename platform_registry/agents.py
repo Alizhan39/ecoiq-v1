@@ -213,9 +213,11 @@ _SYSTEMIC_CORE = (
         entry_point='islamic_knowledge.contracts.assess_definition',
         consumers=('ecoiq.os_kernel',),
         dependencies=(),
-        evaluation='Deterministic gates and catalogue validation are covered by islamic_knowledge.test_contracts and ecoiq_os.test_knowledge.',
+        evaluation='Gates/catalogues: islamic_knowledge.test_contracts and ecoiq_os.test_knowledge. '
+                   'Provider/API/neural contracts: islamic_knowledge.test_integration; optional real offline encoder smoke.',
         basis='Typed source separation, content-bound review and offline 114-surah / 99-name indexes exist; '
-              'interpretations remain draft and no production request path consumes the knowledge layer.',
+              'Django exposes reference catalogues and editorially reviewed provider passages, with optional neural retrieval. '
+              'Interpretations remain draft; provider access/content is not configured automatically.',
         notes='No reviewed religious corpus, reviewer-authentication adapter, fatwa or Shariah certification. '
               'The name enumeration preserves its disputed authentication and pending review.',
     ),

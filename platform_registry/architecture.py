@@ -79,14 +79,17 @@ LAYERS: tuple[ArchitectureLayer, ...] = (
         responsibility='Validate source types, ayah references, content-bound scholarly review and disagreement before OS use.',
         maturity=PARTIAL,
         basis='Offline indexes cover 114 surahs and one attributed 99-name enumeration; typed knowledge gates '
-              'are integrated into optional OS case bindings. All seeded interpretations remain unreviewed drafts.',
+              'are integrated into optional OS case bindings. Provider imports, editorial publication API and '
+              'optional pinned neural retrieval exist. All seeded interpretations remain unreviewed drafts.',
         module_keys=('islamic.knowledge',),
         implementation_paths=('islamic_knowledge/', 'content/islamic_knowledge/',
-                              'docs/architecture/WISDOM_JUSTICE_KNOWLEDGE.md'),
+                              'docs/architecture/WISDOM_JUSTICE_KNOWLEDGE.md',
+                              'docs/architecture/ISLAMIC_PROVIDER_API.md'),
         gaps=(
             'Connect permission-checked source provenance and authorised scholarly reviewers before runtime exposure.',
             'Source and review the Hikmah, Adl and other draft operationalisations; validate recognised scholarly positions.',
             'Review the name enumeration and individual meanings; the reference inventory is not interpretive authority.',
+            'Agree Sajda/Azan.kz feed access, review authorised passages and evaluate multilingual religious retrieval.',
         ),
     ),
     ArchitectureLayer(

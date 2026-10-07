@@ -5,8 +5,10 @@
 EcoIQ keeps one deterministic OS. `islamic_knowledge/` is a knowledge-contract
 service used by optional `EcoIQOSCase.knowledge` bindings. It does not own
 scoring, orchestration, Mizan, causal inference, permissions or implementation.
-There is no additional runtime dependency, database migration, network fetch,
-model call or public interpretation endpoint.
+The contracts themselves have no additional runtime dependency, database or
+model call. The separate provider/publication API and optional neural encoder
+are documented in [ISLAMIC_PROVIDER_API.md](ISLAMIC_PROVIDER_API.md); editorial
+publication there does not approve a principle for OS progression.
 
 ```mermaid
 flowchart TB
@@ -27,7 +29,7 @@ flowchart TB
 | Review binding | `review_digest` / `ReviewReceipt` | Approval binds all definition fields, positions and complete source snapshots; edits require a new review. |
 | Wisdom / justice | `islamic_knowledge/principles.py` | Draft operational questions with valid source locators; no invented passages or reviewers. |
 | OS progression | `ecoiq_os/kernel.py` | Rechecks every optional binding; unready knowledge blocks automatic progression, while causal permission remains unchanged. |
-| Readiness | `platform_registry/` | Contract service is BETA; architecture is PARTIAL; reviewed corpus and runtime adapters remain gaps. |
+| Readiness | `platform_registry/` | Contract service is BETA; architecture is PARTIAL; licensed reviewed corpus and authenticated principle bindings remain gaps. |
 
 The reference loaders cache one immutable index per process. The indexes and
 records cannot be mutated by consumers. Restart the process after changing a
