@@ -143,6 +143,7 @@ INSTALLED_APPS = [
     'hikma',
     'harvester',
     'qdf',
+    'islamic_knowledge',
 
     # Hackathon module (started 2026-07-01) — Conduct AI / BasedAI bounty
     'legacy_safe',
@@ -640,6 +641,16 @@ ANTISPAM_ALERT_REJECTIONS_PER_10MIN = int(os.environ.get('ANTISPAM_ALERT_REJECTI
 ANTISPAM_ALERT_FINGERPRINT_PER_DAY = int(os.environ.get('ANTISPAM_ALERT_FINGERPRINT', '100'))
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+
+# Islamic knowledge: provider-approved JSON feeds only. No guessed private API.
+ISLAMIC_KNOWLEDGE_FEEDS = {
+    'sajda': os.environ.get('SAJDA_KNOWLEDGE_FEED_URL', '').strip(),
+    'azan_kz': os.environ.get('AZAN_KZ_KNOWLEDGE_FEED_URL', '').strip(),
+}
+# A separately installed CPU encoder, cached before serving requests.
+ISLAMIC_NEURAL_SEARCH_ENABLED = os.environ.get(
+    'ISLAMIC_NEURAL_SEARCH_ENABLED', 'false').lower() in ('true', '1', 'yes')
+ISLAMIC_NEURAL_CACHE_DIR = os.environ.get('ISLAMIC_NEURAL_CACHE_DIR', '').strip() or None
 
 # /api/v1/semantic-search/ vector path. OFF by default and must stay off until
 # BOTH are true: sentence-transformers + torch are installed (they are

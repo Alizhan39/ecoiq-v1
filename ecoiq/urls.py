@@ -135,6 +135,7 @@ urlpatterns = [
 
     # EcoIQ Quranic Decision Filter — "Create rizq without zulm"
     path('api/qdf/',    include('qdf.urls',           namespace='qdf')),
+    path('api/islamic/', include('islamic_knowledge.urls', namespace='islamic_knowledge')),
     path('decisions/',  include('qdf.web_urls',       namespace='qdf_web')),
 
     # EcoIQ LegacySafe AI — hackathon module (started 2026-07-01), Conduct AI / BasedAI
