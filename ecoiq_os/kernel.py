@@ -16,6 +16,7 @@ from ecoiq_os.evidence import (
     intervention_permission,
 )
 from ecoiq_os.flow import UniversalFlowGraph
+from islamic_knowledge.contracts import KnowledgeBinding
 from mizan.system_balance import (
     CRITICAL,
     IMBALANCED,
@@ -42,6 +43,7 @@ class EcoIQOSCase:
     flow_graph: UniversalFlowGraph
     mizan: MizanSystemAssessment
     hypothesis_status: str
+    knowledge: tuple[KnowledgeBinding, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.case_id.strip():
@@ -50,6 +52,10 @@ class EcoIQOSCase:
             raise ValueError("objective is required.")
         get_domain(self.domain)
         intervention_permission(self.hypothesis_status)
+        if not isinstance(self.knowledge, tuple) or any(
+            not isinstance(binding, KnowledgeBinding) for binding in self.knowledge
+        ):
+            raise ValueError('Knowledge bindings must be a tuple of validated records.')
 
 
 @dataclass(frozen=True)
@@ -93,13 +99,31 @@ def evaluate_case(case: EcoIQOSCase) -> EcoIQOSDecision:
             blocked_by=tuple(conflict.key for conflict in case.mizan.review_conflicts),
         )
 
-    if case.mizan.status == INSUFFICIENT_DATA:
+    unknown_dimensions = tuple(
+        dimension.key for dimension in case.mizan.dimensions
+        if dimension.status == INSUFFICIENT_DATA
+    )
+    if case.mizan.status == INSUFFICIENT_DATA or unknown_dimensions:
         return EcoIQOSDecision(
             next_stage=COLLECT_EVIDENCE,
             reason="Mizan cannot assess system balance from the available evidence.",
             intervention_permission=permission,
             requires_human_review=False,
-            blocked_by=("mizan_insufficient_data",),
+            blocked_by=("mizan_insufficient_data",) + unknown_dimensions,
+        )
+
+    knowledge_gates = tuple(binding.assess() for binding in case.knowledge)
+    blocked_knowledge = tuple(
+        f'{gate.definition_id}:{reason}'
+        for gate in knowledge_gates for reason in gate.reasons
+    )
+    if blocked_knowledge:
+        return EcoIQOSDecision(
+            next_stage=HUMAN_REVIEW_REQUIRED,
+            reason='Religious knowledge is incomplete, disputed or not currently reviewed; it cannot justify automatic progression.',
+            intervention_permission=permission,
+            requires_human_review=True,
+            blocked_by=blocked_knowledge,
         )
 
     if case.hypothesis_status not in (

@@ -17,6 +17,13 @@ The canonical product architecture is:
 
 This roadmap must remain subordinate to those contracts.
 
+**Phase A implementation:** `islamic_knowledge/` now provides typed source
+separation, version/hash-bound review, attributed scholarly positions and
+offline 114-surah / 99-name indexes. The kernel checks optional knowledge
+bindings before progression. All authored principle definitions remain draft;
+there is no reviewed interpretation corpus or authenticated reviewer adapter.
+See [implemented contracts and boundaries](WISDOM_JUSTICE_KNOWLEDGE.md).
+
 ## Architectural rule
 
 Islamic decision intelligence enters EcoIQ through governed knowledge,

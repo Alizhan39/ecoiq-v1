@@ -62,6 +62,14 @@ AI-specific orchestration is a subordinate subsystem documented in
 Mizan and the falsification-first Poverty & Justice boundary are documented in
 [`docs/architecture/MIZAN_POVERTY_JUSTICE_CORE.md`](docs/architecture/MIZAN_POVERTY_JUSTICE_CORE.md).
 
+The governed knowledge layer in `islamic_knowledge/` adds **Hikmah (wisdom)**
+and **Adl (justice)** contracts, an offline index of **114 surahs**, and an
+attributed **99-name enumeration**. Optional OS bindings require current,
+content-bound source and scholar review; they never upgrade causal evidence.
+The name inventory and all seeded operationalisations remain unreviewed.
+Implementation, source distinctions and remaining gates:
+[`WISDOM_JUSTICE_KNOWLEDGE.md`](docs/architecture/WISDOM_JUSTICE_KNOWLEDGE.md).
+
 Three frontend directories, **none** of which is a runtime dependency:
 
 | path | what | built to |

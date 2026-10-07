@@ -73,6 +73,12 @@ Vault: [[Evidence Memory]], `02-Intelligence-Engine/Evidence/`
 
 ## Scoring
 
+For governed Qur'an references, the 114-surah / 99-name reference inventories,
+Hikmah / Adl draft definitions and content-bound review, start at
+`islamic_knowledge/contracts.py` and
+`docs/architecture/WISDOM_JUSTICE_KNOWLEDGE.md`. This layer supplies optional
+OS knowledge bindings; it does not introduce another scoring engine.
+
 | engine | file | entry point |
 |---|---|---|
 | Composite + pillars | `companies/scoring.py` | `recalculate_and_save` |

@@ -9,6 +9,8 @@ units silently or decide that a loss is unjustified.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from collections import Counter
+from math import isfinite
 from typing import Any, Iterable
 
 
@@ -75,6 +77,11 @@ class FlowEdge:
             raise ValueError(f"Unknown resource type: {self.resource_type}")
         if self.value is not None and not self.unit:
             raise ValueError("A known flow value must declare its unit.")
+        if self.value is not None and (
+            isinstance(self.value, bool) or not isinstance(self.value, (int, float))
+            or not isfinite(self.value)
+        ):
+            raise ValueError('A known flow value must be a finite number.')
         if self.value is not None and self.value < 0:
             raise ValueError("Flow values must be non-negative; direction carries the sign.")
 
@@ -97,8 +104,8 @@ class UniversalFlowGraph:
         node_ids = [node.id for node in self.nodes]
         edge_ids = [edge.id for edge in self.edges]
 
-        duplicate_nodes = sorted({item for item in node_ids if node_ids.count(item) > 1})
-        duplicate_edges = sorted({item for item in edge_ids if edge_ids.count(item) > 1})
+        duplicate_nodes = sorted(item for item, count in Counter(node_ids).items() if count > 1)
+        duplicate_edges = sorted(item for item, count in Counter(edge_ids).items() if count > 1)
 
         for node_id in duplicate_nodes:
             issues.append(FlowValidationIssue("DUPLICATE_NODE", f"Duplicate node id: {node_id}"))
