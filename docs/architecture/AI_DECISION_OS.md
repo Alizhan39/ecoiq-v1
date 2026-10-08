@@ -1,11 +1,15 @@
-# EcoIQ AI Decision & Governance OS
+# EcoIQ AI Decision Subsystem
 
 ## Purpose
 
-EcoIQ is a layered decision-intelligence platform, not a single chatbot and
-not a collection of interchangeable agent frameworks. The architecture keeps
-deterministic decisions, retrieved evidence, generative model output and human
-approval distinct so each can be evaluated and audited on its own terms.
+This document describes the AI-specific subsystem inside **EcoIQ OS**. It is
+not the top-level product architecture. The canonical OS contract is
+[`ECOIQ_OS.md`](ECOIQ_OS.md).
+
+AI orchestration, retrieval and model routing are replaceable capabilities
+behind the deterministic OS kernel. The subsystem keeps deterministic
+decisions, retrieved evidence, generative output and human approval distinct so
+each can be evaluated and audited on its own terms.
 
 The machine-readable authority is
 `platform_registry/architecture.py`. Component status is resolved from
@@ -16,18 +20,18 @@ boundaries but does not own maturity labels.
 
 ```mermaid
 flowchart TB
-    UI["Experience<br/>React / TypeScript"] --> API["Contract<br/>API v2 / Django"]
-    API --> ORCH["Orchestration<br/>LangGraph / runtime / workflows"]
-    ORCH --> CORE["Decision core<br/>evidence / scoring / eligibility"]
+    OS["EcoIQ OS Kernel"] --> ORCH["AI orchestration<br/>optional capability"]
     ORCH --> RAG["Knowledge & retrieval<br/>Evidence Memory / pgvector"]
     ORCH --> LLM["Model gateway<br/>provider-neutral routing"]
-    CORE --> DATA["Data platform<br/>PostgreSQL / pgvector / R2"]
-    RAG --> DATA
-    TOOLS["Tools & connectors<br/>planned governed runtime"] -.-> ORCH
+    RAG --> DATA["Data platform<br/>PostgreSQL / pgvector / R2"]
+    LLM --> OBS["Schema / safety / observability"]
+    OBS --> OS
 ```
 
 Cross-cutting controls apply to the entire flow:
 
+- Mizan system balance: local optimisation must be checked against explicit resource, human, justice, resilience and intergenerational dimensions; hard constraints are not averaged away;
+- falsification-first causal justice: Poverty & Justice hypotheses stay below intervention gates until evidence status justifies modelling;
 - trust, safety and human approval;
 - provenance, observability and audit;
 - institutional memory with scoped retrieval.
@@ -37,8 +41,10 @@ Cross-cutting controls apply to the entire flow:
 | Layer | Current state | Authority | Honest boundary |
 |---|---|---|---|
 | Experience & API | Active | `frontend/web/`, `api/v2_*`, `core/spa.py` | One origin; session authentication; API v2 is canonical for new work. |
+| EcoIQ OS kernel | Partial | `ecoiq_os/` | Deterministic contracts exist; production request paths are not yet migrated onto the kernel. |
 | Orchestration & workflow | Partial | `agent_runtime_model_router/`, `langgraph_orchestration/`, `backend_intelligence_engine/` | Code and tests exist; the Render blueprint has no Redis/worker process. |
 | Decision intelligence core | Active | `companies/`, `ethics/`, `financing/`, `qdf/`, `mizan/` | Deterministic engines are not evidence that generative AI is evaluated. |
+| Mizan system balance & causal justice | Partial | `mizan/system_balance.py`, `poverty_justice/` | Cross-cutting contracts exist; no autonomous policy runtime or HypothesisKiller evaluation exists yet. |
 | Knowledge & retrieval | Partial | `evidence_memory/`, `ingestion/` | Retrieval is real and access-filtered; relevance has no labelled evaluation set. |
 | Model gateway | Partial | `ai_gateway/`, `agent_runtime_model_router/services/model_router.py` | Two routing surfaces exist and must be consolidated only with compatibility evidence. |
 | Tools / MCP / connectors | Planned | `api_integration_layer/`, `.mcp.json` | The current integration page is a blueprint. Development MCP config is not a product runtime. |
@@ -110,6 +116,9 @@ therefore reuses:
 Kubernetes, Kafka, an additional vector database and multiple new agent
 frameworks are deliberately outside this phase. None resolves a current
 evidence, evaluation or deployment gap.
+
+The cross-cutting Mizan and Poverty & Justice contracts are documented in
+[`MIZAN_POVERTY_JUSTICE_CORE.md`](MIZAN_POVERTY_JUSTICE_CORE.md).
 
 ## API contract
 

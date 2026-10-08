@@ -5,9 +5,6 @@
 # documented so known non-secret fixtures/checksums do not weaken detection
 # for unrelated content.
 
-[extend]
-useDefault = true
-
 [[allowlists]]
 description = """
 One historical test fixture, exempted by exact fingerprint.

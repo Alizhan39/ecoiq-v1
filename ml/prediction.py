@@ -20,11 +20,35 @@ from __future__ import annotations
 
 import logging
 from datetime import timedelta
+from itertools import islice
 import numpy as np
 
 from core.unknown import known
 
 logger = logging.getLogger(__name__)
+
+HISTORY_LIMIT = 12
+SIGNAL_LIMIT = 50
+BATCH_SIZE = 128
+_HISTORY_ATTR = '_forecast_history'
+_SIGNALS_ATTR = '_forecast_signals'
+
+
+def _history_for(company):
+    if hasattr(company, _HISTORY_ATTR):
+        rows = getattr(company, _HISTORY_ATTR)
+        return [(row.date, row.ecoiq_score) for row in reversed(rows)]
+    # Select the latest window before restoring chronological order for OLS.
+    latest = list(company.history.order_by('-date', '-pk').values_list(
+        'date', 'ecoiq_score')[:HISTORY_LIMIT])
+    return list(reversed(latest))
+
+
+def _signals_for(company, since):
+    if hasattr(company, _SIGNALS_ATTR):
+        return [row.raw_data for row in getattr(company, _SIGNALS_ATTR)]
+    return company.ingestion_logs.filter(ingested_at__gte=since, source='rss').order_by(
+        '-ingested_at', '-pk').values_list('raw_data', flat=True)[:SIGNAL_LIMIT]
 
 
 def predict_12m(company) -> float | None:
@@ -39,9 +63,7 @@ def predict_12m(company) -> float | None:
     target_date = today + timedelta(days=365)
 
     # ── Try historical trend first ─────────────────────────────────────────
-    history = list(
-        company.history.order_by('date').values_list('date', 'ecoiq_score')[:24]
-    )
+    history = _history_for(company)
 
     if len(history) >= 3:
         dates  = np.array([(h[0] - history[0][0]).days for h in history], dtype=np.float64)
@@ -79,10 +101,7 @@ def predict_12m(company) -> float | None:
     try:
         # Look at last 90 days of ingestion signals
         since = timezone.now() - timedelta(days=90)
-        recent_logs = company.ingestion_logs.filter(
-            ingested_at__gte=since,
-            source='rss',
-        ).values_list('raw_data', flat=True)[:50]
+        recent_logs = _signals_for(company, since)
 
         for raw in recent_logs:
             sig_type = (raw or {}).get('signal_type', '')
@@ -102,7 +121,7 @@ def predict_12m(company) -> float | None:
 # ── Derived provenance (D3C-3f) ───────────────────────────────────────────────
 
 PREDICTION_METHOD = 'ecoiq-forecast-ols-12m'
-PREDICTION_VERSION = '1'
+PREDICTION_VERSION = '2'
 PREDICTION_METRIC_KEY = 'ml.predicted_12m'
 
 #: The ONLY registered metric this forecast consumes.
@@ -138,24 +157,46 @@ def apply_predictions(companies=None) -> dict:
     Compute and write ml_predicted_score_12m for all (or provided) companies.
     """
     from django.utils import timezone
-    from league.models import Company
+    from django.db.models import Prefetch, QuerySet, prefetch_related_objects
+    from league.models import Company, ScoreHistory
+    from companies.models import DataIngestionLog
 
     if companies is None:
-        companies = Company.objects.filter(ecoiq_score__gt=0).select_related(
-            'profile', 'history'
-        ).prefetch_related('history', 'ingestion_logs')
+        companies = Company.objects.filter(ecoiq_score__gt=0)
+
+    if isinstance(companies, QuerySet):
+        companies = companies.select_related('profile').iterator(chunk_size=BATCH_SIZE)
+
+    iterator = iter(companies)
+    since = timezone.now() - timedelta(days=90)
+    history_query = ScoreHistory.objects.only('company_id', 'date', 'ecoiq_score').order_by(
+        '-date', '-pk')[:HISTORY_LIMIT]
+    signal_query = DataIngestionLog.objects.filter(ingested_at__gte=since, source='rss').only(
+        'company_id', 'raw_data', 'ingested_at').order_by('-ingested_at', '-pk')[:SIGNAL_LIMIT]
 
     updated = 0
     failed  = 0
-    for company in companies:
-        try:
-            pred = predict_12m(company)
-            if pred is not None:
-                _write_prediction(company, round(pred, 1), timezone.now())
-                updated += 1
-        except Exception as exc:
-            logger.error('Prediction failed for %s: %s', company, exc)
-            failed += 1
+    while batch := list(islice(iterator, BATCH_SIZE)):
+        # Sliced prefetch uses a SQL window per company, not all historical
+        # rows. to_attr prevents predict_12m from issuing per-company reads.
+        prefetch_related_objects(batch, 'profile',
+            Prefetch('history', queryset=history_query, to_attr=_HISTORY_ATTR),
+            Prefetch('ingestion_logs', queryset=signal_query, to_attr=_SIGNALS_ATTR))
+        for company in batch:
+            try:
+                pred = predict_12m(company)
+                if pred is not None:
+                    _write_prediction(company, round(pred, 1), timezone.now())
+                    updated += 1
+            except Exception as exc:
+                logger.error('Prediction failed for %s: %s', company, exc)
+                failed += 1
+            finally:
+                # A caller-provided list may be reused after this run. Never
+                # leave stale private prefetch snapshots attached to it.
+                for attr in (_HISTORY_ATTR, _SIGNALS_ATTR):
+                    if hasattr(company, attr):
+                        delattr(company, attr)
 
     return {'updated': updated, 'failed': failed}
 
