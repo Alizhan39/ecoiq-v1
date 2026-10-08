@@ -89,11 +89,15 @@ def index_passages():
     return indexed
 
 
-def semantic_search(query, *, limit=5, provider=None, language=None):
+def validate_search(query, limit):
     if not isinstance(query, str) or not query.strip() or len(query) > 1000:
         raise ValueError('Query must contain 1–1000 characters.')
     if type(limit) is not int or not 1 <= limit <= 20:
         raise ValueError('Limit must be between 1 and 20.')
+
+
+def semantic_search(query, *, limit=5, provider=None, language=None):
+    validate_search(query, limit)
     if not settings.ISLAMIC_NEURAL_SEARCH_ENABLED:
         raise NeuralUnavailable('Neural semantic search is disabled.')
     candidates = KnowledgePassage.published().filter(

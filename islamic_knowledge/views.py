@@ -8,6 +8,7 @@ from .catalog import divine_names, surahs
 from .models import KnowledgePassage
 from .neural import MODEL_VERSION, NeuralUnavailable, semantic_search
 from .providers import PROVIDERS, provider_catalog
+from .retrieval import RetrievalUnavailable, hybrid_search
 
 
 def passage_json(row):
@@ -83,8 +84,21 @@ def passages(request):
 @require_GET
 @rate_limit('islamic_neural_search', json=True, anon_per_min=5, auth_per_min=10, staff_exempt=False)
 def search(request):
+    mode = request.GET.get('mode', 'neural')
     try:
+        if mode not in ('neural', 'hybrid'):
+            raise ValueError('Mode must be neural or hybrid.')
         provider, language = filters(request)
+        if mode == 'hybrid':
+            found = hybrid_search(request.GET.get('q', ''), limit=int(request.GET.get('limit', 5)),
+                                  provider=provider, language=language)
+            return JsonResponse({'method': found.method, 'requested_mode': mode,
+                'model': MODEL_VERSION if found.neural_status == 'used' else None,
+                'neural_status': found.neural_status, 'score_is_confidence': False,
+                'similarity_is_confidence': False, 'religious_ruling': False,
+                'results': [{**passage_json(hit.row), 'fusion_score': hit.fusion_score,
+                    'matched_by': hit.matched_by, 'similarity': hit.similarity,
+                    'lexical_match': hit.lexical_match} for hit in found.results]})
         results = semantic_search(request.GET.get('q', ''), limit=int(request.GET.get('limit', 5)),
                                    provider=provider, language=language)
     except ValueError as exc:
@@ -92,6 +106,9 @@ def search(request):
     except NeuralUnavailable as exc:
         return JsonResponse({'status': 'unavailable', 'error': str(exc), 'method': 'neural_cosine',
                              'model': MODEL_VERSION}, status=503)
+    except RetrievalUnavailable as exc:
+        return JsonResponse({'status': 'unavailable', 'error': str(exc),
+                             'requested_mode': mode}, status=503)
     return JsonResponse({'method': 'neural_cosine', 'model': MODEL_VERSION,
                          'similarity_is_confidence': False, 'religious_ruling': False,
                          'results': [{**passage_json(row), 'similarity': similarity}

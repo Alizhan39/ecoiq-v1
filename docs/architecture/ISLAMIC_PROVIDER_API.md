@@ -40,6 +40,7 @@ lists differ, and the Azan.kz course has its own lesson ordering.
 | `/api/islamic/names/` | All 99 identifiers, source enumeration and pending scholar review |
 | `/api/islamic/passages/` | Published exact source passages with attribution/version/digest |
 | `/api/islamic/search/?q=...` | Neural cosine ranking of published indexed passages with citations |
+| `/api/islamic/search/?q=...&mode=hybrid` | Neural + Unicode word retrieval, reciprocal rank fusion, explicit lexical degradation |
 
 Passage listing supports `provider`, `language`, `surah`, `name`, `limit` (1–50)
 and `offset` (0–10000). Search supports `provider`, `language` and `limit` (1–20).
@@ -53,6 +54,44 @@ sources returns an empty list. Similarity is not calibrated confidence, evidence
 of correctness or a religious ruling. Sources must be reviewed and cited before
 content appears; editorial publication does not create a scholar review receipt,
 prove authentication or clear `assess_definition`/OS gates.
+
+### Hybrid retrieval (2026-10-08)
+
+`mode=hybrid` reuses the pinned multilingual encoder and adds exact Unicode word
+matching over published passages. Both retrieve up to 20 candidates; reciprocal
+rank fusion sums `1 / (60 + rank)` per list and deduplicates by passage ID and
+source digest. Equal scores use provider/external ID order. This avoids combining
+cosine and lexical values as though they shared a meaningful scale. See the
+[original RRF paper](https://doi.org/10.1145/1571941.1572114). No improvement on a
+religious corpus is claimed before an evaluated query set exists.
+
+Example for an imported, published Kazakh corpus:
+
+```bash
+curl --get 'https://ecoiq.uk/api/islamic/search/' \
+  --data-urlencode 'q=Таза су' --data 'mode=hybrid&language=kk&limit=5'
+```
+
+This is the API contract; the example does not claim a deployed/live feed.
+`method` is `hybrid_rrf` when neural contributions remain, otherwise
+`lexical_overlap`. `neural_status` explicitly reports `used`, `disabled`,
+`unavailable` or `no_results`. An unavailable/disabled encoder gives a 200 lexical
+result with `model: null`; the default neural-only endpoint still gives 503.
+An empty match returns an empty list. Invalid inputs give 400, and a corpus
+beyond the 10,000-passage lexical capacity gives 503 without truncating it.
+Modes share the same throttle; switching modes does not reset the request budget.
+
+Each result preserves the exact passage, source URL, digest, rights and
+attribution, plus `matched_by`, `fusion_score`, `lexical_match` (fraction of query
+words present) and nullable neural `similarity`. Neither score is confidence or
+a religious ruling. Queries require 1–32 distinct searchable words within the
+existing 1,000-character bound; neural execution retains its token-window check.
+Words are case-folded/NFKC-normalised; combining marks are removed to support
+Arabic queries with or without harakat. Kazakh letters are retained. There is
+no stemming or lexical translation. The lexical scan streams passages without
+loading stored vectors; final fusion rechecks publication and source/embedding
+digests after both searches. No external LLM, API key or new runtime dependency
+is introduced.
 
 ## Import and editorial publication
 
@@ -168,6 +207,13 @@ An opt-in live test also passed with the real offline encoder: authorised synthe
 fixtures → editorial publication → batched indexing → Django search on English,
 Russian and Arabic queries. It checks execution and source citations, not ranking
 quality on religious material. Run it with the prepared cache and optional extra:
+
+The hybrid increment adds synthetic regressions for fusion/deduplication,
+Russian/Kazakh/Arabic/English word matching, filters, model failure, shared
+throttles, capacity bounds and edits/withdrawals during ranking. The opt-in live
+test now exercises both neural-only and hybrid paths with authored English,
+Russian, Arabic and Kazakh fixtures. These check execution, not language/domain
+retrieval quality.
 
 ```bash
 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 ISLAMIC_NEURAL_LIVE_TEST=1 \
