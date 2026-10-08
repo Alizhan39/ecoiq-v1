@@ -96,9 +96,11 @@ def retrieve_evidence_memory(state):
     results = memory_service.search_similar(
         query, top_k=5, company=company_obj, country=country_obj, user=user, project=project,
     ) if query else []
+    from evidence_memory.services.citations import capture_citation
     memories = [
         {'id': m.pk, 'text': m.text_chunk[:200], 'confidence': m.confidence, 'source_type': m.source_type,
-         'source_reference': m.source_reference, 'verification_status': m.verification_status}
+         'source_reference': m.source_reference, 'verification_status': m.verification_status,
+         'citation': capture_citation(m)}
         for m in results
     ]
     known_confidences = [m['confidence'] for m in memories if m['confidence'] is not None]
@@ -339,6 +341,15 @@ def finalize(state):
             'basis': 'pandas_scoring_engine.compute_company_intelligence_score',
             'source': 'pandas_scoring_engine',
         })
+
+    if state.get('project_id') is not None and recommendations_out:
+        from evidence_memory.services.citations import assess_claim, INSUFFICIENT
+        for recommendation in recommendations_out:
+            support = assess_claim({'text': recommendation.get('summary', ''), 'kind': 'conclusion', 'citation_ids': []}, {})
+            recommendation.update({key: support[key] for key in ('citation_ids', 'support_status', 'support_note')})
+        state['human_review_required'] = True
+        state['verification_notes'].append(INSUFFICIENT)
+        state['confidence'] = None
 
     next_actions = []
     if state.get('evidence_context', {}).get('weak'):

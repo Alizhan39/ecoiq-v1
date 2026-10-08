@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Source quotation — Decision Studio{% endblock %}
+{% block content %}
+<div class="ds-wrap">
+  <a class="ds-back" href="{% url 'decision_studio:result_detail' query.pk %}">← Back to decision</a>
+  <h1 class="ds-title">{{ citation.document_title }}</h1>
+  <p>{{ citation.source_location }} · Characters {{ citation.start }}–{{ citation.end }} in the stored chunk (zero-based, end exclusive)</p>
+  <blockquote class="ds-evidence-card">{{ citation.quote }}</blockquote>
+  <details><summary>Read the full stored evidence chunk</summary><p style="white-space:pre-wrap">{{ snapshot.text }}</p></details>
+  <p><a href="?format=json">Download quotation and source snapshot (JSON)</a></p>
+  <dl>
+    <dt>Source record</dt><dd>{{ citation.source_reference|default:"Original source identity unavailable" }}</dd>
+    <dt>Version type</dt><dd>{{ citation.version_kind }}</dd>
+    <dt>Source version</dt><dd class="ds-digest">{{ citation.document_version }}</dd>
+    <dt>Snapshot SHA-256</dt><dd class="ds-digest">{{ citation.snapshot_sha256 }}</dd>
+    <dt>Quoted fragment SHA-256</dt><dd class="ds-digest">{{ citation.quote_sha256 }}</dd>
+    <dt>Verification at capture</dt><dd>{{ citation.verification_status }} · {{ citation.review_tier }}</dd>
+    <dt>Current verification</dt><dd>{{ citation.current_verification_status }}</dd>
+  </dl>
+  {% if citation.source_changed %}<p class="ds-uncertainty-list">The indexed source has changed. This quotation preserves the version used in the original answer.</p>{% endif %}
+  {% if citation.expired %}<p class="ds-uncertainty-list">This source is expired and must not be treated as current evidence.</p>{% endif %}
+  {% if citation.is_demo %}<p class="ds-uncertainty-list">Demonstration material.</p>{% endif %}
+  {% if citation.source_url %}<a class="ds-back" href="{{ citation.source_url }}" rel="noopener noreferrer" target="_blank">Open publisher source (its current content may differ) →</a>{% endif %}
+  <p>Hashes identify the stored text and metadata. They do not prove authenticity, factual accuracy, or that a recommendation follows from this quotation.</p>
+</div>
+{% include 'decision_studio/_styles.html' %}
+{% endblock %}

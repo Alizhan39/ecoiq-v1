@@ -22,7 +22,7 @@ have executed by then (same convention as plotly_visual_intelligence/dashboard.h
   <div class="ds-executive-answer">{{ result.executive_answer }}</div>
 
   <div class="ds-chip-row" style="margin-bottom:1.5rem;">
-    <span class="ds-confidence-badge ds-confidence-{{ query.confidence_label }}">Confidence: {{ query.get_confidence_label_display }}{% if query.confidence_score %} ({{ query.confidence_score }}%){% endif %}</span>
+    <span class="ds-confidence-badge ds-confidence-{{ result.confidence_label }}">Confidence: {{ result.confidence_label }}{% if result.confidence_score %} ({{ result.confidence_score }}%){% endif %}</span>
     <span class="ds-chip">Data availability: {{ query.get_data_availability_status_display }}</span>
     {% if query.scope.country %}<span class="ds-chip">{{ query.scope.country }}</span>{% endif %}
     {% if query.scope.sector %}<span class="ds-chip">{{ query.scope.sector }}</span>{% endif %}
@@ -38,6 +38,15 @@ have executed by then (same convention as plotly_visual_intelligence/dashboard.h
     <p class="ds-h2" style="font-size:0.85rem;margin-top:0.8rem;">Data gaps</p>
     <ul class="ds-gap-list">{% for gap in result.data_gaps %}<li>{{ gap }}</li>{% endfor %}</ul>
     {% endif %}
+  </section>
+  {% endif %}
+
+  {% if result.claims %}
+  <section class="ds-section">
+    <h2 class="ds-h2">Conclusion support</h2>
+    {% for claim in result.claims %}
+    <div class="ds-panel"><p>{{ claim.text }}</p><p class="ds-uncertainty-list">{{ claim.support_note }}</p></div>
+    {% endfor %}
   </section>
   {% endif %}
 
@@ -79,7 +88,8 @@ have executed by then (same convention as plotly_visual_intelligence/dashboard.h
   {% endif %}
 
   <section class="ds-section">
-    <h2 class="ds-h2">Supporting Evidence</h2>
+    <h2 class="ds-h2">Retrieved sources</h2>
+    <p>Search relevance does not establish that a source supports the conclusions above.</p>
     {% if query.project %}<p>Project: {{ query.project.name }}</p>{% endif %}
     {% if result.supporting_evidence %}
       {% for item in result.supporting_evidence|slice:":10" %}
@@ -90,7 +100,15 @@ have executed by then (same convention as plotly_visual_intelligence/dashboard.h
           {% if item.confidence %}<span class="ds-chip">Confidence: {{ item.confidence|floatformat:0 }}%</span>{% endif %}
           {% if item.is_demo %}<span class="ds-chip">Demo data</span>{% endif %}
         </div>
-        <p style="margin:0;color:var(--ds-text);font-size:0.88rem;">{{ item.excerpt }}</p>
+        <blockquote>{{ item.excerpt }}</blockquote>
+        {% if item.citation %}
+        <p>{{ item.citation.document_title }} · {{ item.citation.source_location }}</p>
+        <p class="ds-digest">Version: {{ item.citation.document_version }}</p>
+        <p>{{ item.citation.version_kind }}</p>
+        {% if item.citation.source_changed %}<p class="ds-uncertainty-list">Source changed since this answer; showing the cited snapshot.</p>{% endif %}
+        {% if item.citation.expired %}<p class="ds-uncertainty-list">Source expired — current support requires review.</p>{% endif %}
+        <a class="ds-back" href="{% url 'decision_studio:citation_detail' query.pk item.citation.citation_id %}">Check exact quotation and version →</a>
+        {% else %}<p class="ds-uncertainty-list">Verifiable citation unavailable.</p>{% endif %}
       </div>
       {% endfor %}
     {% else %}

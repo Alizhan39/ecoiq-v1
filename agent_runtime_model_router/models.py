@@ -106,6 +106,8 @@ class AgentRegistryEntry(models.Model):
 class AgentRun(models.Model):
     """One execution of one agent, from routing through to Council submission."""
     project = models.ForeignKey('gold_intelligence.GoldProject', null=True, blank=True, on_delete=models.PROTECT)
+    observatory_session = models.ForeignKey('ai_observatory.AnalysisSession', null=True, blank=True,
+                                           on_delete=models.PROTECT, related_name='agent_runs')
     council_case  = models.ForeignKey(
         'ai_agent_council.CouncilRun', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='agent_runs',

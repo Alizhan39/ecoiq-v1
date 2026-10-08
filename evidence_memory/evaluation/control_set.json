@@ -1,0 +1,442 @@
+{
+  "name": "EcoIQ synthetic retrieval controls v1",
+  "label_status": "Author-labelled diagnostic judgements; pending independent domain review",
+  "documents": [
+    {
+      "id": "heat-meter",
+      "title": "Heating pilot: meter log",
+      "version": "2026-02",
+      "text": "Measured heat loss fell from 120 MWh to 90 MWh during the monitored winter. Outdoor temperature was not normalised; the observation does not establish causation.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "heat-plan",
+      "title": "Heating pilot: proposal",
+      "version": "2026-01",
+      "text": "The proposal targets a 40 percent reduction in heat loss after pipe insulation. This is an estimate, not a measured result.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "permit",
+      "title": "Plant permit register",
+      "version": "2026-03",
+      "text": "The operating permit expires on 30 November 2026. An application for renewal has been filed, but the authority has not granted an extension.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "tender-v2",
+      "title": "Synthetic procurement policy",
+      "version": "v2, effective 2026-01",
+      "text": "Current policy requires three independent supplier quotations for purchases above 50000 units. This version replaces the 2025 policy.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "tender-v1",
+      "title": "Synthetic procurement policy",
+      "version": "v1, superseded 2025",
+      "text": "The former procurement policy required two supplier quotations for purchases above 75000 units. It is superseded and no longer applies.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "approval",
+      "title": "Investment committee minutes",
+      "version": "2026-04",
+      "text": "The committee approved technical due diligence only. Release of construction funds was deferred until the environmental assessment is complete.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "insurance",
+      "title": "Equipment insurance schedule",
+      "version": "2026-05",
+      "text": "The equipment policy covers fire and theft. Flood damage is expressly excluded from coverage.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "warranty",
+      "title": "Pump supply agreement",
+      "version": "revision 3",
+      "text": "The pump warranty lasts 24 months from commissioning, subject to completion of the scheduled maintenance visits.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "maintenance",
+      "title": "Pump service log",
+      "version": "2026-06",
+      "text": "The last scheduled pump maintenance visit was missed. The supplier has requested an inspection before confirming warranty eligibility.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "loan",
+      "title": "Project funding term sheet",
+      "version": "draft 2026-06",
+      "text": "The lender requires a completed environmental assessment and committee approval before the first drawdown. No financing commitment has been signed.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "emissions",
+      "title": "Annual emissions disclosure",
+      "version": "FY2025",
+      "text": "Reported Scope 1 emissions were 900 tonnes CO2e. Scope 2 emissions were 120 tonnes CO2e. These figures have not received independent assurance.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "solar",
+      "title": "Solar generation meter report",
+      "version": "2026-Q1",
+      "text": "Metered solar electricity generation totalled 310 MWh during the first quarter. The original budget forecast was 400 MWh.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "water",
+      "title": "Water balance inspection",
+      "version": "2026-07",
+      "text": "The inspection identified a leaking valve in the recycling loop. Freshwater withdrawals increased by 12 percent compared with the previous month.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "supplier",
+      "title": "Supplier declarations",
+      "version": "2026-05",
+      "text": "Supplier North disclosed that a director owns shares in the procurement consultant. The conflict of interest remains unresolved.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "ethics",
+      "title": "Project review record",
+      "version": "2026-06",
+      "text": "The ethics review has not been completed. The project has no recorded Shariah approval and must be referred to qualified human reviewers.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "safety",
+      "title": "Site safety inspection",
+      "version": "2026-07",
+      "text": "The emergency exit was obstructed by stored materials. The inspector required the obstruction to be removed before the next shift.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "budget",
+      "title": "Cost control report",
+      "version": "2026-07",
+      "text": "Actual capital expenditure reached 1.2 million units against an approved budget of 1.0 million units. No revised budget has been approved.",
+      "source_kind": "synthetic_control_document"
+    },
+    {
+      "id": "audit",
+      "title": "Assurance engagement letter",
+      "version": "2026-07",
+      "text": "The auditor will examine the annual emissions disclosure next quarter. An engagement letter is not a completed independent verification report.",
+      "source_kind": "synthetic_control_document"
+    }
+  ],
+  "queries": [
+    {
+      "id": "q01",
+      "category": "lexical",
+      "question": "When does the operating permit expire?",
+      "relevant_ids": [
+        "permit"
+      ],
+      "judgement_reason": "The permit register gives the expiry date."
+    },
+    {
+      "id": "q02",
+      "category": "paraphrase",
+      "question": "Has permission to keep the plant running been extended?",
+      "relevant_ids": [
+        "permit"
+      ],
+      "judgement_reason": "Application is not a granted extension."
+    },
+    {
+      "id": "q03",
+      "category": "russian",
+      "question": "До какой даты действует разрешение на эксплуатацию?",
+      "relevant_ids": [
+        "permit"
+      ],
+      "judgement_reason": "Russian question, English permit record."
+    },
+    {
+      "id": "q04",
+      "category": "lexical",
+      "question": "What heat loss was actually measured?",
+      "relevant_ids": [
+        "heat-meter"
+      ],
+      "judgement_reason": "Meter log, not the proposal target."
+    },
+    {
+      "id": "q05",
+      "category": "paraphrase",
+      "question": "What change in wasted thermal energy was observed after monitoring?",
+      "relevant_ids": [
+        "heat-meter"
+      ],
+      "judgement_reason": "Observed values are in the meter log."
+    },
+    {
+      "id": "q06",
+      "category": "russian",
+      "question": "Какие теплопотери измерили, а не запланировали?",
+      "relevant_ids": [
+        "heat-meter"
+      ],
+      "judgement_reason": "Measured versus estimated values."
+    },
+    {
+      "id": "q07",
+      "category": "negation",
+      "question": "Were construction funds approved for release?",
+      "relevant_ids": [
+        "approval"
+      ],
+      "judgement_reason": "Only technical due diligence was approved."
+    },
+    {
+      "id": "q08",
+      "category": "russian",
+      "question": "Комитет уже разрешил выдачу денег на строительство?",
+      "relevant_ids": [
+        "approval"
+      ],
+      "judgement_reason": "Funding release was deferred."
+    },
+    {
+      "id": "q09",
+      "category": "version",
+      "question": "Under the current 2026 procurement policy, how many supplier quotations are needed above 50000 units?",
+      "relevant_ids": [
+        "tender-v2"
+      ],
+      "judgement_reason": "Version 2 supersedes version 1."
+    },
+    {
+      "id": "q10",
+      "category": "paraphrase",
+      "question": "How many independent bids must be collected under the latest purchasing rules?",
+      "relevant_ids": [
+        "tender-v2"
+      ],
+      "judgement_reason": "Current rule, not historical version."
+    },
+    {
+      "id": "q11",
+      "category": "russian",
+      "question": "Сколько предложений поставщиков нужно по действующей политике закупок?",
+      "relevant_ids": [
+        "tender-v2"
+      ],
+      "judgement_reason": "Latest procurement rule is v2."
+    },
+    {
+      "id": "q12",
+      "category": "negation",
+      "question": "Does the equipment policy insure against flood damage?",
+      "relevant_ids": [
+        "insurance"
+      ],
+      "judgement_reason": "Flood exclusion must be retrieved."
+    },
+    {
+      "id": "q13",
+      "category": "paraphrase",
+      "question": "Will the insurer pay if rising water damages the machinery?",
+      "relevant_ids": [
+        "insurance"
+      ],
+      "judgement_reason": "Flood is an excluded peril."
+    },
+    {
+      "id": "q14",
+      "category": "lexical",
+      "question": "How long is the pump warranty?",
+      "relevant_ids": [
+        "warranty"
+      ],
+      "judgement_reason": "Contract sets the warranty duration."
+    },
+    {
+      "id": "q15",
+      "category": "multi_source",
+      "question": "Can we assume the pump warranty is valid after the missed service?",
+      "relevant_ids": [
+        "warranty",
+        "maintenance"
+      ],
+      "judgement_reason": "Contract condition and actual missed maintenance both matter."
+    },
+    {
+      "id": "q16",
+      "category": "multi_source",
+      "question": "What prevents the first funding drawdown?",
+      "relevant_ids": [
+        "loan",
+        "approval"
+      ],
+      "judgement_reason": "Lender conditions and deferred approval both matter."
+    },
+    {
+      "id": "q17",
+      "category": "russian",
+      "question": "Договор финансирования уже подписан?",
+      "relevant_ids": [
+        "loan"
+      ],
+      "judgement_reason": "Draft term sheet explicitly says no signed commitment."
+    },
+    {
+      "id": "q18",
+      "category": "lexical",
+      "question": "How much solar electricity was generated in the first quarter?",
+      "relevant_ids": [
+        "solar"
+      ],
+      "judgement_reason": "Metered generation differs from forecast."
+    },
+    {
+      "id": "q19",
+      "category": "paraphrase",
+      "question": "Did the photovoltaic installation deliver its planned output?",
+      "relevant_ids": [
+        "solar"
+      ],
+      "judgement_reason": "Compare measured generation with forecast in the same record."
+    },
+    {
+      "id": "q20",
+      "category": "russian",
+      "question": "Почему вырос забор пресной воды?",
+      "relevant_ids": [
+        "water"
+      ],
+      "judgement_reason": "Inspection identifies the leak; causality still needs review."
+    },
+    {
+      "id": "q21",
+      "category": "lexical",
+      "question": "What unresolved conflict of interest did Supplier North disclose?",
+      "relevant_ids": [
+        "supplier"
+      ],
+      "judgement_reason": "Supplier declaration identifies director ownership."
+    },
+    {
+      "id": "q22",
+      "category": "paraphrase",
+      "question": "Is there a personal financial connection between the bidder and the purchasing adviser?",
+      "relevant_ids": [
+        "supplier"
+      ],
+      "judgement_reason": "Ownership connection, not a generic procurement rule."
+    },
+    {
+      "id": "q23",
+      "category": "negation",
+      "question": "Has this project received Shariah approval?",
+      "relevant_ids": [
+        "ethics"
+      ],
+      "judgement_reason": "No recorded approval, not an automated religious ruling."
+    },
+    {
+      "id": "q24",
+      "category": "russian",
+      "question": "Есть ли подтверждение шариатского одобрения проекта?",
+      "relevant_ids": [
+        "ethics"
+      ],
+      "judgement_reason": "Referral to qualified reviewers is required."
+    },
+    {
+      "id": "q25",
+      "category": "lexical",
+      "question": "What must be removed before the next shift?",
+      "relevant_ids": [
+        "safety"
+      ],
+      "judgement_reason": "Safety inspection identifies the obstruction."
+    },
+    {
+      "id": "q26",
+      "category": "paraphrase",
+      "question": "Why could workers have difficulty escaping the site?",
+      "relevant_ids": [
+        "safety"
+      ],
+      "judgement_reason": "Blocked emergency exit."
+    },
+    {
+      "id": "q27",
+      "category": "lexical",
+      "question": "What is actual capital expenditure compared with the approved budget?",
+      "relevant_ids": [
+        "budget"
+      ],
+      "judgement_reason": "Cost control report contains both amounts."
+    },
+    {
+      "id": "q28",
+      "category": "russian",
+      "question": "Есть ли перерасход капитального бюджета?",
+      "relevant_ids": [
+        "budget"
+      ],
+      "judgement_reason": "Compare actual and approved expenditure."
+    },
+    {
+      "id": "q29",
+      "category": "multi_source",
+      "question": "Are the emissions figures independently assured or only awaiting an audit?",
+      "relevant_ids": [
+        "emissions",
+        "audit"
+      ],
+      "judgement_reason": "Disclosure and engagement status must be distinguished."
+    },
+    {
+      "id": "q30",
+      "category": "lexical",
+      "question": "What were reported Scope 1 emissions?",
+      "relevant_ids": [
+        "emissions"
+      ],
+      "judgement_reason": "Reported, not independently verified, emissions."
+    },
+    {
+      "id": "q31",
+      "category": "no_answer",
+      "question": "What was the CEO salary in 2026?",
+      "relevant_ids": [],
+      "judgement_reason": "No remuneration source in this corpus."
+    },
+    {
+      "id": "q32",
+      "category": "no_answer",
+      "question": "What is the certified gold reserve tonnage?",
+      "relevant_ids": [],
+      "judgement_reason": "No mineral reserve certificate in this corpus."
+    },
+    {
+      "id": "q33",
+      "category": "no_answer",
+      "question": "What is the signed interest rate on the project loan?",
+      "relevant_ids": [],
+      "judgement_reason": "The draft term sheet supplies no interest rate."
+    },
+    {
+      "id": "q34",
+      "category": "no_answer",
+      "question": "Кто выиграл тендер на поставку насосов?",
+      "relevant_ids": [],
+      "judgement_reason": "No tender award record in this corpus."
+    },
+    {
+      "id": "q35",
+      "category": "no_answer",
+      "question": "What causal carbon reduction can be attributed to the insulation?",
+      "relevant_ids": [],
+      "judgement_reason": "No causal carbon assessment; heat monitoring is not carbon attribution."
+    }
+  ]
+}

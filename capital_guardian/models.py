@@ -70,6 +70,37 @@ from django.db import models
 from gold_intelligence.models import CapitalBudgetLine, EquipmentSpec, GoldProject, MineTimelineMilestone
 
 
+class RiskFollowUp(models.Model):
+    """Durable internal document task; its approval never authorises a payment."""
+    project = models.ForeignKey(GoldProject, on_delete=models.PROTECT, related_name='risk_followups')
+    session = models.OneToOneField('ai_observatory.AnalysisSession', on_delete=models.PROTECT, related_name='risk_followup')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+    rule_key = models.CharField(max_length=60)
+    trigger_digest = models.CharField(max_length=64)
+    risk_snapshot = models.JSONField()
+    state = models.CharField(max_length=24, default='awaiting_document', choices=[
+        ('awaiting_document', 'Awaiting document'), ('ready', 'Ready to recalculate'),
+        ('failed', 'Failed, retry available'), ('awaiting_approval', 'Awaiting human approval'),
+        ('approved', 'Review approved'), ('rejected', 'Review rejected'),
+    ])
+    document_request = models.TextField()
+    document_revision = models.PositiveIntegerField(default=0)
+    citation = models.JSONField(default=dict, blank=True)
+    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    attempts = models.PositiveIntegerField(default=0)
+    last_error = models.CharField(max_length=120, blank=True)
+    score_snapshot = models.JSONField(default=dict, blank=True)
+    assessment_digest = models.CharField(max_length=64, blank=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    review_notes = models.TextField(blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=('project', 'rule_key', 'trigger_digest'), name='unique_risk_followup_trigger')]
+
+
 class ProjectGovernance(models.Model):
     """
     Conceptual demo governance/SPV structure for one GoldProject. Explicitly

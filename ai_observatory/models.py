@@ -214,10 +214,14 @@ class PipelineStageExecution(models.Model):
     # candidates blocked, ...) — NULL when the stage has no natural count.
     items_processed = models.PositiveIntegerField(null=True, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
+    # NULL exempts legacy telemetry from the composite unique event key.
+    event_key = models.CharField(max_length=160, null=True, blank=True)  # noqa: DJ001
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:
         ordering = ['started_at', 'pk']
         verbose_name = 'Pipeline Stage Execution'
+        constraints = [models.UniqueConstraint(fields=('session', 'event_key'), name='unique_session_event_key')]
 
     def __str__(self):
         return f'{self.stage_key} ({self.category}, {self.duration_ms}ms)'

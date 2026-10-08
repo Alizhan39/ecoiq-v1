@@ -60,7 +60,9 @@ def _ensure_scored(profiles):
 
 
 def _evidence_to_dict(memory):
+    from evidence_memory.services.citations import capture_citation
     return {
+        'memory_id': memory.pk, 'citation': capture_citation(memory),
         'excerpt': memory.text_chunk[:400], 'source_type': memory.get_source_type_display(),
         'entity': memory.company.company.name if memory.company_id and memory.company.company_id else (memory.country.name if memory.country_id else ''),
         'confidence': memory.confidence, 'date': memory.date_collected.isoformat() if memory.date_collected else None,
@@ -82,12 +84,12 @@ def _retrieve_evidence(question_text, profiles, countries, *, user=None, project
     if project is not None or (not profiles and not countries):
         for memory in search_similar(question_text, top_k=MAX_EVIDENCE_PER_ENTITY, **context):
             items.append(_evidence_to_dict(memory))
-    # Deduplicate on excerpt text — the same finding retrieved via two paths should appear once.
+    # Deduplicate by record identity; equal wording in different sources must retain both citations.
     seen, deduped = set(), []
     for item in items:
-        if item['excerpt'] in seen:
+        if item['memory_id'] in seen:
             continue
-        seen.add(item['excerpt'])
+        seen.add(item['memory_id'])
         deduped.append(item)
     return deduped
 
@@ -158,7 +160,7 @@ def _build_executive_answer(intent, ranking, availability_status):
     if not ranked:
         return "EcoIQ resolved the question's scope, but no company currently has enough scoring data to answer with confidence."
     top = ranked[0]
-    sentence = f'Based on available EcoIQ evidence, {top["name"]} currently shows the strongest signal among the {len(ranked)} compan{"y" if len(ranked)==1 else "ies"} considered'
+    sentence = f'Based on stored EcoIQ scores, {top["name"]} currently shows the strongest signal among the {len(ranked)} compan{"y" if len(ranked)==1 else "ies"} considered'
     if len(ranked) > 1:
         sentence += f', followed by {ranked[1]["name"]}.'
     else:
@@ -291,6 +293,16 @@ def answer_question(question_text, execution_mode='deterministic_test', *, user=
         'visualizations': visualizations,
         'follow_up_questions': _build_follow_up_questions(ranking, intent),
     }
+
+    from decision_studio.services.citation_support import add_claim_support
+    from evidence_memory.services.citations import INSUFFICIENT
+    add_claim_support(result)
+    # Neither similarity nor a stored score proves that a document supports a
+    # material recommendation. Preserve the candidate for review in claims.
+    if intent in ('RECOMMEND', 'PRIORITISE'):
+        result.update(executive_answer=INSUFFICIENT, recommendation=INSUFFICIENT,
+                      confidence_label='INSUFFICIENT_EVIDENCE', confidence_score=None)
+        confidence_label, confidence_score = 'INSUFFICIENT_EVIDENCE', None
 
     return {
         'intent': intent, 'scope': scope, 'entities': entities, 'capability_plan': plan,

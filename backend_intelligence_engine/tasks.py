@@ -262,11 +262,13 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
     relevant_memories = search_similar(
         memory_query, top_k=3, company=company, country=country, project=project, user=user,
     )
+    from evidence_memory.services.citations import capture_citation
+    citations = [capture_citation(m) for m in relevant_memories]
     memory_ids = [m.pk for m in relevant_memories]
     if relevant_memories:
         memory_context = '\n'.join(
-            f'- [EvidenceMemory:{m.pk}; source={m.source_reference or "unspecified"}] {m.text_chunk}'
-            for m in relevant_memories
+            f'- [EvidenceMemory:{c["memory_id"]}; citation={c["citation_id"]}; source={c["source_reference"] or "unspecified"}; version={c["document_version"]}] {c["quote"]}'
+            for c in citations
         )
         full_input_summary = f'{base_input}\n\nRelevant prior evidence (from EcoIQ memory):\n{memory_context}'
     else:
@@ -276,6 +278,7 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
     agent_run = create_agent_run(
         agent_entry['name'], task_type, council_case=council_run, execution_mode=execution_mode,
         input_summary=full_input_summary, project=project, user=user,
+        evidence_provenance=citations,
     )
     agent_run = execute_agent(agent_run)
 
@@ -293,7 +296,7 @@ def run_ai_analysis(self, agent_slug, case_slug=None, execution_mode='determinis
         'agent_run_id': agent_run.pk, 'agent_run_status': agent_run.status,
         'schema_valid': agent_run.schema_valid, 'safety_status': agent_run.safety_status,
         'council_task_id': council_task_id,
-        'memories_retrieved': memory_ids, 'memory_saved_id': memory_saved_id,
+        'memories_retrieved': memory_ids, 'memory_saved_id': memory_saved_id, 'citations': citations,
     }
 
     if agent_run.status == 'failed':

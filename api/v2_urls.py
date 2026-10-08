@@ -14,12 +14,15 @@ from django.urls import path
 
 from api import (
     v2_assessment, v2_contact, v2_kpi, v2_platform, v2_principles, v2_projects,
-    v2_session, v2_views,
+    v2_session, v2_views, v2_risk_workflows,
 )
 
 app_name = 'api_v2'
 
 urlpatterns = [
+    path('projects/<slug:slug>/risk-workflows/', v2_risk_workflows.workflows, name='risk_workflows'),
+    path('projects/<slug:slug>/risk-workflows/<int:task_id>/', v2_risk_workflows.detail, name='risk_workflow_detail'),
+    path('projects/<slug:slug>/audit/<int:session_id>/', v2_risk_workflows.audit_trace, name='project_audit_trace'),
     path('',                       v2_views.api_root_v2,       name='root'),
     # Platform counters and module statuses. The single source of truth for
     # any number the product shows about itself.

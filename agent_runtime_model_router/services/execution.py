@@ -12,6 +12,7 @@ instances and plain dicts only.
 import hashlib
 import json
 
+from django.db import transaction
 from django.utils import timezone
 
 from agent_runtime_model_router.models import AgentRegistryEntry, AgentRun
@@ -146,6 +147,7 @@ def _compute_idempotency_key(council_case_id, agent_id, task_type, input_evidenc
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
+@transaction.atomic
 def create_agent_run(agent_name, task_type, council_case=None, execution_mode='live',
                       input_summary='', evidence_provenance=None, rerun_reason='', *, project=None, user=None):
     """
@@ -156,13 +158,18 @@ def create_agent_run(agent_name, task_type, council_case=None, execution_mode='l
     """
     if project is not None:
         from gold_intelligence.access import require, ANALYSE
+        from gold_intelligence.models import GoldProject
+        project = GoldProject.objects.select_for_update().get(pk=project.pk)
         require(user, project, ANALYSE)
         if council_case is not None:
             raise ValueError('Project analysis cannot publish to an unscoped Council case.')
     agent = AgentRegistryEntry.objects.get(agent_name=agent_name)
     evidence_provenance = evidence_provenance or []
 
-    if evidence_provenance:
+    if project is not None:
+        version_source = json.dumps({'evidence': evidence_provenance, 'input': input_summary,
+                                     'actor': user.pk, 'pack_hash': agent.content_hash}, sort_keys=True)
+    elif evidence_provenance:
         version_source = json.dumps(evidence_provenance, sort_keys=True)
     else:
         version_source = input_summary
@@ -173,14 +180,18 @@ def create_agent_run(agent_name, task_type, council_case=None, execution_mode='l
         input_evidence_version, agent.training_pack_version, execution_mode,
     )
 
-    existing = AgentRun.objects.filter(
-        idempotency_key=idempotency_key, status='completed', project=project,
-    ).order_by('-created_at').first()
+    candidates = AgentRun.objects.filter(idempotency_key=idempotency_key, project=project)
+    if project is None:
+        candidates = candidates.filter(status='completed')
+    existing = candidates.order_by('-created_at').first()
 
     if existing and not rerun_reason:
         return existing
 
+    from ai_observatory.models import AnalysisSession
+    session = AnalysisSession.objects.create(project=project, user=user, kind='other') if project is not None else None
     return AgentRun.objects.create(
+        observatory_session=session,
         council_case=council_case, agent=agent, task_type=task_type, project=project,
         execution_mode_requested=execution_mode, input_summary=input_summary,
         evidence_provenance=evidence_provenance, idempotency_key=idempotency_key,
@@ -253,7 +264,61 @@ def _prior_evidence_by_id(agent_run):
     return by_id
 
 
-def execute_agent(agent_run, sensitivity_level='standard', requires_vision=False,
+def execute_agent(agent_run, *args, observatory_session=None, **kwargs):
+    """One audit session for project sources, routing, calls and final state.
+
+Scoped runs are claimed once before a physical call. A crash leaves an
+ambiguous run for operator investigation, never an automatic paid replay.
+Unscoped legacy executions retain their existing contract.
+"""
+    from ai_observatory.services.governance import record_event
+    from evidence_memory.services.citations import resolve_citation
+    from gold_intelligence.access import require, ANALYSE
+    session = observatory_session or agent_run.observatory_session
+    if agent_run.project_id is not None:
+        if session is None or session.project_id != agent_run.project_id:
+            raise ValueError('Project execution requires its own Observatory session.')
+        require(session.user, agent_run.project, ANALYSE)
+    if agent_run.observatory_session_id and session.pk != agent_run.observatory_session_id:
+        raise ValueError('An agent run cannot be rebound to another audit session.')
+    if agent_run.project_id is not None:
+        agent_run.refresh_from_db()
+        refs = []
+        for item in agent_run.evidence_provenance:
+            if not isinstance(item, dict):
+                continue
+            if 'snapshot_id' in item:
+                resolved = resolve_citation(item, user=session.user, project=agent_run.project)
+                if resolved['source_changed'] or resolved['expired']:
+                    raise ValueError('Source changed or expired before model execution.')
+            refs.append({k: item[k] for k in ('evidence_id', 'memory_id', 'snapshot_id', 'snapshot_sha256') if k in item})
+        if agent_run.status in ('completed', 'failed', 'blocked', 'needs_human_review'):
+            return agent_run
+        with transaction.atomic():
+            claimed = AgentRun.objects.filter(pk=agent_run.pk, status='pending').update(status='running')
+            if not claimed:
+                raise ValueError('Execution already running or interrupted; do not replay an uncertain model call.')
+            record_event(session, f'agent:{agent_run.pk}:sources', 'agent_sources', actor=session.user,
+                         metadata={'agent_run_id': agent_run.pk, 'sources': refs})
+    elif session is not None:
+        agent_run.observatory_session = session
+        agent_run.save(update_fields=['observatory_session'])
+    try:
+        result = _execute_agent(agent_run, *args, observatory_session=session, **kwargs)
+        if agent_run.project_id is not None:
+            record_event(session, f'agent:{agent_run.pk}:result', 'agent_result', actor=session.user,
+                         metadata={'agent_run_id': agent_run.pk, 'status': result.status,
+                                   'provider': result.model_provider, 'model': result.model_name,
+                                   'estimated_cost_usd': result.estimated_cost_usd,
+                                   'human_review_required': result.human_approval_required})
+        return result
+    except Exception:
+        if agent_run.project_id is not None:
+            AgentRun.objects.filter(pk=agent_run.pk).update(status='needs_human_review', human_approval_required=True)
+        raise
+
+
+def _execute_agent(agent_run, sensitivity_level='standard', requires_vision=False,
                    requires_reasoning=False, context_length=0, cost_class='standard',
                    fixture_output=None, allow_deterministic_fallback=False,
                    evidence_quality_score=70, unresolved_disagreements=0,
@@ -264,13 +329,10 @@ def execute_agent(agent_run, sensitivity_level='standard', requires_vision=False
     (with fallback handling) -> validate -> safety-check -> calibrate. Never
     relabels a failed live run as simulated_demo — see the fallback branch.
 
-    observatory_session (feat/model-router-observatory): an optional
-    ai_observatory.AnalysisSession the caller ALREADY owns for the project
-    this run belongs to. When provided, each recorded ModelInvocation links
-    to it; when absent, invocations are recorded honestly unlinked
-    (session=NULL) — the router has no reliable project context of its own
-    (AgentRun knows only its council case), and a guessed link would weaken
-    project isolation.
+    The public execute_agent boundary binds project runs to their persisted
+    AnalysisSession and validates its actor/project before entering here.
+    Legacy unscoped calls can supply an existing session; otherwise their
+    physical model invocations remain honestly unlinked.
     """
     agent_run.status = 'running'
     agent_run.started_at = timezone.now()
@@ -313,6 +375,13 @@ def execute_agent(agent_run, sensitivity_level='standard', requires_vision=False
     agent_run.estimated_input_tokens = input_tokens
     agent_run.estimated_output_tokens = output_tokens
     agent_run.estimated_cost_usd = estimated_cost
+
+    if agent_run.project_id is not None:
+        from ai_observatory.services.governance import record_event
+        record_event(observatory_session, f'agent:{agent_run.pk}:route', 'model_routed', actor=observatory_session.user,
+                     metadata={'agent_run_id': agent_run.pk, 'provider': route['selected_provider'],
+                               'model': route['selected_model'], 'reason': route['reason'],
+                               'estimated_cost_usd': estimated_cost})
 
     cost_check = check_cost_policy(estimated_cost, agent_run.council_case, cost_class)
     if not cost_check['allowed']:
