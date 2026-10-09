@@ -91,3 +91,58 @@ describe('Interactive lab', () => {
     expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes('lang=ar'))).toBe(true);
   });
 });
+
+
+describe('Interactive lab recovery and focus', () => {
+  it('keeps keyboard focus on retry after an import failure', async () => {
+    load.mockRejectedValueOnce(new Error('Offline'));
+    render(<InteractiveLab />);
+    const button = await screen.findByRole('button', { name: 'Load 3D model' });
+    button.focus();
+    await userEvent.keyboard('{Enter}');
+    await screen.findByRole('alert');
+    expect(screen.getByRole('button', { name: 'Load 3D model' })).toHaveFocus();
+  });
+
+  it('restores focus after AR permission rejection without losing text', async () => {
+    vi.stubGlobal('isSecureContext', true);
+    const { container } = render(<InteractiveLab />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Load 3D model' }));
+    const button = await screen.findByRole('button', { name: 'View in your space' });
+    const element = container.querySelector('model-viewer')!;
+    Object.defineProperties(element, {
+      canActivateAR: { value: true },
+      activateAR: { value: vi.fn().mockRejectedValue(new DOMException('Denied', 'NotAllowedError')) },
+    });
+    fireEvent(element, new Event('load'));
+    await userEvent.click(button);
+    await screen.findByRole('alert');
+    expect(screen.getByRole('button', { name: 'Load 3D model' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Energy' })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Load 3D model' }));
+    expect(await screen.findByRole('button', { name: 'View in your space' })).toBeDisabled();
+  });
+
+  it('does not steal text-interface focus when an AR status failure arrives', async () => {
+    const { container } = render(<InteractiveLab />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Load 3D model' }));
+    await screen.findByRole('button', { name: 'View in your space' });
+    const textButton = container.querySelector<HTMLButtonElement>('.interactive-parts button')!;
+    textButton.focus();
+    fireEvent(container.querySelector('model-viewer')!, new CustomEvent('ar-status', {
+      detail: { status: 'failed' },
+    }));
+    await screen.findByRole('alert');
+    expect(textButton).toHaveFocus();
+  });
+
+  it('does not enable AR on insecure pages even when the viewer reports support', async () => {
+    const { container } = render(<InteractiveLab />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Load 3D model' }));
+    const button = await screen.findByRole('button', { name: 'View in your space' });
+    const element = container.querySelector('model-viewer')!;
+    Object.defineProperty(element, 'canActivateAR', { value: true });
+    fireEvent(element, new Event('load'));
+    expect(button).toBeDisabled();
+  });
+});

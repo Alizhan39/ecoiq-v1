@@ -307,3 +307,7 @@ docs/knowledge/vault/*
 # review workbench — so it is working material, not project source, and it must
 # not reach a commit by being sitting in the tree when someone types `git add`.
 .playwright-mcp/
+
+# Browser verification output
+frontend/web/test-results/
+frontend/web/playwright-report/

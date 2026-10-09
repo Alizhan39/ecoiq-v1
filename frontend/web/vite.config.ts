@@ -39,6 +39,7 @@ export default defineConfig({
     sourcemap: false,
   },
   test: {
+    include: ['src/**/*.test.{ts,tsx}'],
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test-setup.ts'],

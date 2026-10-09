@@ -108,3 +108,18 @@ Future real assets require publication and organisation authorization checks,
 reviewed model uploads, format/size validation, and evidence links resolved
 through the existing evidence permission boundary. Do not add arbitrary URL
 fetching or expose private R2 URLs to this anonymous demonstration endpoint.
+
+## Repeatable browser checks
+
+From `frontend/web`, run `npm ci`, `npx playwright install chromium`,
+`npm run build`, then `npm run test:browser`. The dedicated GitHub Actions
+workflow runs the same checks and uploads screenshots/traces. These checks use
+real compiled SPA/GLB assets and a local catalogue-backed API fixture server;
+they do not replace the Django API tests or production HTTPS smoke checks.
+
+The suite covers four-language 375 px overflow, keyboard part selection and
+visible focus, deferred viewer download, chunk-failure focus recovery and actual
+GLB loading. Screenshots require human inspection; passing numeric checks alone
+is not visual sign-off. Permission rejection / AR status recovery also have
+component regressions, but only physical devices can certify native handoff.
+See [release verification](RELEASE_346_347.md) for the remaining release gates.
