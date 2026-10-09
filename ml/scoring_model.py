@@ -2,8 +2,9 @@
 ml/scoring_model.py — GradientBoostingRegressor EcoIQ scorer with SHAP.
 
 Training strategy:
-  - Uses existing ecoiq_score as supervision signal (self-supervised refinement)
-  - Adds small amount of noise to prevent model just learning identity
+  - Uses existing ecoiq_score as supervision signal (score approximation)
+  - Evaluates shuffled folds with preprocessing fitted inside each fold
+  - Reports a mean-score baseline; this is not independent evidence validation
   - SHAP TreeExplainer explains feature contributions per company
 
 Usage:
@@ -90,7 +91,7 @@ class EcoIQScoringModel:
             logger.warning('Scoring model not loaded: %s', exc)
             return False
 
-    def train(self, companies=None, apply: bool = False) -> dict:
+    def train(self, companies=None, apply: bool = False, *, output_dir=None) -> dict:
         """
         Train the GBR model on all companies with ecoiq_score > 0.
 
@@ -103,41 +104,26 @@ class EcoIQScoringModel:
         """
         from sklearn.ensemble import GradientBoostingRegressor
         from sklearn.preprocessing import StandardScaler
-        from sklearn.model_selection import cross_val_score
-        import joblib
+        from sklearn.model_selection import KFold, cross_validate
+        from sklearn.pipeline import make_pipeline
+        from sklearn.dummy import DummyRegressor
         from league.models import Company
-        from ml.features import company_to_vector, get_feature_names
+        from ml.training import (
+            artifact_directory, save_training_run, training_metadata, training_rows,
+        )
+
+        directory = artifact_directory(output_dir, MODEL_PATH.parent, apply=apply)
 
         if companies is None:
             companies = Company.objects.filter(ecoiq_score__gt=0).select_related('profile')
 
-        X_rows, y_rows, ids = [], [], []
-        for company in companies:
-            try:
-                vec   = company_to_vector(company)
-                score = float(company.ecoiq_score)
-                if score <= 0:
-                    continue
-                X_rows.append(vec)
-                y_rows.append(score)
-                ids.append(company.pk)
-            except Exception as exc:
-                logger.debug('Feature extraction failed for %s: %s', company, exc)
-
-        if len(X_rows) < 5:
-            logger.warning('Not enough training samples (%d). Need at least 5.', len(X_rows))
-            return {'error': 'insufficient_data', 'n_samples': len(X_rows)}
-
-        X = np.array(X_rows, dtype=np.float64)
-        y = np.array(y_rows, dtype=np.float64)
-
-        # Small noise prevents pure identity memorisation
-        rng = np.random.default_rng(42)
-        y_noisy = y + rng.normal(0, 1.5, size=len(y))
-        y_noisy = np.clip(y_noisy, 0, 100)
-
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
+        companies = list(companies)
+        X, y, ids, skipped = training_rows(companies, supervised=True)
+        result = training_metadata(X, y, skipped)
+        if len(X) < 5:
+            return {**result, 'error': 'insufficient_data'}
+        if np.ptp(y) == 0:
+            return {**result, 'error': 'constant_target'}
 
         gbr = GradientBoostingRegressor(
             n_estimators=200,
@@ -147,36 +133,43 @@ class EcoIQScoringModel:
             min_samples_leaf=2,
             random_state=42,
         )
-        gbr.fit(X_scaled, y_noisy)
-
-        # Cross-validation R²
-        if len(X_rows) >= 10:
-            cv_scores = cross_val_score(gbr, X_scaled, y_noisy, cv=min(5, len(X_rows)), scoring='r2')
-            r2_mean = float(cv_scores.mean())
-            r2_std  = float(cv_scores.std())
+        # Raw X enters CV: validation rows cannot influence a fold's scaler.
+        if len(X) >= 10:
+            cv = KFold(n_splits=5, shuffle=True, random_state=42)
+            scores = cross_validate(make_pipeline(StandardScaler(), gbr), X, y, cv=cv,
+                scoring={'r2': 'r2', 'mae': 'neg_mean_absolute_error'}, error_score='raise')
+            baseline = cross_validate(DummyRegressor(strategy='mean'), X, y, cv=cv,
+                scoring='neg_mean_absolute_error', error_score='raise')
+            r2_mean = float(scores['test_r2'].mean())
+            r2_std = float(scores['test_r2'].std())
+            result['evaluation'] = {
+                'status': 'MEASURED', 'method': '5-fold shuffled cross-validation',
+                'mae': float(-scores['test_mae'].mean()),
+                'baseline_mae': float(-baseline['test_score'].mean()),
+                'external_validation': False,
+            }
         else:
-            r2_mean = float(gbr.score(X_scaled, y_noisy))
-            r2_std  = 0.0
+            r2_mean = r2_std = None
+            result['evaluation'] = {'status': 'NOT_MEASURED', 'reason': 'fewer_than_10_samples'}
 
-        # Persist
-        MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump(gbr,    MODEL_PATH)
-        joblib.dump(scaler, SCALER_PATH)
+        # Refit the fixed procedure after evaluation. No test-based tuning.
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        gbr.fit(X_scaled, y)
+        result.update(r2_mean=r2_mean, r2_std=r2_std,
+                      target='existing_ecoiq_score', refitted_after_evaluation=True)
+        save_training_run({MODEL_PATH.name: gbr, SCALER_PATH.name: scaler},
+                          directory, 'scoring', result, exclusive=output_dir is not None)
         self.model   = gbr
         self.scaler  = scaler
         self._loaded = True
 
-        logger.info('GBR trained: n=%d, R²=%.3f±%.3f', len(X_rows), r2_mean, r2_std)
+        logger.info('GBR trained: n=%d, CV R²=%s', len(X), r2_mean)
 
         if apply:
             self._apply_scores(companies, ids, X_scaled)
 
-        return {
-            'n_samples': len(X_rows),
-            'r2_mean':   r2_mean,
-            'r2_std':    r2_std,
-            'features':  get_feature_names(),
-        }
+        return result
 
     def _apply_scores(self, companies, ids, X_scaled):
         """

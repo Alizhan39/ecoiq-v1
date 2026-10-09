@@ -43,7 +43,7 @@ class AnomalyDetector:
             logger.warning('Anomaly model not loaded: %s', exc)
             return False
 
-    def train(self, companies=None, apply: bool = False) -> dict:
+    def train(self, companies=None, apply: bool = False, *, output_dir=None) -> dict:
         """
         Train Isolation Forest on all companies with scores.
 
@@ -51,28 +51,22 @@ class AnomalyDetector:
         """
         from sklearn.ensemble import IsolationForest
         from sklearn.preprocessing import StandardScaler
-        import joblib
         from league.models import Company
-        from ml.features import company_to_vector
+        from ml.training import (
+            artifact_directory, save_training_run, training_metadata, training_rows,
+        )
+
+        directory = artifact_directory(output_dir, MODEL_PATH.parent, apply=apply)
 
         if companies is None:
             companies = list(
                 Company.objects.filter(ecoiq_score__gt=0).select_related('profile')
             )
 
-        X_rows, ids = [], []
-        for company in companies:
-            try:
-                vec = company_to_vector(company)
-                X_rows.append(vec)
-                ids.append(company.pk)
-            except Exception as exc:
-                logger.debug('Feature extraction failed for %s: %s', company, exc)
-
-        if len(X_rows) < 5:
-            return {'error': 'insufficient_data', 'n_samples': len(X_rows)}
-
-        X = np.array(X_rows, dtype=np.float64)
+        X, y, ids, skipped = training_rows(companies)
+        result = training_metadata(X, y, skipped)
+        if len(X) < 5:
+            return {**result, 'error': 'insufficient_data'}
 
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
@@ -85,10 +79,6 @@ class AnomalyDetector:
         )
         iforest.fit(X_scaled)
 
-        MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-        import joblib as _jl
-        _jl.dump(iforest, MODEL_PATH)
-        _jl.dump(scaler,  SCALER_PATH)
         self.model   = iforest
         self.scaler  = scaler
         self._loaded = True
@@ -99,16 +89,19 @@ class AnomalyDetector:
 
         logger.info(
             'IsolationForest trained: n=%d, anomalies=%d (%.1f%%)',
-            len(X_rows), n_anomalies, 100 * n_anomalies / max(len(X_rows), 1),
+            len(X), n_anomalies, 100 * n_anomalies / max(len(X), 1),
         )
+
+        result.update(n_anomalies=n_anomalies,
+                      evaluation={'status': 'NOT_MEASURED', 'reason': 'no_reviewed_anomaly_labels'},
+                      findings_basis='statistical_outliers_not_verified_wrongdoing')
+        save_training_run({MODEL_PATH.name: iforest, SCALER_PATH.name: scaler},
+                          directory, 'anomaly', result, exclusive=output_dir is not None)
 
         if apply:
             self._apply(ids, anomaly_scores, flags)
 
-        return {
-            'n_samples':   len(X_rows),
-            'n_anomalies': n_anomalies,
-        }
+        return result
 
     def _apply(self, ids, anomaly_scores, flags):
         """Write anomaly_score and is_anomaly to Company records."""
