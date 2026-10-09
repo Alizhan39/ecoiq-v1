@@ -95,6 +95,7 @@ export default function Labs() {
           modules={modules.filter((m) => m.status === status)}
         />
       ))}
+      <p><a href="/labs/interactive">Interactive 3D and AR demonstration</a> — experimental, with no measured asset data.</p>
     </div>
   );
 }
