@@ -239,6 +239,8 @@ def api_root_v2(request):
         ),
         'score_status_values': ['PUBLISHED', 'INSUFFICIENT_EVIDENCE'],
         'endpoints': {
+            'interactive_libraries': '/api/v2/interactive/libraries/',
+            'interactive_scenes': '/api/v2/interactive/scenes/',
             'companies': '/api/v2/companies/',
             'company_detail': '/api/v2/companies/<slug>/',
             'leaderboard': '/api/v2/leaderboard/',

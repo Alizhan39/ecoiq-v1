@@ -34,6 +34,7 @@ export const ROUTE_TITLES: Record<string, string> = {
   '/pricing': 'Pricing — EcoIQ',
   '/league': 'League — EcoIQ',
   '/labs': 'EcoIQ Labs — EcoIQ',
+  '/labs/interactive': 'Interactive 3D and AR lab — EcoIQ',
   '/trust': 'Trust Center — EcoIQ',
   '/industrial-modernisation': 'Industrial modernisation — EcoIQ',
   '/industrial-modernisation-preview': 'Industrial modernisation preview — EcoIQ',

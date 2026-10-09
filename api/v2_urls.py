@@ -13,13 +13,16 @@ maintenance surface for no truthfulness gain.
 from django.urls import path
 
 from api import (
-    v2_assessment, v2_contact, v2_kpi, v2_platform, v2_principles, v2_projects,
+    v2_assessment, v2_contact, v2_interactive, v2_kpi, v2_platform, v2_principles, v2_projects,
     v2_session, v2_views,
 )
 
 app_name = 'api_v2'
 
 urlpatterns = [
+    path('interactive/libraries/', v2_interactive.libraries, name='interactive_libraries'),
+    path('interactive/scenes/', v2_interactive.scenes, name='interactive_scenes'),
+    path('interactive/scenes/<slug:scene_id>/', v2_interactive.scene, name='interactive_scene'),
     path('',                       v2_views.api_root_v2,       name='root'),
     # Platform counters and module statuses. The single source of truth for
     # any number the product shows about itself.

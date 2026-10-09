@@ -309,6 +309,10 @@ ROUTE_META: dict[str, dict[str, str]] = {
             'Experimental and planned work, listed with its real status. '
             'Nothing here is presented as a production capability.'),
     },
+    '/labs/interactive': {
+        'title': 'Interactive 3D and AR lab — EcoIQ',
+        'description': 'An experimental 3D demonstration with optional device AR. No measured asset data.',
+    },
     '/trust': {
         'title': 'Trust Center — EcoIQ',
         'description': (

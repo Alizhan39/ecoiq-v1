@@ -7,6 +7,7 @@ from harvester import views as harvester_views
 from . import spa
 
 urlpatterns = [
+    path('labs/interactive/', spa.spa_view, name='interactive_lab'),
     # Landing page — public homepage
     # ── React SPA ─────────────────────────────────────────────────────────
     #
