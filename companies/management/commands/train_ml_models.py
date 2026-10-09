@@ -2,15 +2,12 @@
 train_ml_models — Train and optionally apply all EcoIQ ML models.
 
 Usage:
-    python manage.py train_ml_models                         # train all, no apply
-    python manage.py train_ml_models --apply                 # train all + write to DB
-    python manage.py train_ml_models --model=scoring         # only GBR scoring
-    python manage.py train_ml_models --model=anomaly --apply
-    python manage.py train_ml_models --model=clustering --apply
-    python manage.py train_ml_models --model=prediction --apply
     python manage.py train_ml_models --output-dir=/secure/ecoiq/candidates/run-001
+    python manage.py train_ml_models --model=prediction  # read-only OLS preview
 
-Without --output-dir, training still replaces the legacy artefact files.
+Training requires a new candidate output directory by default. The explicit
+--allow-legacy-write escape hatch permits legacy artefact replacement and
+--apply database updates. It is NOT an approval of model quality.
 Candidate output never applies scores to database records. OLS is a preview,
 not an independently trained neural model.
 
@@ -35,6 +32,10 @@ class Command(BaseCommand):
             help='New directory for candidate models and JSON evaluation reports (no DB apply)',
         )
         parser.add_argument(
+            '--allow-legacy-write', action='store_true',
+            help='Explicitly permit legacy artefact replacement / DB apply; not quality approval',
+        )
+        parser.add_argument(
             '--model',
             type=str,
             choices=['all', 'scoring', 'anomaly', 'clustering', 'prediction'],
@@ -56,6 +57,19 @@ class Command(BaseCommand):
         self.output_dir = Path(options['output_dir']) if options['output_dir'] else None
         if apply and self.output_dir:
             raise CommandError('--output-dir candidates cannot be combined with --apply.')
+        legacy_write = options['allow_legacy_write']
+        if legacy_write and self.output_dir:
+            raise CommandError('--allow-legacy-write cannot be combined with --output-dir.')
+        if not self.output_dir and not legacy_write and (model_choice != 'prediction' or apply):
+            raise CommandError(
+                'Use --output-dir for safe candidate training. Legacy writes require '
+                '--allow-legacy-write after independent review; --apply alone is not sufficient.'
+            )
+        if legacy_write:
+            self.stderr.write(self.style.WARNING(
+                'Legacy writes enabled: training may replace active artefacts; --apply also '
+                'updates company records. This flag does not establish production readiness.'
+            ))
         width        = 60
 
         self.stdout.write('═' * width)

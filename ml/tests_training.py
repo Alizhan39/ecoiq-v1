@@ -158,3 +158,45 @@ class TrainingTests(SimpleTestCase):
                 self.assertRaises(CommandError):
             command._run_prediction([], True)
         self.assertNotIn('✓', command.stdout.getvalue())
+
+
+class TrainingCommandSafetyTests(SimpleTestCase):
+    def test_unsafe_invocations_fail_before_querying_or_training(self):
+        for options in ({}, {'model': 'scoring'}, {'apply': True},
+                        {'model': 'prediction', 'apply': True}):
+            with self.subTest(options=options), patch('league.models.Company.objects.filter') as query, \
+                    patch('ml.scoring_model.EcoIQScoringModel.train') as train:
+                with self.assertRaisesMessage(CommandError, 'Use --output-dir'):
+                    call_command('train_ml_models', stdout=StringIO(), **options)
+                query.assert_not_called()
+                train.assert_not_called()
+
+    def test_candidate_and_legacy_modes_are_mutually_exclusive(self):
+        with patch('league.models.Company.objects.filter') as query:
+            with self.assertRaisesMessage(CommandError, 'cannot be combined'):
+                call_command('train_ml_models', output_dir='/unused/candidate',
+                             allow_legacy_write=True, stdout=StringIO())
+            query.assert_not_called()
+
+    def test_prediction_preview_remains_read_only_without_override(self):
+        from unittest.mock import MagicMock
+        query = MagicMock()
+        query.select_related.return_value.order_by.return_value = [SimpleNamespace(name='Fixture')]
+        with patch('league.models.Company.objects.filter', return_value=query), \
+                patch('ml.prediction.predict_12m', return_value=50) as preview, \
+                patch('ml.prediction.apply_predictions') as apply:
+            call_command('train_ml_models', model='prediction', stdout=StringIO())
+            preview.assert_called_once()
+            apply.assert_not_called()
+
+    def test_explicit_legacy_override_warns_and_passes_apply(self):
+        from unittest.mock import MagicMock
+        query = MagicMock()
+        query.select_related.return_value.order_by.return_value = [SimpleNamespace(name='Fixture')]
+        errors = StringIO()
+        with patch('league.models.Company.objects.filter', return_value=query), \
+                patch('ml.prediction.apply_predictions', return_value={'updated': 1, 'failed': 0}) as apply:
+            call_command('train_ml_models', model='prediction', apply=True,
+                         allow_legacy_write=True, stdout=StringIO(), stderr=errors)
+            apply.assert_called_once()
+        self.assertIn('does not establish production readiness', errors.getvalue())

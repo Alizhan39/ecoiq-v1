@@ -31,6 +31,9 @@ interface Props {
 
 export function ModelScene({ scene, selected, onSelect, labels }: Props) {
   const viewer = useRef<ModelViewerElement>(null);
+  const region = useRef<HTMLElement>(null);
+  const retry = useRef<HTMLButtonElement>(null);
+  const restoreFocus = useRef(false);
   const alive = useRef(true);
   const [state, setState] = useState<'idle' | 'loading' | 'registered' | 'ready' | 'error'>('idle');
   const [canAR, setCanAR] = useState(false);
@@ -41,13 +44,31 @@ export function ModelScene({ scene, selected, onSelect, labels }: Props) {
   }, []);
 
   useEffect(() => {
+    if (state === 'error' && (restoreFocus.current || document.activeElement === region.current)) {
+      retry.current?.focus();
+    }
+    restoreFocus.current = false;
+  }, [state]);
+
+  const fail = () => {
+    if (!alive.current) return;
+    restoreFocus.current = !!viewer.current?.contains(document.activeElement);
+    setState('error');
+    setCanAR(false);
+  };
+
+  useEffect(() => {
     const element = viewer.current;
     if (!element) return undefined;
     const loaded = () => {
       setState('ready');
       setCanAR(window.isSecureContext && element.canActivateAR);
     };
-    const failed = () => { setState('error'); setCanAR(false); };
+    const failed = () => {
+      restoreFocus.current = element.contains(document.activeElement);
+      setState('error');
+      setCanAR(false);
+    };
     const arStatus = (event: Event) => {
       if ((event as CustomEvent<{ status: string }>).detail.status === 'failed') failed();
     };
@@ -64,6 +85,9 @@ export function ModelScene({ scene, selected, onSelect, labels }: Props) {
   }, [registered, scene.model_url]);
 
   const load = async () => {
+    // Keep focus in the viewer when its load button is removed. Do not move it
+    // again on success: the user may have continued into the text interface.
+    if (document.activeElement === retry.current) region.current?.focus();
     setState('loading');
     try {
       await loadViewer();
@@ -74,9 +98,9 @@ export function ModelScene({ scene, selected, onSelect, labels }: Props) {
   };
 
   return (
-    <section className="interactive-viewer" aria-label={labels.alt}>
+    <section ref={region} tabIndex={-1} className="interactive-viewer" aria-label={labels.alt}>
       {(state === 'idle' || state === 'error') && (
-        <button type="button" onClick={() => void load()}>{labels.load}</button>
+        <button ref={retry} type="button" onClick={() => void load()}>{labels.load}</button>
       )}
       {(state === 'loading' || state === 'registered') && <p role="status">{labels.loading}</p>}
       {state === 'error' && <p role="alert">{labels.error}</p>}
@@ -86,9 +110,7 @@ export function ModelScene({ scene, selected, onSelect, labels }: Props) {
           {/* Override the native button: enable only after actual capability
               detection. activateAR runs directly in the user click gesture. */}
           <button slot="ar-button" type="button" disabled={!canAR}
-            onClick={() => void viewer.current?.activateAR().catch(() => {
-              setState('error'); setCanAR(false);
-            })}>{labels.ar}</button>
+            onClick={() => void viewer.current?.activateAR().catch(fail)}>{labels.ar}</button>
           {scene.hotspots.map((part) => (
             <button key={part.id} slot={`hotspot-${part.id}`} type="button"
               data-position={part.position} data-normal={part.normal}

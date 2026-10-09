@@ -42,9 +42,18 @@ hash tracks the ordered training matrix and targets; it is not a source-evidence
 digest or an independently reviewed dataset version.
 
 Candidate directories cannot already exist and cannot be used with `--apply`.
-No automatic promotion is performed. The legacy command **without** `--output-dir`
-still replaces `ml/models` artefacts, even without `--apply`; `--apply` additionally
-updates company records. Use candidate mode for experimentation.
+No automatic promotion is performed. Training without `--output-dir` now fails
+before querying the database unless `--allow-legacy-write` is explicitly passed.
+`--apply` alone is not sufficient. The override cannot be combined with candidate
+output and prints a warning: it is not evidence of independent review or quality.
+With the override, training still replaces `ml/models` even without `--apply`;
+`--apply` additionally updates records. A prediction-only read-only preview remains
+available without either flag. Direct Python trainer calls retain their legacy
+behavior; this guard protects the management command, not every internal caller.
+Use candidate mode for experimentation. Existing automation that intentionally
+writes must be reviewed before adding the override; do not add it blindly.
+
+See [release verification](RELEASE_346_347.md) for activation gates and evidence.
 
 ## Quality and data requirements
 
