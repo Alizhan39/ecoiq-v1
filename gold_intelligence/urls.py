@@ -10,6 +10,7 @@ urlpatterns = [
     path('map/', views.mine_map, name='mine_map'),
     path('<slug:slug>/', views.investor_view, name='investor_view'),
     path('<slug:slug>/dashboard/', views.investment_dashboard, name='investment_dashboard'),
+    path('<slug:slug>/stewardship/', views.stewardship_view, name='stewardship'),
     path('<slug:slug>/risk/', views.risk_intelligence_view, name='risk_intelligence'),
     path('<slug:slug>/timeline/', views.timeline_view, name='timeline'),
     path('<slug:slug>/capital/', views.capital_tracker_view, name='capital_tracker'),
