@@ -23,6 +23,7 @@ from gold_intelligence.models import GoldProject
 from gold_intelligence.access import projects_for
 from gold_intelligence.services import aggregates, mizan_bridge, project_finance, risk_intelligence, stewardship_lenses
 from gold_intelligence.services import public_operator_benchmarks
+from gold_intelligence.services import source_time_series
 
 # Preset questions routed straight into the existing Decision Studio / AI
 # Agent Workbench — never a second question-answering path.
@@ -62,6 +63,20 @@ def public_benchmarks_view(request):
     card = public_operator_benchmarks.mine_evidence_card(selected) if selected else None
     return render(request, 'gold_intelligence/public_benchmarks.html', {
         'catalogue': catalogue, 'card': card, 'selected': selected,
+    })
+
+
+@login_required
+def public_time_series_view(request):
+    """Rights-aware research view, no ingestion into private mining KPIs."""
+    series_list = source_time_series.available_time_series()
+    selected = request.GET.get('series', '')
+    card = source_time_series.time_series_card(selected) if selected else None
+    return render(request, 'gold_intelligence/public_time_series.html', {
+        'series_list': series_list,
+        'card': card,
+        'selected': selected,
+        'rights_summary': source_time_series.source_rights_summary(),
     })
 
 
