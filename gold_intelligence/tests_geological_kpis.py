@@ -213,7 +213,7 @@ class GeologicalAndKPITests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['mizan_readiness']['operational_kpis']['observed_count'], 1)
         self.assertContains(response, 'Mine operations')
-        self.assertContains(response, 'KPI_REVIEW_REQUIRED')
+        self.assertContains(response, 'SOURCE_REVIEW_REQUIRED')
 
     def test_never_mutates_resource_tonnes_or_other_financial_data(self):
         src = self.source()
