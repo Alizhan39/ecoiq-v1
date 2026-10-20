@@ -384,3 +384,10 @@ class ScenarioAssumption(models.Model):
 
     def __str__(self):
         return f'{self.project.name}: {self.name}'
+
+
+# Separate file keeps project finance models stable while registering auditable
+# geological source, borehole, assay and operating KPI records with Django.
+from gold_intelligence.geology_models import (  # noqa: F401
+    GeologicalEvidenceSource, GoldDrillhole, GoldAssayInterval, MineKPIObservation,
+)
