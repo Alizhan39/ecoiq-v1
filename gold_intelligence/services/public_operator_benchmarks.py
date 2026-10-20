@@ -10,6 +10,7 @@ from __future__ import annotations
 from copy import deepcopy
 from functools import lru_cache
 import json
+import math
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -66,11 +67,10 @@ def _validate(dataset: dict[str, Any]) -> None:
             raise ValueError('Public facts cannot impersonate independently validated site evidence.')
         if type(obs['value']) not in (int, float) or obs['value'] < 0:
             raise ValueError('Observations must use finite, nonnegative numeric values.')
-        import math
         if not math.isfinite(obs['value']):
             raise ValueError('Nonfinite measured value.')
         unit = _UNIT_BY_METRIC.get(obs['metric'])
-        if unit is not None and obs['unit'] != unit:
+        if unit is None or obs['unit'] != unit:
             raise ValueError('Metric/unit mismatch.')
         if obs['metric'].endswith('recovery') and obs['value'] > 100:
             raise ValueError('Recovery cannot exceed 100%.')
@@ -133,7 +133,6 @@ def recovery_uplift_sensitivity(ore_tonnes: float, head_grade_gpt: float,
     or forecast of profitable ounces. Feed tonnes and grade are provided
     explicitly: no mixing of a hub's feed with a single deposit's grade.
     """
-    import math
     inputs = (ore_tonnes, head_grade_gpt, recovery_uplift_percentage_points)
     if any(type(n) not in (int, float) or not math.isfinite(n) or n < 0 for n in inputs):
         return {'available': False, 'reason': 'Finite, nonnegative numeric inputs required.'}
