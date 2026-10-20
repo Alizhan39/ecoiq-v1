@@ -20,7 +20,7 @@ from django.shortcuts import get_object_or_404, render
 
 from gold_intelligence.models import GoldProject
 from gold_intelligence.access import projects_for
-from gold_intelligence.services import aggregates, mizan_bridge, project_finance, risk_intelligence
+from gold_intelligence.services import aggregates, mizan_bridge, project_finance, risk_intelligence, stewardship_lenses
 
 # Preset questions routed straight into the existing Decision Studio / AI
 # Agent Workbench — never a second question-answering path.
@@ -73,6 +73,15 @@ def investor_view(request, slug):
         'capital': capital, 'equipment': equipment, 'timeline': timeline,
         'mizan_readiness': mizan_readiness,
         'decision_studio_links': _decision_studio_links(project)[:3],
+    })
+
+
+def stewardship_view(request, slug):
+    """Private 20-principle evidence overview; no religious or mining certification."""
+    project = _project_or_404(slug, request.user)
+    readiness = stewardship_lenses.build_stewardship_readiness(project)
+    return render(request, 'gold_intelligence/stewardship.html', {
+        'project': project, 'stewardship': readiness,
     })
 
 

@@ -34,7 +34,12 @@ class Rights(str, Enum):
 
 
 CONCEPTS = ('khalifah', 'amanah', 'maqasid', 'adl', 'mizan', 'hikmah',
-            'israf', 'fasad', 'islah', 'ihsan', 'shura')
+            'israf', 'fasad', 'islah', 'ihsan', 'shura',
+            # Environmental stewardship extensions; existing concepts/IDs stable.
+            'imarat_al_ard', 'tabdhir', 'iqtisad', 'tayyib', 'hima', 'harim',
+            'ihya_al_mawat', 'ghars_al_ashjar', 'rifq_bil_hayawan',
+            'hifz_al_maa', 'la_darar_wa_la_dirar', 'maslaha',
+            'dar_al_mafasid', 'sadaqa_jariya')
 
 
 def content_hash(text: str) -> str:

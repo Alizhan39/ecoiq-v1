@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ · 20 Principles of Stewardship — {{ project.name }}{% endblock %}
+{% block meta_description_content %}Private project stewardship evidence readiness; no religious ruling or mine-site certification.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ · RESPONSIBLE STEWARDSHIP</span>
+  <h1 class="gold-h1">20 principles · {{ project.name }}</h1>
+  <p class="gold-sub">Khalifah · Amanah · Mizan · Islah and 16 further principles
+    across Qur'an, Sunnah, legal scholarship and carefully marked EcoIQ applications.</p>
+  <p class="gold-honest-stub"><strong>Evidence and scholarly review required.</strong>
+    This is an inventory of questions and partial measurement proxies, not a ranking,
+    Shariah ruling, certified ecological assessment, resource estimate or mining permit.
+    A source locator is not an authenticated quotation or reviewed interpretation.</p>
+  {% include 'gold_intelligence/_nav.html' with active_tab='stewardship' %}
+
+  <section class="gold-section">
+    <div class="gold-grid">
+      <div class="gold-card">
+        <div class="gold-card-label">Stewardship lenses</div>
+        <div class="gold-card-value">{{ stewardship.count }}</div>
+        <div class="gold-card-sub">All drafted; independent scholarly review pending</div>
+      </div>
+      <div class="gold-card">
+        <div class="gold-card-label">Operating KPI observations</div>
+        <div class="gold-card-value">{{ stewardship.total_kpi_observations }}</div>
+        <div class="gold-card-sub">Observations are not a moral or religious score</div>
+      </div>
+    </div>
+  </section>
+
+  {% for lens in stewardship.lenses %}
+  <section class="gold-section">
+    <h2 class="gold-h2">{{ forloop.counter }}. {{ lens.transliteration }} · {{ lens.name_ru }}
+      <span lang="ar" dir="rtl">{{ lens.arabic }}</span>
+    </h2>
+    <p class="gold-sub">{{ lens.question_ru }}</p>
+    <p class="gold-honest-stub"><strong>Origin:</strong> {{ lens.source_family }}
+      · <strong>status:</strong> {{ lens.scholarly_status }}; {{ lens.ethical_status }}</p>
+    <p class="gold-sub">{{ lens.source_note }}</p>
+    {% if lens.quran_refs %}
+    <p class="gold-sub"><strong>Qur'an locators for review:</strong>
+      {% for ref in lens.quran_refs %}
+        <a href="https://quran.com/{{ ref }}" target="_blank" rel="noopener noreferrer">{{ ref }}</a>{% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    </p>
+    {% endif %}
+    {% if lens.non_quran_refs %}
+    <p class="gold-sub"><strong>Other source traditions (review required):</strong>
+      {% for source in lens.non_quran_refs %}
+        {% if source.url %}<a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.locator }}</a>{% else %}{{ source.locator }}{% endif %}
+        [{{ source.type }}]{% if not forloop.last %}; {% endif %}
+      {% endfor %}
+    </p>
+    {% endif %}
+    <div class="gold-card">
+      <div class="gold-card-label">Linked measurements — incomplete proxies only</div>
+      {% for metric in lens.linked_kpis %}
+        <p class="gold-card-sub">{{ metric.label }} ({{ metric.unit }}):
+          {{ metric.observation_count }} period observation(s)</p>
+      {% empty %}
+        <p class="gold-honest-stub">No registered mining KPI is sufficient to represent this principle.</p>
+      {% endfor %}
+      <p class="gold-card-sub">Calculable linked observations: {{ lens.calculable_count }};
+        internally reviewed: {{ lens.internally_reviewed_count }}.
+        Neither establishes religious or legal compliance.</p>
+      <p class="gold-honest-stub"><strong>Still required:</strong> {{ lens.missing_evidence }}</p>
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% include 'gold_intelligence/_styles.html' %}
+{% endblock %}
