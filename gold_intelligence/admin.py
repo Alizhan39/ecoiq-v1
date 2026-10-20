@@ -6,7 +6,8 @@ Phase 2 (capital_guardian): `save_model`/`save_formset` stash the editing
 user on each instance as `_cg_changed_by` before saving, so
 capital_guardian/signals.py's Audit History entries can honestly attribute a
 change to a real user (never guessed) rather than leaving it blank."""
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from gold_intelligence.models import (
@@ -100,18 +101,49 @@ class ScenarioAssumptionAdmin(admin.ModelAdmin):
 
 
 class GoldEvidenceReviewAdmin(admin.ModelAdmin):
-    """Record the actual internal staff reviewer; not independent certification."""
-    readonly_fields = ('reviewer', 'reviewed_at')
+    """Review via explicit staff action after full form/model validation.
 
-    def save_model(self, request, obj, form, change):
-        if obj.review_state == 'reviewed':
-            if not change or self.model.objects.filter(pk=obj.pk).exclude(review_state='reviewed').exists():
-                obj.reviewer = request.user
-                obj.reviewed_at = timezone.now()
-        elif obj.review_state == 'pending':
+    Never silently approve a newly entered record: the form keeps the review
+    fields read-only and reviewed changes require reopening first.
+    """
+    readonly_fields = ('review_state', 'reviewer', 'reviewed_at')
+    actions = ('mark_internally_reviewed', 'reopen_for_review')
+
+    @admin.action(description='Internally review selected records (not external certification)')
+    def mark_internally_reviewed(self, request, queryset):
+        if not self.has_change_permission(request):
+            self.message_user(request, 'Permission denied.', level=messages.ERROR)
+            return
+        accepted = 0
+        for obj in queryset:
+            obj.review_state = 'reviewed'
+            obj.reviewer = request.user
+            obj.reviewed_at = timezone.now()
+            try:
+                obj.save()
+                accepted += 1
+            except ValidationError as exc:
+                self.message_user(request, f'{obj.pk}: {exc}', level=messages.WARNING)
+        if accepted:
+            self.message_user(request, f'{accepted} record(s) internally reviewed.')
+
+    @admin.action(description='Return selected records to pending for correction')
+    def reopen_for_review(self, request, queryset):
+        if not self.has_change_permission(request):
+            self.message_user(request, 'Permission denied.', level=messages.ERROR)
+            return
+        reopened = 0
+        for obj in queryset:
+            obj.review_state = 'pending'
             obj.reviewer = None
             obj.reviewed_at = None
-        super().save_model(request, obj, form, change)
+            try:
+                obj.save()
+                reopened += 1
+            except ValidationError as exc:
+                self.message_user(request, f'{obj.pk}: {exc}', level=messages.WARNING)
+        if reopened:
+            self.message_user(request, f'{reopened} record(s) returned to pending.')
 
 
 @admin.register(GeologicalEvidenceSource)
