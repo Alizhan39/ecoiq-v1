@@ -1,0 +1,277 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-20",
+  "scope": "SOURCE_LINKED_LIMITED_PUBLIC_FACTS_AND_OPEN_MARKET_SERIES",
+  "rights_register": "source_rights_register_2026-10.json",
+  "warning": "No mine-private operational time series; Solidcore quarterly source data are published reported values with downstream processing dependencies. Data rights for commercial reuse remain pending. Nothing here is independently audited site data or verified Mizan.",
+  "series": [
+    {
+      "id": "solidcore-kyzyl-gold-in-concentrate-quarterly",
+      "asset_id": "solidcore-kyzyl-bakyrchik",
+      "reporting_operator": "Solidcore",
+      "production_stage": "GOLD_IN_CONCENTRATE",
+      "metric": "gold_in_concentrate",
+      "unit": "thousand_gold_ounces_in_concentrate",
+      "frequency": "quarterly",
+      "source_rights_key": "solidcore_quarterly",
+      "notice": "Mine-site recovered gold in concentrate, before downstream processing; not directly comparable with payable gold equivalent.",
+      "observations": [
+        {
+          "period": "2025-Q1",
+          "period_start": "2025-01-01",
+          "period_end": "2025-03-31",
+          "reported_at": "2025-04-28",
+          "value": 97,
+          "source_url": "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/28-04-2025/"
+        },
+        {
+          "period": "2025-Q2",
+          "period_start": "2025-04-01",
+          "period_end": "2025-06-30",
+          "reported_at": "2025-07-31",
+          "value": 103,
+          "source_url": "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/31-07-2025/"
+        },
+        {
+          "period": "2025-Q3",
+          "period_start": "2025-07-01",
+          "period_end": "2025-09-30",
+          "reported_at": "2025-10-31",
+          "value": 79,
+          "source_url": "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/31-10-2025/"
+        },
+        {
+          "period": "2025-Q4",
+          "period_start": "2025-10-01",
+          "period_end": "2025-12-31",
+          "reported_at": "2026-01-30",
+          "value": 67,
+          "source_url": "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/30-01-2026/"
+        },
+        {
+          "period": "2026-Q1",
+          "period_start": "2026-01-01",
+          "period_end": "2026-03-31",
+          "reported_at": "2026-04-30",
+          "value": 79,
+          "source_url": "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/30-04-2026/"
+        },
+        {
+          "period": "2026-Q2",
+          "period_start": "2026-04-01",
+          "period_end": "2026-06-30",
+          "reported_at": "2026-07-31",
+          "value": 100,
+          "source_url": "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/31-07-2026/"
+        }
+      ]
+    },
+    {
+      "id": "solidcore-kyzyl-payable-ge-quarterly",
+      "asset_id": "solidcore-kyzyl-bakyrchik",
+      "reporting_operator": "Solidcore",
+      "production_stage": "PAYABLE_GE",
+      "metric": "payable_GE_production",
+      "unit": "thousand_gold_equivalent_ounces",
+      "frequency": "quarterly",
+      "source_rights_key": "solidcore_quarterly",
+      "notice": "Payable GE metal includes inventory timing/refining stages; not a proxy for mine production volume or metallurgical losses.",
+      "observations": [
+        {
+          "period": "2025-Q1",
+          "period_start": "2025-01-01",
+          "period_end": "2025-03-31",
+          "reported_at": "2025-04-28",
+          "value": 31,
+          "source_url": "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/28-04-2025/"
+        },
+        {
+          "period": "2025-Q2",
+          "period_start": "2025-04-01",
+          "period_end": "2025-06-30",
+          "reported_at": "2025-07-31",
+          "value": 16,
+          "source_url": "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/31-07-2025/"
+        },
+        {
+          "period": "2025-Q3",
+          "period_start": "2025-07-01",
+          "period_end": "2025-09-30",
+          "reported_at": "2025-10-31",
+          "value": 86,
+          "source_url": "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/31-10-2025/"
+        },
+        {
+          "period": "2025-Q4",
+          "period_start": "2025-10-01",
+          "period_end": "2025-12-31",
+          "reported_at": "2026-01-30",
+          "value": 101,
+          "source_url": "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/30-01-2026/"
+        },
+        {
+          "period": "2026-Q1",
+          "period_start": "2026-01-01",
+          "period_end": "2026-03-31",
+          "reported_at": "2026-04-30",
+          "value": 81,
+          "source_url": "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/30-04-2026/"
+        },
+        {
+          "period": "2026-Q2",
+          "period_start": "2026-04-01",
+          "period_end": "2026-06-30",
+          "reported_at": "2026-07-31",
+          "value": 41,
+          "source_url": "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/31-07-2026/"
+        }
+      ]
+    },
+    {
+      "id": "solidcore-varvara-production-ge-quarterly",
+      "asset_id": "solidcore-varvara",
+      "reporting_operator": "Solidcore",
+      "production_stage": "PAYABLE_GE",
+      "metric": "payable_GE_production",
+      "unit": "thousand_gold_equivalent_ounces",
+      "frequency": "quarterly",
+      "source_rights_key": "solidcore_quarterly",
+      "notice": "Varvara processing hub output includes feed from other mines; not the production of the Varvara pit alone.",
+      "observations": [
+        {
+          "period": "2025-Q1",
+          "period_start": "2025-01-01",
+          "period_end": "2025-03-31",
+          "reported_at": "2025-04-28",
+          "value": 37,
+          "source_url": "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/28-04-2025/"
+        },
+        {
+          "period": "2025-Q2",
+          "period_start": "2025-04-01",
+          "period_end": "2025-06-30",
+          "reported_at": "2025-07-31",
+          "value": 39,
+          "source_url": "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/31-07-2025/"
+        },
+        {
+          "period": "2025-Q3",
+          "period_start": "2025-07-01",
+          "period_end": "2025-09-30",
+          "reported_at": "2025-10-31",
+          "value": 40,
+          "source_url": "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/31-10-2025/"
+        },
+        {
+          "period": "2025-Q4",
+          "period_start": "2025-10-01",
+          "period_end": "2025-12-31",
+          "reported_at": "2026-01-30",
+          "value": 45,
+          "source_url": "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/30-01-2026/"
+        },
+        {
+          "period": "2026-Q1",
+          "period_start": "2026-01-01",
+          "period_end": "2026-03-31",
+          "reported_at": "2026-04-30",
+          "value": 44,
+          "source_url": "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/30-04-2026/"
+        },
+        {
+          "period": "2026-Q2",
+          "period_start": "2026-04-01",
+          "period_end": "2026-06-30",
+          "reported_at": "2026-07-31",
+          "value": 45,
+          "source_url": "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/31-07-2026/"
+        }
+      ]
+    },
+    {
+      "id": "worldbank-gold-monthly-market-price",
+      "asset_id": null,
+      "reporting_operator": "World Bank Prospects Group",
+      "production_stage": "MARKET_PRICE_NOT_PRODUCTION",
+      "metric": "gold_price_monthly_average",
+      "unit": "USD_per_troy_ounce",
+      "frequency": "monthly",
+      "source_rights_key": "world_bank_pink_sheet",
+      "notice": "World Bank Pink Sheet monthly averages, USD per troy oz. Transcribed from the World Bank series display, values rounded to USD 1 by public secondary datasets. Direct original workbook cross-check still required before valuation.",
+      "observations": [
+        {
+          "period": "2026-01",
+          "period_start": "2026-01-01",
+          "value": 4753,
+          "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+          "cross_check_url": "https://app.indexbox.io/indicators/symbol/pink-sheet-gold-world/",
+          "verified_against_original_workbook": false
+        },
+        {
+          "period": "2026-02",
+          "period_start": "2026-02-01",
+          "value": 5020,
+          "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+          "cross_check_url": "https://app.indexbox.io/indicators/symbol/pink-sheet-gold-world/",
+          "verified_against_original_workbook": false
+        },
+        {
+          "period": "2026-03",
+          "period_start": "2026-03-01",
+          "value": 4856,
+          "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+          "cross_check_url": "https://app.indexbox.io/indicators/symbol/pink-sheet-gold-world/",
+          "verified_against_original_workbook": false
+        },
+        {
+          "period": "2026-04",
+          "period_start": "2026-04-01",
+          "value": 4721,
+          "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+          "cross_check_url": "https://app.indexbox.io/indicators/symbol/pink-sheet-gold-world/",
+          "verified_against_original_workbook": false
+        },
+        {
+          "period": "2026-05",
+          "period_start": "2026-05-01",
+          "value": 4587,
+          "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+          "cross_check_url": "https://app.indexbox.io/indicators/symbol/pink-sheet-gold-world/",
+          "verified_against_original_workbook": false
+        },
+        {
+          "period": "2026-06",
+          "period_start": "2026-06-01",
+          "value": 4228,
+          "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+          "cross_check_url": "https://app.indexbox.io/indicators/symbol/pink-sheet-gold-world/",
+          "verified_against_original_workbook": false
+        },
+        {
+          "period": "2026-07",
+          "period_start": "2026-07-01",
+          "value": 4073,
+          "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+          "cross_check_url": "https://app.indexbox.io/indicators/symbol/pink-sheet-gold-world/",
+          "verified_against_original_workbook": false
+        },
+        {
+          "period": "2026-08",
+          "period_start": "2026-08-01",
+          "value": 4411,
+          "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+          "cross_check_url": "https://app.indexbox.io/indicators/symbol/pink-sheet-gold-world/",
+          "verified_against_original_workbook": false
+        },
+        {
+          "period": "2026-09",
+          "period_start": "2026-09-01",
+          "value": 4319,
+          "source_url": "https://www.worldbank.org/en/research/commodity-markets",
+          "cross_check_url": "https://app.indexbox.io/indicators/symbol/pink-sheet-gold-world/",
+          "verified_against_original_workbook": false
+        }
+      ]
+    }
+  ]
+}
