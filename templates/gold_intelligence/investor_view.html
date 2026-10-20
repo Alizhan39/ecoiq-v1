@@ -104,6 +104,31 @@
   </section>
 
   <section class="gold-section">
+    <h2 class="gold-h2">Mine operations · Evidence-backed KPIs</h2>
+    <p class="gold-honest-stub">
+      {{ mizan_readiness.operational_kpis.reviewed_count }} of
+      {{ mizan_readiness.operational_kpis.observed_count }}
+      observations internally reviewed. Internal review is not external certification.
+      No gold resources, safety compliance or Mizan balance are inferred.
+    </p>
+    {% if mizan_readiness.operational_kpis.observations %}
+    <div class="gold-list">
+      {% for metric in mizan_readiness.operational_kpis.observations %}
+      <div class="gold-list-row">
+        <span class="gold-list-label">{{ metric.label }} ({{ metric.period_start }}–{{ metric.period_end }})</span>
+        <span>
+          {% if metric.value is not None %}{{ metric.value }} {{ metric.unit }}{% else %}Not assessed{% endif %}
+          · {{ metric.status }}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No site-level operational KPI inputs have been recorded for this project.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
     <h2 class="gold-h2">Ask EcoIQ</h2>
     <div class="gold-btn-row">
       {% for link in decision_studio_links %}

@@ -79,9 +79,19 @@ def build_gold_mizan_readiness(project):
         for dimension in MIZAN_DIMENSIONS
     )
 
+    # Operational KPIs are a separate readiness track. Internal review does
+    # not establish independently certified thresholds or system balance.
+    from gold_intelligence.services.mine_kpis import mine_kpi_readiness
+    mine_kpis = (
+        mine_kpi_readiness(project) if getattr(project, 'pk', None) is not None
+        and hasattr(project, 'mine_kpi_observations') else
+        {'observations': [], 'reviewed_count': 0, 'observed_count': 0}
+    )
+
     return {
         'assessment': assess_balance(scope_level='facility', dimensions=dimensions),
         'observations': observations,
+        'operational_kpis': mine_kpis,
         'declared_count': sum(item['value'] is not None for item in observations),
         'total_count': len(observations),
         'is_demo': demo,

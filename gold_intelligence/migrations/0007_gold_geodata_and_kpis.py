@@ -1,0 +1,116 @@
+# Versioned geodata/KPI provenance schema. Matches geology_models.py.
+import django.db.models.deletion
+from django.conf import settings
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+    dependencies = [
+        ('gold_intelligence', '0006_projectmembership'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='GeologicalEvidenceSource',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('source_id', models.CharField(max_length=120)),
+                ('kind', models.CharField(max_length=20, choices=[
+                    ('map', 'Geological map'), ('geophysics', 'Geophysical survey'),
+                    ('drill_log', 'Drilling/collar log'), ('assay', 'Laboratory certificate'),
+                    ('metallurgy', 'Metallurgical study'), ('operations', 'Operations log'),
+                    ('environment', 'Environment/water'), ('safety', 'Safety log'),
+                    ('financial', 'Financial record'), ('other', 'Other'),
+                ])),
+                ('title', models.CharField(max_length=250)),
+                ('issuer', models.CharField(max_length=200)),
+                ('citation', models.TextField(blank=True)),
+                ('source_url', models.URLField(blank=True)),
+                ('licence_terms', models.TextField(blank=True)),
+                ('observed_on', models.DateField(blank=True, null=True)),
+                ('acquired_on', models.DateField(blank=True, null=True)),
+                ('crs', models.CharField(blank=True, help_text='Original EPSG code or stated source CRS', max_length=40)),
+                ('coverage_notes', models.TextField(blank=True)),
+                ('content_sha256', models.CharField(blank=True, help_text='SHA-256 of the original source file, verified off-platform', max_length=64)),
+                ('is_synthetic', models.BooleanField(default=False)),
+                ('review_state', models.CharField(choices=[('pending', 'Pending'), ('reviewed', 'Internally reviewed'), ('rejected', 'Rejected')], default='pending', max_length=10)),
+                ('reviewed_at', models.DateTimeField(blank=True, null=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('project', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='geological_sources', to='gold_intelligence.goldproject')),
+                ('reviewer', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+            ],
+            options={'ordering': ['project', 'source_id'],
+                     'constraints': [models.UniqueConstraint(fields=('project', 'source_id'), name='uniq_gold_source_version')]},
+        ),
+        migrations.CreateModel(
+            name='GoldDrillhole',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('hole_id', models.CharField(max_length=100)),
+                ('latitude', models.DecimalField(decimal_places=6, max_digits=9)),
+                ('longitude', models.DecimalField(decimal_places=6, max_digits=9)),
+                ('total_depth_m', models.DecimalField(decimal_places=3, max_digits=12)),
+                ('collar_elevation_m', models.DecimalField(blank=True, decimal_places=3, max_digits=12, null=True)),
+                ('logged_on', models.DateField(blank=True, null=True)),
+                ('review_state', models.CharField(choices=[('pending', 'Pending'), ('reviewed', 'Internally reviewed'), ('rejected', 'Rejected')], default='pending', max_length=10)),
+                ('reviewed_at', models.DateTimeField(blank=True, null=True)),
+                ('project', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='drillholes', to='gold_intelligence.goldproject')),
+                ('source', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='drillholes', to='gold_intelligence.geologicalevidencesource')),
+                ('reviewer', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+            ],
+            options={'ordering': ['project', 'hole_id'],
+                     'constraints': [models.UniqueConstraint(fields=('project', 'hole_id'), name='uniq_gold_hole_by_project')]},
+        ),
+        migrations.CreateModel(
+            name='GoldAssayInterval',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('sample_id', models.CharField(max_length=120)),
+                ('sample_type', models.CharField(choices=[('primary', 'Primary sample'), ('blank', 'Blank'), ('standard', 'Reference standard'), ('duplicate', 'Duplicate')], default='primary', max_length=12)),
+                ('from_m', models.DecimalField(decimal_places=3, max_digits=12)),
+                ('to_m', models.DecimalField(decimal_places=3, max_digits=12)),
+                ('au_g_per_t', models.DecimalField(blank=True, decimal_places=6, max_digits=17, null=True)),
+                ('laboratory', models.CharField(blank=True, max_length=200)),
+                ('certificate_id', models.CharField(blank=True, max_length=160)),
+                ('review_state', models.CharField(choices=[('pending', 'Pending'), ('reviewed', 'Internally reviewed'), ('rejected', 'Rejected')], default='pending', max_length=10)),
+                ('reviewed_at', models.DateTimeField(blank=True, null=True)),
+                ('project', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='assays', to='gold_intelligence.goldproject')),
+                ('source', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='assays', to='gold_intelligence.geologicalevidencesource')),
+                ('drillhole', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='assays', to='gold_intelligence.golddrillhole')),
+                ('reviewer', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+            ],
+            options={'ordering': ['project', 'drillhole', 'from_m'],
+                     'constraints': [models.UniqueConstraint(fields=('project', 'sample_id', 'source'), name='uniq_gold_sample_source')]},
+        ),
+        migrations.CreateModel(
+            name='MineKPIObservation',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('metric_key', models.CharField(choices=[
+                    ('gold_recovery_pct', 'Metallurgical gold recovery'),
+                    ('freshwater_m3_per_t', 'Freshwater withdrawal intensity'),
+                    ('process_water_reuse_pct', 'Process water recirculation'),
+                    ('electricity_kwh_per_t', 'Electricity intensity'),
+                    ('tailings_t_per_t', 'Tailings generation intensity'),
+                    ('rehabilitation_pct', 'Land rehabilitation ratio'),
+                    ('local_procurement_pct', 'Local procurement share'),
+                    ('lost_time_injury_frequency', 'Lost-time injury frequency'),
+                    ('ghg_tco2e_per_t', 'Scope-defined emissions intensity'),
+                ], max_length=50)),
+                ('period_start', models.DateField()),
+                ('period_end', models.DateField()),
+                ('numerator', models.DecimalField(blank=True, decimal_places=6, max_digits=24, null=True)),
+                ('denominator', models.DecimalField(blank=True, decimal_places=6, max_digits=24, null=True)),
+                ('review_state', models.CharField(choices=[('pending', 'Pending'), ('reviewed', 'Internally reviewed'), ('rejected', 'Rejected')], default='pending', max_length=10)),
+                ('reviewed_at', models.DateTimeField(blank=True, null=True)),
+                ('method_version', models.CharField(default='1', max_length=12)),
+                ('notes', models.TextField(blank=True)),
+                ('project', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='mine_kpi_observations', to='gold_intelligence.goldproject')),
+                ('source', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='mine_kpi_observations', to='gold_intelligence.geologicalevidencesource')),
+                ('reviewer', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+            ],
+            options={'ordering': ['project', 'metric_key', '-period_end'],
+                     'constraints': [models.UniqueConstraint(fields=('project', 'source', 'metric_key', 'period_start', 'period_end'), name='uniq_gold_kpi_observation')]},
+        ),
+    ]

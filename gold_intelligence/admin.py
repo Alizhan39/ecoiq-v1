@@ -6,10 +6,13 @@ Phase 2 (capital_guardian): `save_model`/`save_formset` stash the editing
 user on each instance as `_cg_changed_by` before saving, so
 capital_guardian/signals.py's Audit History entries can honestly attribute a
 change to a real user (never guessed) rather than leaving it blank."""
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from gold_intelligence.models import (
     CapitalBudgetLine, EquipmentSpec, GoldProject, MineTimelineMilestone, ScenarioAssumption, ProjectMembership,
+    GeologicalEvidenceSource, GoldDrillhole, GoldAssayInterval, MineKPIObservation,
 )
 
 
@@ -95,3 +98,79 @@ class EquipmentSpecAdmin(admin.ModelAdmin):
 class ScenarioAssumptionAdmin(admin.ModelAdmin):
     list_display = ('project', 'name', 'gold_price_usd_per_oz', 'capex_multiplier', 'opex_multiplier')
     list_filter = ('project',)
+
+
+class GoldEvidenceReviewAdmin(admin.ModelAdmin):
+    """Review via explicit staff action after full form/model validation.
+
+    Never silently approve a newly entered record: the form keeps the review
+    fields read-only and reviewed changes require reopening first.
+    """
+    readonly_fields = ('review_state', 'reviewer', 'reviewed_at')
+    actions = ('mark_internally_reviewed', 'reopen_for_review')
+
+    @admin.action(description='Internally review selected records (not external certification)')
+    def mark_internally_reviewed(self, request, queryset):
+        if not self.has_change_permission(request):
+            self.message_user(request, 'Permission denied.', level=messages.ERROR)
+            return
+        accepted = 0
+        for obj in queryset:
+            obj.review_state = 'reviewed'
+            obj.reviewer = request.user
+            obj.reviewed_at = timezone.now()
+            try:
+                obj.save()
+                accepted += 1
+            except ValidationError as exc:
+                self.message_user(request, f'{obj.pk}: {exc}', level=messages.WARNING)
+        if accepted:
+            self.message_user(request, f'{accepted} record(s) internally reviewed.')
+
+    @admin.action(description='Return selected records to pending for correction')
+    def reopen_for_review(self, request, queryset):
+        if not self.has_change_permission(request):
+            self.message_user(request, 'Permission denied.', level=messages.ERROR)
+            return
+        reopened = 0
+        for obj in queryset:
+            obj.review_state = 'pending'
+            obj.reviewer = None
+            obj.reviewed_at = None
+            try:
+                obj.save()
+                reopened += 1
+            except ValidationError as exc:
+                self.message_user(request, f'{obj.pk}: {exc}', level=messages.WARNING)
+        if reopened:
+            self.message_user(request, f'{reopened} record(s) returned to pending.')
+
+
+@admin.register(GeologicalEvidenceSource)
+class GeologicalEvidenceSourceAdmin(GoldEvidenceReviewAdmin):
+    list_display = ('project', 'source_id', 'kind', 'issuer', 'is_synthetic', 'review_state')
+    list_filter = ('kind', 'review_state', 'is_synthetic', 'project')
+    search_fields = ('source_id', 'title', 'issuer', 'citation', 'project__name')
+
+
+@admin.register(GoldDrillhole)
+class GoldDrillholeAdmin(GoldEvidenceReviewAdmin):
+    list_display = ('project', 'hole_id', 'latitude', 'longitude', 'total_depth_m', 'review_state')
+    list_filter = ('review_state', 'project')
+    search_fields = ('hole_id', 'project__name')
+
+
+@admin.register(GoldAssayInterval)
+class GoldAssayIntervalAdmin(GoldEvidenceReviewAdmin):
+    list_display = ('project', 'sample_id', 'drillhole', 'from_m', 'to_m',
+                    'au_g_per_t', 'sample_type', 'review_state')
+    list_filter = ('review_state', 'sample_type', 'project')
+    search_fields = ('sample_id', 'certificate_id', 'drillhole__hole_id')
+
+
+@admin.register(MineKPIObservation)
+class MineKPIObservationAdmin(GoldEvidenceReviewAdmin):
+    list_display = ('project', 'metric_key', 'period_start', 'period_end',
+                    'numerator', 'denominator', 'review_state')
+    list_filter = ('metric_key', 'review_state', 'project')
+    search_fields = ('source__source_id', 'project__name')
