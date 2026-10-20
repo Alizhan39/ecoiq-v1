@@ -1,9 +1,12 @@
 """Contract tests for the read-only Gold Intelligence -> Mizan bridge."""
 from types import SimpleNamespace
 
-from django.test import SimpleTestCase
+from django.contrib.auth import get_user_model
+from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
 
 from gold_intelligence.services.mizan_bridge import build_gold_mizan_readiness
+from gold_intelligence.models import GoldProject, ProjectMembership
 from mizan.system_balance import INSUFFICIENT_DATA, MIZAN_DIMENSIONS
 
 
@@ -60,3 +63,30 @@ class GoldMizanReadinessTests(SimpleTestCase):
         before = dict(vars(project))
         build_gold_mizan_readiness(project)
         self.assertEqual(vars(project), before)
+
+
+class GoldMizanInvestorViewTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user('mizan-gold-viewer')
+        cls.project = GoldProject.objects.create(
+            name='Protected gold demonstration', slug='protected-gold-demo',
+            is_demo=True, ore_grade_g_per_tonne=1.2,
+        )
+        ProjectMembership.objects.create(
+            project=cls.project, user=cls.user, role=ProjectMembership.Role.VIEWER,
+        )
+
+    def test_investor_view_displays_insufficient_data_not_a_false_mizan_score(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('gold_intelligence:investor_view', args=[self.project.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['mizan_readiness']['declared_count'], 1)
+        self.assertContains(response, 'Insufficient data')
+        self.assertContains(response, 'Not independently verified')
+
+    def test_nonmember_cannot_read_project_mizan_inputs(self):
+        stranger = get_user_model().objects.create_user('mizan-gold-stranger')
+        self.client.force_login(stranger)
+        response = self.client.get(reverse('gold_intelligence:investor_view', args=[self.project.slug]))
+        self.assertEqual(response.status_code, 404)
