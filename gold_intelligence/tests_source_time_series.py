@@ -78,7 +78,7 @@ class GoldTimeSeriesValidationTests(SimpleTestCase):
 
     def test_rejects_commercial_permissions_silently_added_to_operator(self):
         self.rights['sources']['solidcore_quarterly']['rights_status'] = 'CC_BY_4_0'
-        with self.assertRaisesRegex(ValueError, 'operator'):
+        with self.assertRaisesRegex(ValueError, 'Issuer data cannot silently inherit open-data permissions'):
             validate_time_series(self.manifest, self.rights)
 
     def test_rejects_fake_wb_primary_verification(self):
