@@ -20,7 +20,7 @@ from django.shortcuts import get_object_or_404, render
 
 from gold_intelligence.models import GoldProject
 from gold_intelligence.access import projects_for
-from gold_intelligence.services import aggregates, project_finance, risk_intelligence
+from gold_intelligence.services import aggregates, mizan_bridge, project_finance, risk_intelligence
 
 # Preset questions routed straight into the existing Decision Studio / AI
 # Agent Workbench — never a second question-answering path.
@@ -61,6 +61,7 @@ def investor_view(request, slug):
     capital = aggregates.capital_tracker_summary(project)
     equipment = aggregates.equipment_summary(project)
     timeline = aggregates.timeline_summary(project)
+    mizan_readiness = mizan_bridge.build_gold_mizan_readiness(project)
 
     top_risks = sorted(
         [{'key': k, 'label': risk_intelligence.RISK_DIMENSION_LABELS[k], **v} for k, v in risk.items() if v['available']],
@@ -70,6 +71,7 @@ def investor_view(request, slug):
     return render(request, 'gold_intelligence/investor_view.html', {
         'project': project, 'economics': economics, 'risk': risk, 'top_risks': top_risks,
         'capital': capital, 'equipment': equipment, 'timeline': timeline,
+        'mizan_readiness': mizan_readiness,
         'decision_studio_links': _decision_studio_links(project)[:3],
     })
 
