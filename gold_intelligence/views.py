@@ -16,11 +16,13 @@ agent-orchestration path is created here.
 """
 from urllib.parse import quote
 
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 
 from gold_intelligence.models import GoldProject
 from gold_intelligence.access import projects_for
 from gold_intelligence.services import aggregates, mizan_bridge, project_finance, risk_intelligence, stewardship_lenses
+from gold_intelligence.services import public_operator_benchmarks
 
 # Preset questions routed straight into the existing Decision Studio / AI
 # Agent Workbench — never a second question-answering path.
@@ -50,6 +52,17 @@ def _project_or_404(slug, user):
 def directory(request):
     projects = projects_for(request.user).select_related('country')
     return render(request, 'gold_intelligence/directory.html', {'projects': projects})
+
+
+@login_required
+def public_benchmarks_view(request):
+    """Publicly reported facts for research, separate from private GoldProject."""
+    catalogue = public_operator_benchmarks.public_gold_inventory()
+    selected = request.GET.get('asset', '')
+    card = public_operator_benchmarks.mine_evidence_card(selected) if selected else None
+    return render(request, 'gold_intelligence/public_benchmarks.html', {
+        'catalogue': catalogue, 'card': card, 'selected': selected,
+    })
 
 
 def investor_view(request, slug):
