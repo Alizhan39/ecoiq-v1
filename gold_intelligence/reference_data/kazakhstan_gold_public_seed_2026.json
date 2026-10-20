@@ -33,24 +33,27 @@
     },
     "zijin_rg": {
       "title": "Zijin Mining Raygorodok project disclosure",
-      "published": "2026-01-01",
+      "published": null,
       "url": "https://www.zijinmining.com/global/program-detail-72040.htm",
       "origin": "operator_primary",
-      "caveat": "Page reports project status and 2025 production; exact page update date not stated. Date is contextual report-year anchor, not assumed publication date."
+      "caveat": "Page reports project status and 2025 production; exact page update date not stated. Date is contextual report-year anchor, not assumed publication date.",
+      "date_note": "Exact publication date not verified here; use document reporting period and publication metadata on original website."
     },
     "glencore_rr2025": {
       "title": "Glencore Resources and Reserves Report 2025, Vasilkovsky operations",
-      "published": "2026-03-01",
+      "published": null,
       "url": "https://www.glencore.com/.rest/api/v1/documents/static/a17cc44b-7947-4169-9b6b-b882403fb42b/GLENCORE-Resources-and-Reserves-report-2025.pdf",
       "origin": "operator_primary",
-      "caveat": "Month-level publication estimate; report states 2025 data."
+      "caveat": "Month-level publication estimate; report states 2025 data.",
+      "date_note": "Exact publication date not verified here; use document reporting period and publication metadata on original website."
     },
     "glencore_annual2025": {
       "title": "Glencore Annual Report 2025, Kazzinc",
-      "published": "2026-02-01",
+      "published": null,
       "url": "https://www.glencore.com/.rest/api/v1/documents/static/9b103e11-72e7-40bf-ae7c-eabe57361522/GLEN-2025-Annual-Report.pdf",
       "origin": "operator_primary",
-      "caveat": "Month-level estimated publication date; annual reporting year 2025."
+      "caveat": "Month-level estimated publication date; annual reporting year 2025.",
+      "date_note": "Exact publication date not verified here; use document reporting period and publication metadata on original website."
     },
     "altyngold_ops": {
       "title": "AltynGold current operations and 2025 results",
@@ -60,9 +63,10 @@
     },
     "altyngold_q4": {
       "title": "AltynGold Q4 2025 operations and development (January 2026)",
-      "published": "2026-01-01",
+      "published": null,
       "url": "https://altyngold.uk/wp-content/uploads/2026/01/RNS_AltynGold_Q4-2025_FINAL.pdf",
-      "origin": "operator_primary"
+      "origin": "operator_primary",
+      "date_note": "Exact publication date not verified here; use document reporting period and publication metadata on original website."
     },
     "zijin_new_plant": {
       "title": "Kazakh Invest: Raygorodok new processing plant construction",
