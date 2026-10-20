@@ -1,7 +1,6 @@
 """Independent public-facts seed: scope safety, provenance and access."""
 from copy import deepcopy
 from math import isclose
-from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
