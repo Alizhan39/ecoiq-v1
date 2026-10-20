@@ -7,9 +7,11 @@ user on each instance as `_cg_changed_by` before saving, so
 capital_guardian/signals.py's Audit History entries can honestly attribute a
 change to a real user (never guessed) rather than leaving it blank."""
 from django.contrib import admin
+from django.utils import timezone
 
 from gold_intelligence.models import (
     CapitalBudgetLine, EquipmentSpec, GoldProject, MineTimelineMilestone, ScenarioAssumption, ProjectMembership,
+    GeologicalEvidenceSource, GoldDrillhole, GoldAssayInterval, MineKPIObservation,
 )
 
 
@@ -95,3 +97,48 @@ class EquipmentSpecAdmin(admin.ModelAdmin):
 class ScenarioAssumptionAdmin(admin.ModelAdmin):
     list_display = ('project', 'name', 'gold_price_usd_per_oz', 'capex_multiplier', 'opex_multiplier')
     list_filter = ('project',)
+
+
+class GoldEvidenceReviewAdmin(admin.ModelAdmin):
+    """Record the actual internal staff reviewer; not independent certification."""
+    readonly_fields = ('reviewer', 'reviewed_at')
+
+    def save_model(self, request, obj, form, change):
+        if obj.review_state == 'reviewed':
+            if not change or self.model.objects.filter(pk=obj.pk).exclude(review_state='reviewed').exists():
+                obj.reviewer = request.user
+                obj.reviewed_at = timezone.now()
+        elif obj.review_state == 'pending':
+            obj.reviewer = None
+            obj.reviewed_at = None
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(GeologicalEvidenceSource)
+class GeologicalEvidenceSourceAdmin(GoldEvidenceReviewAdmin):
+    list_display = ('project', 'source_id', 'kind', 'issuer', 'is_synthetic', 'review_state')
+    list_filter = ('kind', 'review_state', 'is_synthetic', 'project')
+    search_fields = ('source_id', 'title', 'issuer', 'citation', 'project__name')
+
+
+@admin.register(GoldDrillhole)
+class GoldDrillholeAdmin(GoldEvidenceReviewAdmin):
+    list_display = ('project', 'hole_id', 'latitude', 'longitude', 'total_depth_m', 'review_state')
+    list_filter = ('review_state', 'project')
+    search_fields = ('hole_id', 'project__name')
+
+
+@admin.register(GoldAssayInterval)
+class GoldAssayIntervalAdmin(GoldEvidenceReviewAdmin):
+    list_display = ('project', 'sample_id', 'drillhole', 'from_m', 'to_m',
+                    'au_g_per_t', 'sample_type', 'review_state')
+    list_filter = ('review_state', 'sample_type', 'project')
+    search_fields = ('sample_id', 'certificate_id', 'drillhole__hole_id')
+
+
+@admin.register(MineKPIObservation)
+class MineKPIObservationAdmin(GoldEvidenceReviewAdmin):
+    list_display = ('project', 'metric_key', 'period_start', 'period_end',
+                    'numerator', 'denominator', 'review_state')
+    list_filter = ('metric_key', 'review_state', 'project')
+    search_fields = ('source__source_id', 'project__name')
