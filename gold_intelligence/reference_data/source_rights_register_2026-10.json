@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-20",
+  "notes": "This is a preliminary rights classification, not legal advice. Verify dataset-specific notices and any automated download / redistribution conditions before production deployment.",
+  "sources": {
+    "solidcore_quarterly": {
+      "name": "Solidcore quarterly production and operations releases",
+      "publisher": "Solidcore Resources plc",
+      "source_urls": [
+        "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/28-04-2025/",
+        "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/31-07-2025/",
+        "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/31-10-2025/",
+        "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/30-01-2026/",
+        "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/30-04-2026/",
+        "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/31-07-2026/"
+      ],
+      "rights_status": "PERMISSION_NOT_CONFIRMED",
+      "rights_basis": "Quarterly issuer disclosures are publicly viewable; no explicit general license for bulk extraction, automated harvesting or commercial redistribution was verified.",
+      "commercial_redistribution_allowed": false,
+      "automated_bulk_ingestion_allowed": false,
+      "allowed_in_ecoiq": "LIMITED_ATTRIBUTED_RESEARCH_FACTS_ONLY",
+      "review_due": "Before client resale, large-scale ingestion, public API or formal service."
+    },
+    "kazakhstan_official_statistics": {
+      "name": "Kazakhstan Bureau of National Statistics official statistical information",
+      "publisher": "Bureau of National Statistics, Republic of Kazakhstan",
+      "source_urls": [
+        "https://stat.gov.kz/description/",
+        "https://sdg.stat.gov.kz/en",
+        "https://stat.gov.kz/en/open-data/use-of-resources/476590/"
+      ],
+      "rights_status": "OFFICIAL_STATS_REUSE_WITH_ATTRIBUTION",
+      "rights_basis": "The Bureau states official statistical information may be copied, modified, combined and used in software for any purpose with source attribution. Applies to official published aggregates, not confidential microdata or third-party attachments.",
+      "commercial_redistribution_allowed": true,
+      "automated_bulk_ingestion_allowed": null,
+      "allowed_in_ecoiq": "PUBLISHED_AGGREGATE_STATISTICS_WITH_SOURCE_LINK",
+      "review_due": "Confirm dataset scope, API access/rate limits and attribution before automated ingestion."
+    },
+    "world_bank_pink_sheet": {
+      "name": "World Bank Commodity Price Data (Pink Sheet)",
+      "publisher": "World Bank Prospects Group",
+      "source_urls": [
+        "https://www.worldbank.org/en/research/commodity-markets",
+        "https://datacatalog.worldbank.org/search/dataset/0038238/commodity-prices-history-and-projections",
+        "https://www.worldbank.org/ext/en/legal/terms-conditions/datasets"
+      ],
+      "rights_status": "CC_BY_4_0",
+      "rights_basis": "World Bank dataset catalog confirms CC BY 4.0; publish attribution and identify modifications, subject to dataset terms.",
+      "commercial_redistribution_allowed": true,
+      "automated_bulk_ingestion_allowed": null,
+      "allowed_in_ecoiq": "ATTRIBUTED_OPEN_MARKET_SERIES",
+      "review_due": "Use documented official machine-readable access path and validate latest workbook before activating a scheduled ingest."
+    },
+    "private_mine_telemetry": {
+      "name": "Operators' private SCADA / MES / fleet dispatch / assay / maintenance timeseries",
+      "publisher": "Individual mine operators and equipment suppliers",
+      "source_urls": [],
+      "rights_status": "CONTRACT_REQUIRED",
+      "rights_basis": "Not public; require owner permission, confidentiality, usage scope, storage/access rights and data processing/security terms.",
+      "commercial_redistribution_allowed": false,
+      "automated_bulk_ingestion_allowed": false,
+      "allowed_in_ecoiq": "NO_DATA_IMPORTED",
+      "review_due": "Before NDA/paid pilot, establish data-control roles, write/read boundaries and retention."
+    }
+  }
+}
