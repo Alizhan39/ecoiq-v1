@@ -5,12 +5,13 @@
   <p style="font-size:.8rem;letter-spacing:.15em;color:#b8923d;">ECOIQ GOLD INTELLIGENCE · EXPERIMENTAL</p>
   <h1>AI Gold Targeting — Geological Evidence Map</h1>
   <p>This is a desktop exploration evidence map, <strong>not</strong> a mineral discovery, licence cadastre, resource estimate or drilling permit. A highlighted area does not demonstrate gold or available mining rights.</p>
-  <p><strong>{{ feature_count }}</strong> sourced feature(s) in view. Unverified or historical occurrence records are not drill targets.
+  <p><strong>{{ feature_count }}</strong> geological reference(s) and <strong>{{ cadastre_count }}</strong> reviewed dated cadastral polygon(s) in view. Unverified or historical occurrence records are not drill targets.
      {% if truncated %}<strong>Showing first 500; narrow the filters.</strong>{% endif %}
   </p>
   <nav aria-label="Research reference links" style="margin:1rem 0;display:flex;gap:1rem;flex-wrap:wrap;">
     <a href="/gold-intelligence/map/">Existing mine map</a>
-    <a href="{% url 'gold_intelligence:targets_geojson' %}">GeoJSON API</a>
+    <a href="{% url 'gold_intelligence:targets_geojson' %}">Geological GeoJSON</a>
+    <a href="{% url 'gold_intelligence:cadastre_geojson' %}">Dated cadastre GeoJSON</a>
     <a href="https://minerals-u.e-qazyna.kz/en/contracts-map" rel="noopener noreferrer" target="_blank">Check cadastral licences (E-Qazyna)</a>
     <a href="https://dataspace.copernicus.eu/" rel="noopener noreferrer" target="_blank">Copernicus data source</a>
   </nav>
@@ -24,7 +25,8 @@
   {% if feature_count == 0 %}
     <p>No geologically sourced targets or reference records are loaded for your access scope. This is deliberate: no speculative map pins are generated.</p>
   {% endif %}
-  <p style="font-size:.85rem;margin-top:1rem;">Map legend: <span style="color:#e6b54a;">■ Candidate exploration target</span> · <span style="color:#3b82f6;">■ Research area</span> · <span style="color:#64748b;">■ Historical reference occurrence</span>. Categories indicate record type, <strong>not</strong> predicted gold abundance.</p>
+  {% if cadastre_truncated %}<p><strong>Cadastre limited to first 250 reviewed polygons; no inference of coverage.</strong></p>{% endif %}
+  <p style="font-size:.85rem;margin-top:1rem;">Cadastre overlay: red = right recorded at snapshot date, orange = application recorded, grey = expired/withdrawn/unknown, <strong>never</strong> necessarily available now. Confirm with E-Qazyna. Map legend: <span style="color:#e6b54a;">■ Candidate exploration target</span> · <span style="color:#3b82f6;">■ Research area</span> · <span style="color:#64748b;">■ Historical reference occurrence</span>. Categories indicate record type, <strong>not</strong> predicted gold abundance.</p>
   <p style="font-size:.8rem;">GeoJSON coordinates use WGS84 EPSG:4326. Map tiles © OpenStreetMap contributors. The backend stores geometry in portable JSON / PostgreSQL JSONB, not yet PostGIS indexed geometry.</p>
 </main>
 {% endblock %}
