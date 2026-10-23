@@ -33,7 +33,7 @@ class GoldTarget(models.Model):
     source_name = models.CharField(max_length=200)
     source_url = models.URLField()
     source_reference = models.CharField(max_length=250)
-    source_observed_on = models.DateField()
+    source_observed_on = models.DateField(null=True, blank=True, help_text='Unknown if the original observation date is not documented')
     source_rights = models.CharField(max_length=250, help_text="Recorded reuse licence or terms for this specific dataset")
     rights_status = models.CharField(max_length=25, choices=RIGHTS, default="unknown")
     rights_reference = models.CharField(max_length=250, blank=True)
