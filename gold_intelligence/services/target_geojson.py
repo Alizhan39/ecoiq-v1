@@ -77,7 +77,7 @@ def target_feature(record):
             "source_name": record.source_name,
             "source_url": record.source_url,
             "source_reference": record.source_reference,
-            "source_observed_on": record.source_observed_on.isoformat(),
+            "source_observed_on": record.source_observed_on.isoformat() if record.source_observed_on else None,
             "source_rights": record.source_rights,
             "review_state": record.review_state,
             "is_demo": record.is_demo,
