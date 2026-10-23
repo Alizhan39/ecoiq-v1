@@ -43,7 +43,7 @@ class AnomalyDetector:
             logger.warning('Anomaly model not loaded: %s', exc)
             return False
 
-    def train(self, companies=None, apply: bool = False, *, output_dir=None) -> dict:
+    def train(self, companies=None, apply: bool = False, *, output_dir=None, n_jobs=1) -> dict:
         """
         Train Isolation Forest on all companies with scores.
 
@@ -56,6 +56,9 @@ class AnomalyDetector:
             artifact_directory, save_training_run, training_metadata, training_rows,
         )
 
+        from ml.training import validate_training_jobs
+
+        validate_training_jobs(n_jobs)
         directory = artifact_directory(output_dir, MODEL_PATH.parent, apply=apply)
 
         if companies is None:
@@ -75,7 +78,7 @@ class AnomalyDetector:
             n_estimators=200,
             contamination=0.05,
             random_state=42,
-            n_jobs=-1,
+            n_jobs=n_jobs,
         )
         iforest.fit(X_scaled)
 
@@ -92,7 +95,7 @@ class AnomalyDetector:
             len(X), n_anomalies, 100 * n_anomalies / max(len(X), 1),
         )
 
-        result.update(n_anomalies=n_anomalies,
+        result.update(n_anomalies=n_anomalies, estimator_parameters=iforest.get_params(),
                       evaluation={'status': 'NOT_MEASURED', 'reason': 'no_reviewed_anomaly_labels'},
                       findings_basis='statistical_outliers_not_verified_wrongdoing')
         save_training_run({MODEL_PATH.name: iforest, SCALER_PATH.name: scaler},

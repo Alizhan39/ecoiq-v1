@@ -464,10 +464,17 @@ if IS_PRODUCTION and not os.environ.get('DATABASE_URL', '').strip():
         'SQLite fallback in production.'
     )
 
+try:
+    DATABASE_CONN_MAX_AGE = int(os.environ.get('DATABASE_CONN_MAX_AGE', '600'))
+except ValueError as exc:
+    raise ImproperlyConfigured('DATABASE_CONN_MAX_AGE must be an integer from 0 to 3600.') from exc
+if not 0 <= DATABASE_CONN_MAX_AGE <= 3600:
+    raise ImproperlyConfigured('DATABASE_CONN_MAX_AGE must be an integer from 0 to 3600.')
+
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=600,
+        conn_max_age=DATABASE_CONN_MAX_AGE,
         conn_health_checks=True,
     )
 }
