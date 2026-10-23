@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from gold_intelligence.models import (
     CapitalBudgetLine, EquipmentSpec, GoldProject, MineTimelineMilestone, ScenarioAssumption, ProjectMembership,
-    GeologicalEvidenceSource, GoldDrillhole, GoldAssayInterval, MineKPIObservation, GoldTarget,
+    GeologicalEvidenceSource, GoldDrillhole, GoldAssayInterval, MineKPIObservation, GoldTarget, GoldCadastreSnapshot,
 )
 
 
@@ -184,3 +184,13 @@ class GoldTargetAdmin(admin.ModelAdmin):
     list_filter = ('feature_kind', 'review_state', 'rights_status', 'is_demo', 'region')
     search_fields = ('target_id', 'name', 'region', 'source_reference')
     readonly_fields = ('created_at', 'updated_at')
+
+
+
+@admin.register(GoldCadastreSnapshot)
+class GoldCadastreSnapshotAdmin(admin.ModelAdmin):
+    """Read-only audit metadata with explicit human review; no live licence claims."""
+    list_display = ('parcel_id', 'snapshot_on', 'recorded_status', 'review_state', 'project')
+    list_filter = ('recorded_status', 'review_state', 'snapshot_on')
+    search_fields = ('parcel_id', 'source_reference')
+    readonly_fields = ('created_at', 'source_sha256', 'snapshot_on')
