@@ -12,8 +12,8 @@ from django.core.management.base import BaseCommand, CommandError
 
 from gold_intelligence.services.target_geojson import validate_geometry
 
-USGS_REFERENCE = "https://www.usgs.gov/publications/mineral-resources-data-system-mrds"
-USGS_DOI = "https://doi.org/10.3133/ds20"
+USGS_REFERENCE = "https://energy.usgs.gov/arcgis/rest/services/Hosted/Mineral_Resource_Data_System/FeatureServer/0"
+USGS_DOI = "https://www.usgs.gov/publications/mineral-resources-data-system-mrds"
 GOLD_CODES = re.compile(r"(?i)(?:^|[^a-z])(?:au|gold)(?:$|[^a-z])")
 
 
