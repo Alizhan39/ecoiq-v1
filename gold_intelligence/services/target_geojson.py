@@ -66,6 +66,9 @@ def target_feature(record):
     if not eligible_for_index:
         assessment["score"] = None
         assessment["score_kind"] = None
+        # Unknown/unreviewed coverage is not a measured zero.
+        assessment["evidence_coverage"] = None
+        assessment["missing_features"] = None
         assessment["eligibility"] = "reference_only_or_not_reviewed"
     return {
         "type": "Feature", "id": record.target_id,
