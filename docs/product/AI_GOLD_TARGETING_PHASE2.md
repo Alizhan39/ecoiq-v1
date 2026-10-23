@@ -81,3 +81,91 @@ Exact polygons require source-dated scientific or project-defined geometries.
 - Capture dated official cadastral rights + restrictions before any drilling decisions.
 - Install PostGIS only if the operational stack supports it; add GIST index and spatial overlap checks.
 - Trained AI classifier only after source-backed training labels and spatially blocked evaluation.
+
+
+## Phase 3 — reproducible USGS pilot acquisition and **dated** cadastral overlay
+Code is committed to the experimental branch; this documentation does **not** claim
+that any live USGS record or national mining licence has been downloaded, loaded,
+checked or independently located in Kazakhstan.
+
+### USGS hosted ArcGIS MRDS FeatureServer
+Source schema verified from the official USGS endpoint:
+https://energy.usgs.gov/arcgis/rest/services/Hosted/Mineral_Resource_Data_System/FeatureServer/0
+The layer exposes `objectid_1`, `dep_id`, `site_name`, `code_list` and
+`dev_stat`, and advertises GeoJSON output and paginated queries. The region
+`--bbox 74 42 80 46` is an approximate desktop-study envelope that includes
+Qonaev and portions of Chu-Ili; it is **not** a Kazakhstan border or licence polygon.
+
+```bash
+python manage.py fetch_usgs_mrds_gold /secure/chu_ili_mrds.geojson --bbox 74 42 80 46
+# Writes immutable provenance manifest chu_ili_mrds.geojson.provenance.json,
+# file SHA256, retrieval timestamp and count or fails closed.
+python manage.py import_gold_targets /secure/chu_ili_mrds.geojson
+# Manually verify dataset rights, country placement and source record IDs
+python manage.py import_gold_targets /secure/chu_ili_mrds.geojson --apply --real-records --confirm-data-rights
+```
+
+No downloaded data is committed to the repository. Source errors stop the
+pipeline; a USGS error or empty source does not become invented records.
+Converted points are `reference_occurrence`; even after geological reviewer
+approval they have no AI score and no licence availability determination.
+
+### Operator-acquired official Kazakhstan cadastre, not scraped
+The official platform publicly displays licence reference information, but
+automated bulk-export rights and a stable endpoint have not been verified.
+The current importer therefore requires an **operator-obtained GeoJSON**
+export with documented storage and reuse permission.
+
+Do not manually trace polygons from a screenshot and present them as official.
+The input GeoJSON must use EPSG:4326 `FeatureCollection` with
+Polygon/MultiPolygon, each feature's stable official `id` or
+`properties.official_id`. Optional `properties.recorded_status` must be
+an explicitly sourced value from:
+`unknown | licenced | application | withdrawn | expired | other`;
+a recognised `expired` value is **never** interpreted as available.
+`properties.official_status_text` retains source text when possible.
+
+```bash
+python manage.py import_gold_cadastre /secure/cadastre_export.geojson \
+  --snapshot-date 2026-10-23 \
+  --source-url https://minerals.e-qazyna.kz/en/start \
+  --source-reference OFFICIAL-EXPORT-REFERENCE \
+  --terms-file /secure/permissions.txt
+
+# Only after documentary permission has been independently verified:
+python manage.py import_gold_cadastre /secure/cadastre_export.geojson \
+  --snapshot-date 2026-10-23 \
+  --source-url https://minerals.e-qazyna.kz/en/start \
+  --source-reference OFFICIAL-EXPORT-REFERENCE \
+  --terms-file /secure/permissions.txt \
+  --apply --confirm-permission
+```
+
+Commands above show a **template**, not a genuine obtained export or approved
+permission. Import creates `GoldCadastreSnapshot` rows in `pending` state;
+staff must validate every licence classification and geometry before marking
+`reviewed`. This enforces separation of historical gold occurrences and
+dated licensed areas, without asserting current legal availability.
+
+### Private endpoints and displayed layers
+- `/gold-intelligence/targets/`: Folium targeting map, historical gold
+  references + reviewed dated cadastral snapshot outlines.
+- `/gold-intelligence/targets/geojson/`: geological / reference features.
+- `/gold-intelligence/targets/cadastre.geojson`: dated reviewed rights snapshots.
+- Cadastral records are staff-only until assigned to a project with explicit
+  membership. Unreviewed records never leave the private review workflow.
+- No real known-to-be-unlicensed drill target or mineral resources are returned
+  without authenticated project-specific evidence.
+
+### Operational requirements before any public launch
+1. Obtain actual archival data and check each gold feature against the source.
+2. Obtain operator-approved official current cadastral export, including
+   exclusions and restricted land data, not just granted licence polygons.
+3. Conduct geologist and legal due diligence; classify uncertainties.
+4. Run Django CI, check migrations and permissions, and obtain a reviewed PR.
+5. Only then deploy. PostGIS and spatial-overlap enforcement remain unimplemented.
+
+Tests:
+```bash
+python manage.py test gold_intelligence.tests_targeting_sources gold_intelligence.tests_targeting_geojson gold_intelligence.tests_targeting
+```
