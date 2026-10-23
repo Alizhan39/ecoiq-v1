@@ -25,6 +25,21 @@ Scores are `null` for demo/unreviewed/historical/research records, and whenever 
 features is missing. Source issuer/url/id/date/reuse terms accompany every record. Rights default
 to `unknown`; an occupied/restricted site must never be presented as available.
 
+## Historical USGS MRDS conversion (optional)
+Download source records yourself from a licensed/verified USGS MRDS distribution. The USGS feature service
+can serve exported GeoJSON with fields such as `dep_id`, `site_name`, `code_list` and geometry. Then:
+
+```bash
+python manage.py convert_usgs_mrds_gold /secure/mrds_source.geojson /secure/normalized_mrds.geojson --bbox 73 42 80 47
+python manage.py import_gold_targets /secure/normalized_mrds.geojson
+python manage.py import_gold_targets /secure/normalized_mrds.geojson --apply --real-records --confirm-data-rights
+```
+
+The bounding rectangle is **not Kazakhstan's administrative boundary**, and an MRDS point is not
+proof of industrial gold or current permissions. Converted records always remain historical reference
+occurrences and unreviewed until staff review; their observation dates are unknown by default.
+The conversion command does not automatically fetch data, and the live service is not yet integrated.
+
 ## Safe importer
 Create a local FeatureCollection with a stable `id` per feature and properties:
 `name`, `feature_kind`, `region`, `source_name`, `source_url`,
