@@ -1,6 +1,5 @@
 """Offline regression tests: official-source stages, dated rights overlay and access."""
 from datetime import date
-from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
