@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from gold_intelligence.models import (
     CapitalBudgetLine, EquipmentSpec, GoldProject, MineTimelineMilestone, ScenarioAssumption, ProjectMembership,
-    GeologicalEvidenceSource, GoldDrillhole, GoldAssayInterval, MineKPIObservation,
+    GeologicalEvidenceSource, GoldDrillhole, GoldAssayInterval, MineKPIObservation, GoldTarget,
 )
 
 
@@ -174,3 +174,13 @@ class MineKPIObservationAdmin(GoldEvidenceReviewAdmin):
                     'numerator', 'denominator', 'review_state')
     list_filter = ('metric_key', 'review_state', 'project')
     search_fields = ('source__source_id', 'project__name')
+
+
+
+@admin.register(GoldTarget)
+class GoldTargetAdmin(admin.ModelAdmin):
+    """Staff-only source review; review is internal, not geological certification."""
+    list_display = ('target_id', 'name', 'feature_kind', 'region', 'review_state', 'rights_status', 'is_demo', 'updated_at')
+    list_filter = ('feature_kind', 'review_state', 'rights_status', 'is_demo', 'region')
+    search_fields = ('target_id', 'name', 'region', 'source_reference')
+    readonly_fields = ('created_at', 'updated_at')
