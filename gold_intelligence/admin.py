@@ -193,4 +193,16 @@ class GoldCadastreSnapshotAdmin(admin.ModelAdmin):
     list_display = ('parcel_id', 'snapshot_on', 'recorded_status', 'review_state', 'project')
     list_filter = ('recorded_status', 'review_state', 'snapshot_on')
     search_fields = ('parcel_id', 'source_reference')
-    readonly_fields = ('created_at', 'source_sha256', 'snapshot_on')
+    # A snapshot is immutable in the admin: correcting source geometry/status
+    # requires a fresh dated import; only review and project access can change.
+    readonly_fields = (
+        'parcel_id', 'snapshot_on', 'geometry', 'recorded_status',
+        'official_status_text', 'source_name', 'source_url',
+        'source_reference', 'reuse_terms', 'source_sha256', 'created_at',
+    )
+
+    def has_add_permission(self, request):
+        return False  # Operator-controlled import only.
+
+    def has_delete_permission(self, request, obj=None):
+        return False  # Preserve historical source snapshots.
