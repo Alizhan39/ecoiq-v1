@@ -199,7 +199,31 @@ class GoldCadastreSnapshotAdmin(admin.ModelAdmin):
         'parcel_id', 'snapshot_on', 'geometry', 'recorded_status',
         'official_status_text', 'source_name', 'source_url',
         'source_reference', 'reuse_terms', 'source_sha256', 'created_at',
+        'review_state',
     )
+
+    actions = ('approve_snapshot', 'reopen_snapshot')
+
+    @admin.action(description="Internally review cadastral snapshots (not legal certification)")
+    def approve_snapshot(self, request, queryset):
+        approved = 0
+        for obj in queryset:
+            obj.review_state = "reviewed"
+            try:
+                obj.full_clean()
+                obj.save(update_fields=["review_state"])
+                self.log_change(request, obj, "Reviewed dated cadastral evidence; not current legal status.")
+                approved += 1
+            except ValidationError as exc:
+                self.message_user(request, f"{obj.pk}: {exc}", level=messages.WARNING)
+        self.message_user(request, f"{approved} cadastre record(s) internally reviewed.")
+
+    @admin.action(description="Reopen selected cadastral snapshots for review")
+    def reopen_snapshot(self, request, queryset):
+        for obj in queryset:
+            obj.review_state = "pending"
+            obj.save(update_fields=["review_state"])
+            self.log_change(request, obj, "Cadastral snapshot reopened for review.")
 
     def has_add_permission(self, request):
         return False  # Operator-controlled import only.
