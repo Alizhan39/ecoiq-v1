@@ -28,7 +28,7 @@ to `unknown`; an occupied/restricted site must never be presented as available.
 ## Safe importer
 Create a local FeatureCollection with a stable `id` per feature and properties:
 `name`, `feature_kind`, `region`, `source_name`, `source_url`,
-`source_reference`, `source_observed_on` (YYYY-MM-DD) and `source_rights`.
+`source_reference` and `source_rights`. Optionally supply `source_observed_on` (YYYY-MM-DD) **only** if the original observation date is documented; otherwise store null.
 Optionally `evidence` contains the v0.1 normalized, individually sourced feature objects.
 Do not supply rights availability by inference from the geology.
 
