@@ -8,10 +8,11 @@ from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
 from gold_intelligence.access import projects_for
-from gold_intelligence.models import GoldTarget
-from gold_intelligence.services.target_geojson import feature_collection
+from gold_intelligence.models import GoldTarget, GoldCadastreSnapshot
+from gold_intelligence.services.target_geojson import feature_collection, validate_geometry
 
 MAX_FEATURES = 500
+MAX_CADASTRE = 250
 
 
 def _visible_targets(request):
@@ -43,11 +44,60 @@ def targets_geojson(request):
     return JsonResponse(_collection(request))
 
 
+
+def _cadastre_collection(request):
+    """Only reviewed dated rights snapshots. Never imply land is free."""
+    qs = GoldCadastreSnapshot.objects.filter(review_state="reviewed")
+    if not request.user.is_staff:
+        qs = qs.filter(project__in=projects_for(request.user))
+    qs = qs.order_by("-snapshot_on", "parcel_id")
+    if request.GET.get("region", "").strip():
+        # Region text filters are not an official spatial relationship.
+        qs = qs.none()
+    records = list(qs[:MAX_CADASTRE + 1])
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "id": f"{r.parcel_id}:{r.snapshot_on.isoformat()}",
+                "geometry": validate_geometry(r.geometry),
+                "properties": {
+                    "parcel_id": r.parcel_id,
+                    "snapshot_on": r.snapshot_on.isoformat(),
+                    "recorded_status": r.recorded_status,
+                    "official_status_text": r.official_status_text,
+                    "source_name": r.source_name,
+                    "source_url": r.source_url,
+                    "source_reference": r.source_reference,
+                    "review_state": r.review_state,
+                    "current_status_verified": False,
+                    "available_for_application": None,
+                    "drilling_authorized": False,
+                },
+            } for r in records[:MAX_CADASTRE]
+        ],
+        "metadata": {
+            "truncated": len(records) > MAX_CADASTRE,
+            "as_of": "Each feature's snapshot_on date, not today's status",
+            "is_current_authoritative_licence_registry": False,
+            "limitation": "Staff-reviewed historical snapshots only. Check live E-Qazyna.",
+        },
+    }
+
+
+@login_required
+@require_GET
+def cadastre_geojson(request):
+    return JsonResponse(_cadastre_collection(request))
+
+
 @login_required
 @require_GET
 def targets_map(request):
     """Folium/Leaflet map using the existing map dependency, no new JS build."""
     collection = _collection(request)
+    cadastre = _cadastre_collection(request)
     fmap = folium.Map(location=[48.0, 68.0], zoom_start=5, tiles="OpenStreetMap")
     if collection["features"]:
         # Folium emits raw data inside map JavaScript. Escape all properties
@@ -96,10 +146,48 @@ def targets_map(request):
         if points:
             fmap.fit_bounds([[min(p[0] for p in points), min(p[1] for p in points)],
                              [max(p[0] for p in points), max(p[1] for p in points)]])
+
+    if cadastre["features"]:
+        safe_cadastre = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    **feature,
+                    "properties": {
+                        key: escape(value) if isinstance(value, str) else value
+                        for key, value in feature["properties"].items()
+                    },
+                } for feature in cadastre["features"]
+            ],
+        }
+        # No green "available" paint; expired does not mean unencumbered.
+        def licence_style(feature):
+            status = feature["properties"]["recorded_status"]
+            color = {
+                "licenced": "#e23d46",
+                "application": "#e19d37",
+                "withdrawn": "#838b99",
+                "expired": "#838b99",
+                "other": "#7c3aed",
+                "unknown": "#64748b",
+            }.get(status, "#64748b")
+            return {"color": color, "fillColor": color, "weight": 2, "fillOpacity": 0.10}
+        folium.GeoJson(
+            safe_cadastre,
+            name="Dated cadastral snapshots (NOT live rights)",
+            style_function=licence_style,
+            tooltip=folium.GeoJsonTooltip(
+                fields=["parcel_id", "snapshot_on", "recorded_status", "source_reference"],
+                aliases=["Official record", "Snapshot date", "Recorded status", "Source"],
+            ),
+        ).add_to(fmap)
     folium.LayerControl().add_to(fmap)
+
     return render(request, "gold_intelligence/targets_map.html", {
         "map_html": fmap._repr_html_(),
         "feature_count": len(collection["features"]),
+        "cadastre_count": len(cadastre["features"]),
+        "cadastre_truncated": cadastre["metadata"]["truncated"],
         "truncated": collection["metadata"]["truncated"],
         "region_filter": request.GET.get("region", "").strip(),
         "geojson_url": request.get_full_path().split("?")[0].rstrip("/") + "/geojson/",
