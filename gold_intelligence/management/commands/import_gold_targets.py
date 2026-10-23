@@ -16,7 +16,7 @@ from gold_intelligence.models import GoldTarget
 
 
 REQUIRED = ("name", "feature_kind", "source_name", "source_url",
-            "source_reference", "source_observed_on", "source_rights")
+            "source_reference", "source_rights")
 
 
 class Command(BaseCommand):
@@ -63,7 +63,7 @@ class Command(BaseCommand):
                 raise CommandError(f"Feature {index}: missing/duplicate stable id.")
             seen.add(identifier)
             try:
-                observed_on = date.fromisoformat(str(props["source_observed_on"]))
+                observed_on = date.fromisoformat(str(props["source_observed_on"])) if props.get("source_observed_on") else None
                 target = GoldTarget(
                     target_id=identifier,
                     name=props["name"],
@@ -83,7 +83,7 @@ class Command(BaseCommand):
                     is_demo=not options["real_records"],
                 )
                 target.full_clean(validate_unique=False)
-            except (ValueError, TypeError, Exception) as exc:
+            except Exception as exc:
                 # Includes Django ValidationError; re-raised as a useful CLI error.
                 raise CommandError(f"Feature {index} ({identifier}): {exc}") from exc
             staged.append(target)
