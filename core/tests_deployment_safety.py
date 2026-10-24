@@ -123,6 +123,19 @@ class AllowedHostsTests(SimpleTestCase):
 
 class DatabaseConfigurationTests(SimpleTestCase):
 
+    def test_connection_lifetime_defaults_and_overrides_keep_health_checks(self):
+        for value, expected in ((None, 600), ('0', 0), ('60', 60), ('3600', 3600)):
+            with self.subTest(value=value):
+                ns = load_settings_module(production_env(DATABASE_CONN_MAX_AGE=value))
+                self.assertEqual(ns['DATABASES']['default']['CONN_MAX_AGE'], expected)
+                self.assertTrue(ns['DATABASES']['default']['CONN_HEALTH_CHECKS'])
+
+    def test_invalid_connection_lifetime_refuses_startup(self):
+        for value in ('', '-1', '3601', '1.5', 'forever'):
+            with self.subTest(value=value), self.assertRaisesMessage(
+                    ImproperlyConfigured, 'DATABASE_CONN_MAX_AGE'):
+                load_settings_module(production_env(DATABASE_CONN_MAX_AGE=value))
+
     def test_production_without_database_url_refuses_to_start(self):
         with self.assertRaises(ImproperlyConfigured) as ctx:
             load_settings_module(production_env(DATABASE_URL=None))

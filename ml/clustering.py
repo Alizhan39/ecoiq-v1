@@ -110,7 +110,7 @@ class CompanyClusterer:
         cluster_counts = dict(zip(*np.unique(km.labels_, return_counts=True)))
         logger.info('K-Means trained: n=%d, clusters=%s', len(X), cluster_counts)
 
-        result.update(n_clusters=n_c, cluster_labels=labels,
+        result.update(n_clusters=n_c, cluster_labels=labels, estimator_parameters=km.get_params(),
                       cluster_sizes={int(k): int(v) for k, v in cluster_counts.items()},
                       evaluation={'status': 'NOT_MEASURED', 'reason': 'no_reviewed_peer_labels'},
                       findings_basis='heuristic_cluster_names_not_verified_judgements')
