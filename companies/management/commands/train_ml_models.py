@@ -28,6 +28,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            '--dask-scheduler',
+            help='Existing TLS Dask scheduler; distributes outer scoring folds only',
+        )
+        parser.add_argument(
             '--training-jobs', type=int, choices=range(1, 9), default=1,
             help='CPU budget for training: native threads and IsolationForest workers (1..8)',
         )
@@ -65,6 +69,18 @@ class Command(BaseCommand):
         self.output_dir = Path(options['output_dir']) if options['output_dir'] else None
         self.training_jobs = options['training_jobs']
         self.tune_scoring = options['tune_scoring']
+        self.scheduler_address = options['dask_scheduler']
+        if self.scheduler_address:
+            from ml.distributed_training import validate_scheduler
+
+            try:
+                validate_scheduler(self.scheduler_address)
+            except ValueError as exc:
+                raise CommandError(str(exc)) from exc
+            if (model_choice != 'scoring' or not self.tune_scoring or not self.output_dir
+                    or apply or options['allow_legacy_write']):
+                raise CommandError('--dask-scheduler requires --model=scoring --tune-scoring '
+                                   'and a new --output-dir, without apply or legacy writes.')
         from ml.training import validate_training_jobs
 
         try:
@@ -203,6 +219,8 @@ class Command(BaseCommand):
         options = {'output_dir': self.output_dir / name} if self.output_dir else {}
         if name == 'scoring' and getattr(self, 'tune_scoring', False):
             options['tune'] = True
+        if name == 'scoring' and getattr(self, 'scheduler_address', None):
+            options['scheduler_address'] = self.scheduler_address
         if name == 'anomaly':
             options['n_jobs'] = getattr(self, 'training_jobs', 1)
         return options
