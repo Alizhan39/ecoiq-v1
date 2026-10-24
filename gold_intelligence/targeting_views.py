@@ -10,6 +10,8 @@ from django.views.decorators.http import require_GET
 from gold_intelligence.access import projects_for
 from gold_intelligence.models import GoldTarget, GoldCadastreSnapshot
 from gold_intelligence.services.target_geojson import feature_collection, validate_geometry
+from gold_intelligence.services.chu_ili_research import pilot_reference_geojson, pilot_research_queue, PILOT_ID
+from gold_intelligence.services.kazakhstan_reference_deposits import named_gold_reference_catalog
 
 MAX_FEATURES = 500
 MAX_CADASTRE = 250
@@ -94,11 +96,51 @@ def cadastre_geojson(request):
 
 @login_required
 @require_GET
+def pilot_research_queue_json(request):
+    """Public bibliography, restricted to signed-in EcoIQ users."""
+    return JsonResponse(pilot_research_queue())
+
+
+@login_required
+@require_GET
+def named_gold_references_json(request):
+    """Operator-cited deposit names, without coordinates or licence assertions."""
+    return JsonResponse(named_gold_reference_catalog())
+
+
+@login_required
+@require_GET
 def targets_map(request):
     """Folium/Leaflet map using the existing map dependency, no new JS build."""
     collection = _collection(request)
     cadastre = _cadastre_collection(request)
-    fmap = folium.Map(location=[48.0, 68.0], zoom_start=5, tiles="OpenStreetMap")
+    active_pilot = request.GET.get("pilot") == PILOT_ID
+    fmap = folium.Map(
+        location=[44.0, 76.6] if active_pilot else [48.0, 68.0],
+        zoom_start=7 if active_pilot else 5,
+        tiles="OpenStreetMap",
+    )
+    if active_pilot:
+        pilot_layer = folium.FeatureGroup(
+            name="Desk-study envelope and orientation ONLY (not gold)", show=True,
+        )
+        envelope, *anchors = pilot_reference_geojson()["features"]
+        folium.GeoJson(
+            envelope,
+            name="Operator-defined research envelope — not a mineral target",
+            style_function=lambda _: {
+                "color": "#2563eb", "weight": 3, "dashArray": "10 7", "fillOpacity": 0.06,
+            },
+            tooltip="Desk-study envelope only: no gold grade or licensed status implied",
+        ).add_to(pilot_layer)
+        for anchor in anchors:
+            lon, lat = anchor["geometry"]["coordinates"]
+            folium.Marker(
+                location=[lat, lon],
+                tooltip=anchor["properties"]["name"],
+                icon=folium.Icon(color="blue", icon="info-sign"),
+            ).add_to(pilot_layer)
+        pilot_layer.add_to(fmap)
     if collection["features"]:
         # Folium emits raw data inside map JavaScript. Escape all properties
         # before handing it to Folium (API still returns their original values).
@@ -143,7 +185,7 @@ def targets_map(request):
                     collect(item)
         for f in collection["features"]:
             collect(f["geometry"]["coordinates"])
-        if points:
+        if points and not active_pilot:
             fmap.fit_bounds([[min(p[0] for p in points), min(p[1] for p in points)],
                              [max(p[0] for p in points), max(p[1] for p in points)]])
 
@@ -187,6 +229,9 @@ def targets_map(request):
         "map_html": fmap._repr_html_(),
         "feature_count": len(collection["features"]),
         "cadastre_count": len(cadastre["features"]),
+        "pilot_active": active_pilot,
+        "pilot_queue": pilot_research_queue()["ranked_research_workstreams"] if active_pilot else [],
+        "pilot_deposit_names": named_gold_reference_catalog()["records"] if active_pilot else [],
         "cadastre_truncated": cadastre["metadata"]["truncated"],
         "truncated": collection["metadata"]["truncated"],
         "region_filter": request.GET.get("region", "").strip(),
