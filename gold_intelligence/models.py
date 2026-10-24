@@ -391,3 +391,9 @@ class ScenarioAssumption(models.Model):
 from gold_intelligence.geology_models import (  # noqa: F401
     GeologicalEvidenceSource, GoldDrillhole, GoldAssayInterval, MineKPIObservation,
 )
+
+# Provenance-tagged GeoJSON exploration areas and reference occurrences.
+from gold_intelligence.targeting_models import GoldTarget  # noqa: F401
+
+# Versioned and source-checked cadastral boundaries; kept separate from targets.
+from gold_intelligence.cadastre_models import GoldCadastreSnapshot  # noqa: F401

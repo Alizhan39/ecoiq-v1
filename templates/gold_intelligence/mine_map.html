@@ -9,6 +9,7 @@
   <p class="gold-sub">Deposits, active mines, processing plants, exploration licences, and the transport/power/water infrastructure around them — the same real, interactive Geo Intelligence map engine used across EcoIQ.</p>
   <p class="gold-sub" style="font-family:'SF Mono',monospace;font-size:0.78rem;"><strong>{{ asset_count }}</strong> assets · <strong>{{ zone_count }}</strong> risk zones · <strong>{{ opportunity_count }}</strong> investment opportunities</p>
 
+  <p><a href="{% url 'gold_intelligence:targets_map' %}">Open AI Gold Targeting evidence map →</a> — sourced GeoJSON targets, separate from mines and licences.</p>
   <div class="gold-map-panel">{{ map_html|safe }}</div>
 
   <div class="gold-section">

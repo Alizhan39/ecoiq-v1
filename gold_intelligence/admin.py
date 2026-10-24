@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from gold_intelligence.models import (
     CapitalBudgetLine, EquipmentSpec, GoldProject, MineTimelineMilestone, ScenarioAssumption, ProjectMembership,
-    GeologicalEvidenceSource, GoldDrillhole, GoldAssayInterval, MineKPIObservation,
+    GeologicalEvidenceSource, GoldDrillhole, GoldAssayInterval, MineKPIObservation, GoldTarget, GoldCadastreSnapshot,
 )
 
 
@@ -174,3 +174,59 @@ class MineKPIObservationAdmin(GoldEvidenceReviewAdmin):
                     'numerator', 'denominator', 'review_state')
     list_filter = ('metric_key', 'review_state', 'project')
     search_fields = ('source__source_id', 'project__name')
+
+
+
+@admin.register(GoldTarget)
+class GoldTargetAdmin(admin.ModelAdmin):
+    """Staff-only source review; review is internal, not geological certification."""
+    list_display = ('target_id', 'name', 'feature_kind', 'region', 'review_state', 'rights_status', 'is_demo', 'updated_at')
+    list_filter = ('feature_kind', 'review_state', 'rights_status', 'is_demo', 'region')
+    search_fields = ('target_id', 'name', 'region', 'source_reference')
+    readonly_fields = ('created_at', 'updated_at')
+
+
+
+@admin.register(GoldCadastreSnapshot)
+class GoldCadastreSnapshotAdmin(admin.ModelAdmin):
+    """Read-only audit metadata with explicit human review; no live licence claims."""
+    list_display = ('parcel_id', 'snapshot_on', 'recorded_status', 'review_state', 'project')
+    list_filter = ('recorded_status', 'review_state', 'snapshot_on')
+    search_fields = ('parcel_id', 'source_reference')
+    # A snapshot is immutable in the admin: correcting source geometry/status
+    # requires a fresh dated import; only review and project access can change.
+    readonly_fields = (
+        'parcel_id', 'snapshot_on', 'geometry', 'recorded_status',
+        'official_status_text', 'source_name', 'source_url',
+        'source_reference', 'reuse_terms', 'source_sha256', 'created_at',
+        'review_state',
+    )
+
+    actions = ('approve_snapshot', 'reopen_snapshot')
+
+    @admin.action(description="Internally review cadastral snapshots (not legal certification)")
+    def approve_snapshot(self, request, queryset):
+        approved = 0
+        for obj in queryset:
+            obj.review_state = "reviewed"
+            try:
+                obj.full_clean()
+                obj.save(update_fields=["review_state"])
+                self.log_change(request, obj, "Reviewed dated cadastral evidence; not current legal status.")
+                approved += 1
+            except ValidationError as exc:
+                self.message_user(request, f"{obj.pk}: {exc}", level=messages.WARNING)
+        self.message_user(request, f"{approved} cadastre record(s) internally reviewed.")
+
+    @admin.action(description="Reopen selected cadastral snapshots for review")
+    def reopen_snapshot(self, request, queryset):
+        for obj in queryset:
+            obj.review_state = "pending"
+            obj.save(update_fields=["review_state"])
+            self.log_change(request, obj, "Cadastral snapshot reopened for review.")
+
+    def has_add_permission(self, request):
+        return False  # Operator-controlled import only.
+
+    def has_delete_permission(self, request, obj=None):
+        return False  # Preserve historical source snapshots.
