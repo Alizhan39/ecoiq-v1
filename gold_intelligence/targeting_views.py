@@ -11,6 +11,7 @@ from gold_intelligence.access import projects_for
 from gold_intelligence.models import GoldTarget, GoldCadastreSnapshot
 from gold_intelligence.services.target_geojson import feature_collection, validate_geometry
 from gold_intelligence.services.chu_ili_research import pilot_reference_geojson, pilot_research_queue, PILOT_ID
+from gold_intelligence.services.kazakhstan_reference_deposits import named_gold_reference_catalog
 
 MAX_FEATURES = 500
 MAX_CADASTRE = 250
@@ -98,6 +99,13 @@ def cadastre_geojson(request):
 def pilot_research_queue_json(request):
     """Public bibliography, restricted to signed-in EcoIQ users."""
     return JsonResponse(pilot_research_queue())
+
+
+@login_required
+@require_GET
+def named_gold_references_json(request):
+    """Operator-cited deposit names, without coordinates or licence assertions."""
+    return JsonResponse(named_gold_reference_catalog())
 
 
 @login_required
@@ -223,6 +231,7 @@ def targets_map(request):
         "cadastre_count": len(cadastre["features"]),
         "pilot_active": active_pilot,
         "pilot_queue": pilot_research_queue()["ranked_research_workstreams"] if active_pilot else [],
+        "pilot_deposit_names": named_gold_reference_catalog()["records"] if active_pilot else [],
         "cadastre_truncated": cadastre["metadata"]["truncated"],
         "truncated": collection["metadata"]["truncated"],
         "region_filter": request.GET.get("region", "").strip(),
