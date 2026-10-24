@@ -55,6 +55,41 @@ writes must be reviewed before adding the override; do not add it blindly.
 
 See [release verification](RELEASE_346_347.md) for activation gates and evidence.
 
+## Bounded parameter selection
+
+The command defaults to `--training-jobs=1` and accepts 1..8. It limits native
+BLAS/OpenMP threads during the command and sets IsolationForest's worker count;
+previous native thread settings are restored on exit, including failure.
+IsolationForest also defaults to one worker for direct Python training calls.
+This is a per-library/estimator limit, not an OS quota or total memory limit.
+Every estimator's resolved parameters are recorded in its JSON report.
+
+For an approved dataset with at least 30 eligible, nonconstant scoring rows:
+
+```sh
+python manage.py train_ml_models --model=scoring --tune-scoring --training-jobs=1 \
+  --output-dir=/secure/ecoiq/candidates/tuned-run-001
+```
+
+`--tune-scoring` is candidate-only and cannot be used with database application
+or the legacy write override. It evaluates eight combinations of 100/200 trees,
+learning rates 0.03/0.05 and depths 2/4, retaining the existing subsample=0.8,
+min_samples_leaf=2 and seed=42. The existing configuration is in the grid.
+Selection minimizes MAE in three inner folds. Five outer folds evaluate the
+whole selection procedure against a mean-score baseline, with preprocessing
+fitted inside each inner training fold. Search and outer folds run sequentially
+to avoid multiplying process and native thread pools. The final candidate is
+selected/refitted only after the outer evaluation. Inner selection scores are
+not reported as validation quality.
+
+This bounded search performs 150 estimator fits (8×3+1 for each of five outer
+folds, plus 8×3+1 for the final search); its cost still grows with dataset size.
+Nested shuffled CV measures approximation of existing EcoIQ scores, not
+independent truth, time-forward performance or cross-company-group generalization.
+There is no automatic promotion and no claim of improved accuracy without an
+approved real-data run and external review. Anomaly contamination and cluster
+count are not tuned against nonexistent reviewed labels.
+
 ## Quality and data requirements
 
 - Skip duplicate/missing company IDs, unknown or nonfinite material inputs,
@@ -62,7 +97,7 @@ See [release verification](RELEASE_346_347.md) for activation gates and evidence
   does not prove the company's source evidence is reliable.
 - Score targets are existing EcoIQ scores, approximated without added artificial
   label noise. This cannot independently validate fairness or the score formula.
-- With ten or more eligible rows, scoring uses five shuffled CV folds with seed 42.
+- By default, with ten or more eligible rows, scoring uses five shuffled CV folds with seed 42.
   Each fold fits its own scaler on training rows only. Report MAE, CV R² and a
   mean-score baseline evaluated on the same folds. After evaluation, refit the
   fixed procedure on all eligible rows. No parameters are selected from test scores.

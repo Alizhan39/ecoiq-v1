@@ -86,6 +86,7 @@ class TrainingTests(SimpleTestCase):
                                                trained.model.predict(trained.scaler.transform(self.X)))
                     report = json.loads((directory / f'{name}_training.json').read_text())
                     self.assertEqual(report, json.loads(json.dumps(result)))
+                    self.assertEqual(report['estimator_parameters'], model.get_params())
                     self.assertEqual(len(report['artifacts'][model_file]), 64)
                     if name != 'scoring':
                         self.assertEqual(report['evaluation']['status'], 'NOT_MEASURED')
@@ -161,6 +162,68 @@ class TrainingTests(SimpleTestCase):
 
 
 class TrainingCommandSafetyTests(SimpleTestCase):
+    def test_command_forwards_tuning_and_anomaly_worker_budget(self):
+        from unittest.mock import MagicMock
+
+        query = MagicMock()
+        companies = [SimpleNamespace()]
+        query.select_related.return_value.order_by.return_value = companies
+        result = {'n_samples': 30, 'r2_mean': None, 'n_anomalies': 2}
+        with TemporaryDirectory() as root, \
+                patch('league.models.Company.objects.filter', return_value=query), \
+                patch('ml.scoring_model.EcoIQScoringModel.train', return_value=result) as scoring, \
+                patch('ml.anomaly_detection.AnomalyDetector.train', return_value=result) as anomaly:
+            call_command('train_ml_models', model='scoring', output_dir=root,
+                         tune_scoring=True, stdout=StringIO())
+            scoring.assert_called_once_with(companies=companies, apply=False,
+                                            output_dir=Path(root) / 'scoring', tune=True)
+            call_command('train_ml_models', model='anomaly', output_dir=root,
+                         training_jobs=2, stdout=StringIO())
+            anomaly.assert_called_once_with(companies=companies, apply=False,
+                                            output_dir=Path(root) / 'anomaly', n_jobs=2)
+
+    def test_tuning_rejects_unsafe_or_unrelated_modes_before_querying(self):
+        options_list = ({'model': 'scoring'},
+                        {'model': 'anomaly', 'output_dir': '/unused/candidate'},
+                        {'model': 'scoring', 'output_dir': '/unused/candidate', 'apply': True},
+                        {'model': 'scoring', 'allow_legacy_write': True})
+        for options in options_list:
+            with self.subTest(options=options), patch('league.models.Company.objects.filter') as query:
+                with self.assertRaisesMessage(CommandError, '--tune-scoring requires'):
+                    call_command('train_ml_models', tune_scoring=True, stdout=StringIO(), **options)
+                query.assert_not_called()
+
+    def test_invalid_training_jobs_fail_before_querying(self):
+        for value in (0, -1, 9, True, 1.5):
+            with self.subTest(value=value), patch('league.models.Company.objects.filter') as query:
+                with self.assertRaisesMessage(CommandError, 'Training jobs'):
+                    call_command('train_ml_models', output_dir='/unused/candidate',
+                                 training_jobs=value, stdout=StringIO())
+                query.assert_not_called()
+
+    def test_thread_budget_is_active_during_training_and_restored_on_error(self):
+        from unittest.mock import MagicMock
+        from threadpoolctl import threadpool_info
+        from companies.management.commands.train_ml_models import Command
+
+        query = MagicMock()
+        query.select_related.return_value.order_by.return_value = [SimpleNamespace()]
+        before = {lib['filepath']: lib['num_threads'] for lib in threadpool_info()}
+
+        def failing_training(*args):
+            self.assertTrue(threadpool_info())
+            for lib in threadpool_info():
+                self.assertLessEqual(lib['num_threads'], 1)
+            raise RuntimeError('fixture training failure')
+
+        with patch('league.models.Company.objects.filter', return_value=query), \
+                patch.object(Command, '_run_scoring', side_effect=failing_training):
+            with self.assertRaisesMessage(RuntimeError, 'fixture training failure'):
+                call_command('train_ml_models', model='scoring', output_dir='/unused/candidate',
+                             training_jobs=1, stdout=StringIO())
+        after = {lib['filepath']: lib['num_threads'] for lib in threadpool_info()}
+        self.assertEqual(before, after)
+
     def test_unsafe_invocations_fail_before_querying_or_training(self):
         for options in ({}, {'model': 'scoring'}, {'apply': True},
                         {'model': 'prediction', 'apply': True}):

@@ -28,6 +28,14 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            '--training-jobs', type=int, choices=range(1, 9), default=1,
+            help='CPU budget for training: native threads and IsolationForest workers (1..8)',
+        )
+        parser.add_argument(
+            '--tune-scoring', action='store_true',
+            help='Evaluate eight GBR candidates with nested CV; requires candidate output',
+        )
+        parser.add_argument(
             '--output-dir', type=Path,
             help='New directory for candidate models and JSON evaluation reports (no DB apply)',
         )
@@ -55,6 +63,16 @@ class Command(BaseCommand):
         model_choice = options['model']
         apply        = options['apply']
         self.output_dir = Path(options['output_dir']) if options['output_dir'] else None
+        self.training_jobs = options['training_jobs']
+        self.tune_scoring = options['tune_scoring']
+        from ml.training import validate_training_jobs
+
+        try:
+            validate_training_jobs(self.training_jobs)
+        except ValueError as exc:
+            raise CommandError(str(exc)) from exc
+        if self.tune_scoring and (not self.output_dir or apply or model_choice not in ('all', 'scoring')):
+            raise CommandError('--tune-scoring requires candidate output and --model=scoring or all, without apply.')
         if apply and self.output_dir:
             raise CommandError('--output-dir candidates cannot be combined with --apply.')
         legacy_write = options['allow_legacy_write']
@@ -89,17 +107,21 @@ class Command(BaseCommand):
 
         start_total = time.time()
 
-        if model_choice in ('all', 'scoring'):
-            self._run_scoring(companies, apply)
+        from sklearn import config_context
+        from threadpoolctl import threadpool_limits
 
-        if model_choice in ('all', 'anomaly'):
-            self._run_anomaly(companies, apply)
-
-        if model_choice in ('all', 'clustering'):
-            self._run_clustering(companies, apply)
-
-        if model_choice in ('all', 'prediction'):
-            self._run_prediction(companies, apply)
+        # Import sklearn before constructing the controller: otherwise its
+        # subsequently loaded OpenMP library would escape the limit.
+        # Both contexts restore previous process configuration even on failure.
+        with config_context(assume_finite=False), threadpool_limits(limits=self.training_jobs):
+            if model_choice in ('all', 'scoring'):
+                self._run_scoring(companies, apply)
+            if model_choice in ('all', 'anomaly'):
+                self._run_anomaly(companies, apply)
+            if model_choice in ('all', 'clustering'):
+                self._run_clustering(companies, apply)
+            if model_choice in ('all', 'prediction'):
+                self._run_prediction(companies, apply)
 
         total = time.time() - start_total
         self.stdout.write('\n' + '═' * width)
@@ -178,7 +200,12 @@ class Command(BaseCommand):
         self.stdout.write(f'  ({time.time() - t0:.1f}s)')
 
     def _candidate_options(self, name):
-        return {'output_dir': self.output_dir / name} if self.output_dir else {}
+        options = {'output_dir': self.output_dir / name} if self.output_dir else {}
+        if name == 'scoring' and getattr(self, 'tune_scoring', False):
+            options['tune'] = True
+        if name == 'anomaly':
+            options['n_jobs'] = getattr(self, 'training_jobs', 1)
+        return options
 
     def _run_prediction(self, companies, apply: bool):
         self.stdout.write('\n→ 12-Month Score Prediction (OLS trend)…')

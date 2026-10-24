@@ -91,7 +91,7 @@ class EcoIQScoringModel:
             logger.warning('Scoring model not loaded: %s', exc)
             return False
 
-    def train(self, companies=None, apply: bool = False, *, output_dir=None) -> dict:
+    def train(self, companies=None, apply: bool = False, *, output_dir=None, tune=False) -> dict:
         """
         Train the GBR model on all companies with ecoiq_score > 0.
 
@@ -112,6 +112,8 @@ class EcoIQScoringModel:
             artifact_directory, save_training_run, training_metadata, training_rows,
         )
 
+        if tune and (output_dir is None or apply):
+            raise ValueError('Scoring tuning requires a new candidate output directory without apply.')
         directory = artifact_directory(output_dir, MODEL_PATH.parent, apply=apply)
 
         if companies is None:
@@ -134,7 +136,14 @@ class EcoIQScoringModel:
             random_state=42,
         )
         # Raw X enters CV: validation rows cannot influence a fold's scaler.
-        if len(X) >= 10:
+        if tune:
+            from ml.tuning import tune_scoring
+
+            fitted, metrics = tune_scoring(gbr, X, y)
+            result.update(metrics)
+            scaler, gbr = fitted.steps[0][1], fitted.steps[1][1]
+            r2_mean, r2_std = result['r2_mean'], result['r2_std']
+        elif len(X) >= 10:
             cv = KFold(n_splits=5, shuffle=True, random_state=42)
             scores = cross_validate(make_pipeline(StandardScaler(), gbr), X, y, cv=cv,
                 scoring={'r2': 'r2', 'mae': 'neg_mean_absolute_error'}, error_score='raise')
@@ -152,11 +161,15 @@ class EcoIQScoringModel:
             r2_mean = r2_std = None
             result['evaluation'] = {'status': 'NOT_MEASURED', 'reason': 'fewer_than_10_samples'}
 
-        # Refit the fixed procedure after evaluation. No test-based tuning.
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-        gbr.fit(X_scaled, y)
+        # Tuned candidates were already refitted after the nested evaluation.
+        if not tune:
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
+            gbr.fit(X_scaled, y)
+        else:
+            X_scaled = scaler.transform(X)
         result.update(r2_mean=r2_mean, r2_std=r2_std,
+                      estimator_parameters=gbr.get_params(),
                       target='existing_ecoiq_score', refitted_after_evaluation=True)
         save_training_run({MODEL_PATH.name: gbr, SCALER_PATH.name: scaler},
                           directory, 'scoring', result, exclusive=output_dir is not None)

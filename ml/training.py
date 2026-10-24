@@ -17,6 +17,12 @@ from ml.features import (
 from ml.model_identity import FEATURE_SET_VERSION
 
 
+def validate_training_jobs(value):
+    if type(value) is not int or not 1 <= value <= 8:
+        raise ValueError('Training jobs must be an integer from 1 to 8.')
+    return value
+
+
 def training_rows(companies, *, supervised=False):
     rows, targets, ids = [], [], []
     skipped = Counter()
