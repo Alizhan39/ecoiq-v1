@@ -1,0 +1,5 @@
+# Optional coordinator/worker dependencies. Not installed into the web service.
+-r requirements-dev.txt
+dask[distributed]==2026.8.0
+# Temporary mutual-TLS certificates for the isolated cluster integration test.
+cryptography>=41

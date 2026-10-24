@@ -57,6 +57,10 @@ See [release verification](RELEASE_346_347.md) for activation gates and evidence
 
 ## Bounded parameter selection
 
+For an existing TLS Dask cluster, see [multi-host training](MULTI_HOST_TRAINING.md).
+`--dask-scheduler` distributes outer scoring folds; final refit and saving remain
+on the coordinator. It requires candidate-only `--model=scoring --tune-scoring`.
+
 The command defaults to `--training-jobs=1` and accepts 1..8. It limits native
 BLAS/OpenMP threads during the command and sets IsolationForest's worker count;
 previous native thread settings are restored on exit, including failure.
