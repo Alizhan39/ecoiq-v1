@@ -11,6 +11,7 @@ urlpatterns = [
     path('targets/', targeting_views.targets_map, name='targets_map'),
     path('targets/geojson/', targeting_views.targets_geojson, name='targets_geojson'),
     path('targets/cadastre.geojson', targeting_views.cadastre_geojson, name='cadastre_geojson'),
+    path('targets/pilot/research-queue.json', targeting_views.pilot_research_queue_json, name='pilot_research_queue'),
     path('public-benchmarks/', views.public_benchmarks_view, name='public_benchmarks'),
     path('public-time-series/', views.public_time_series_view, name='public_time_series'),
     path('<slug:slug>/', views.investor_view, name='investor_view'),
