@@ -76,7 +76,10 @@ def distributed_folds(search, X, y, splits, scheduler_address):
                     workers=[addresses[index % len(addresses)]],
                     allow_other_workers=False, pure=False, retries=0,
                 ))
-            wait(futures, timeout=1800)
+            # Dask's public wait() resolves the current client, even when every
+            # future belongs to this explicit set_as_default=False client.
+            with client.as_current():
+                wait(futures, timeout=1800)
             rows = client.gather(futures)
             return rows, {
                 'backend': 'dask', 'outer_folds': len(splits),
