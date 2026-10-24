@@ -7,6 +7,7 @@
   <nav style="margin:.7rem 0;display:flex;gap:1rem;flex-wrap:wrap;">
     <a href="{% url 'gold_intelligence:targets_map' %}?pilot=chu_ili_qonaev">Open Chu–Ili / Qonaev research pilot</a>
     <a href="{% url 'gold_intelligence:pilot_research_queue' %}">Research priority API</a>
+    <a href="{% url 'gold_intelligence:named_gold_references' %}">Eight named gold deposits (no coordinates)</a>
     {% if pilot_active %}<a href="{% url 'gold_intelligence:targets_map' %}">Hide pilot overlay</a>{% endif %}
   </nav>
   {% if pilot_active %}
@@ -21,6 +22,12 @@
         </li>
       {% endfor %}
       </ol>
+      <p>Separate documented existing deposits from new unverified targets:</p>
+      <ul>
+      {% for item in pilot_deposit_names %}
+        <li>{{ item.name }} — {{ item.issuer }} (<a href="{{ item.source_url }}" rel="noopener noreferrer" target="_blank">source</a>)</li>
+      {% endfor %}
+      </ul>
       <p>Verified new gold occurrence coordinates: none. Licence status: unknown. No prospectivity score.</p>
     </aside>
   {% endif %}
