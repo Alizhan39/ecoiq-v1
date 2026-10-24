@@ -36,6 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
+      DJANGO_SETTINGS_MODULE: ecoiq.settings
       DJANGO_SECRET_KEY: test-only-key-gold-pilot-github-actions
       DEBUG: "True"
       DATABASE_URL: sqlite:///db.sqlite3
@@ -76,7 +77,6 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          from django.conf import settings
           import django
           django.setup()
           from gold_intelligence.management.commands.fetch_usgs_mrds_gold import collect_source_pages
