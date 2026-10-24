@@ -91,7 +91,8 @@ class EcoIQScoringModel:
             logger.warning('Scoring model not loaded: %s', exc)
             return False
 
-    def train(self, companies=None, apply: bool = False, *, output_dir=None, tune=False) -> dict:
+    def train(self, companies=None, apply: bool = False, *, output_dir=None, tune=False,
+              scheduler_address=None) -> dict:
         """
         Train the GBR model on all companies with ecoiq_score > 0.
 
@@ -112,6 +113,12 @@ class EcoIQScoringModel:
             artifact_directory, save_training_run, training_metadata, training_rows,
         )
 
+        if scheduler_address:
+            from ml.distributed_training import validate_scheduler
+
+            validate_scheduler(scheduler_address)
+            if not tune:
+                raise ValueError('Multi-host training requires candidate scoring tuning.')
         if tune and (output_dir is None or apply):
             raise ValueError('Scoring tuning requires a new candidate output directory without apply.')
         directory = artifact_directory(output_dir, MODEL_PATH.parent, apply=apply)
@@ -139,7 +146,7 @@ class EcoIQScoringModel:
         if tune:
             from ml.tuning import tune_scoring
 
-            fitted, metrics = tune_scoring(gbr, X, y)
+            fitted, metrics = tune_scoring(gbr, X, y, scheduler_address=scheduler_address)
             result.update(metrics)
             scaler, gbr = fitted.steps[0][1], fitted.steps[1][1]
             r2_mean, r2_std = result['r2_mean'], result['r2_std']
