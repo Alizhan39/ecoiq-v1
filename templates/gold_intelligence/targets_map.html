@@ -4,6 +4,26 @@
 <main style="max-width:1300px;margin:auto;padding:2rem 1rem;">
   <p style="font-size:.8rem;letter-spacing:.15em;color:#b8923d;">ECOIQ GOLD INTELLIGENCE · EXPERIMENTAL</p>
   <h1>AI Gold Targeting — Geological Evidence Map</h1>
+  <nav style="margin:.7rem 0;display:flex;gap:1rem;flex-wrap:wrap;">
+    <a href="{% url 'gold_intelligence:targets_map' %}?pilot=chu_ili_qonaev">Open Chu–Ili / Qonaev research pilot</a>
+    <a href="{% url 'gold_intelligence:pilot_research_queue' %}">Research priority API</a>
+    {% if pilot_active %}<a href="{% url 'gold_intelligence:targets_map' %}">Hide pilot overlay</a>{% endif %}
+  </nav>
+  {% if pilot_active %}
+    <aside style="padding:1.1rem;border:1px solid #64748b;border-radius:10px;margin:1rem 0">
+      <h2>Chu–Ili / Qonaev: first research priorities, NOT Au probability</h2>
+      <p>Blue dashed envelope is an operator-defined study window, NOT geology, free tenure, a new gold occurrence or a drilling instruction. Rank indicates source-document research readiness only.</p>
+      <ol>
+      {% for item in pilot_queue %}
+        <li style="margin:.7rem 0"><strong>{{ item.name }}</strong> — {{ item.evidence_stage }}.
+          {{ item.next_action }}
+          {% for label, url in item.sources.items %}<a href="{{ url }}" rel="noopener noreferrer" target="_blank">Source document</a>{% endfor %}
+        </li>
+      {% endfor %}
+      </ol>
+      <p>Verified new gold occurrence coordinates: none. Licence status: unknown. No prospectivity score.</p>
+    </aside>
+  {% endif %}
   <p>This is a desktop exploration evidence map, <strong>not</strong> a mineral discovery, licence cadastre, resource estimate or drilling permit. A highlighted area does not demonstrate gold or available mining rights.</p>
   <p><strong>{{ feature_count }}</strong> geological reference(s) and <strong>{{ cadastre_count }}</strong> reviewed dated cadastral polygon(s) in view. Unverified or historical occurrence records are not drill targets.
      {% if truncated %}<strong>Showing first 500; narrow the filters.</strong>{% endif %}
