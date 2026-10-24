@@ -177,7 +177,7 @@ def targets_map(request):
                     collect(item)
         for f in collection["features"]:
             collect(f["geometry"]["coordinates"])
-        if points:
+        if points and not active_pilot:
             fmap.fit_bounds([[min(p[0] for p in points), min(p[1] for p in points)],
                              [max(p[0] for p in points), max(p[1] for p in points)]])
 
