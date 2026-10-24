@@ -7,6 +7,8 @@ The separately served `/gold-intelligence/targets/pilot/research-queue.json`
 returns three qualitative literature-investigation workstreams (not gold/grade/rights
 probabilities). An unsigned/anonymous request cannot read the priority API.
 
+The parallel source bibliography API at `/gold-intelligence/targets/pilot/named-deposits.json` lists **eight operator-reported existing gold deposits**: Akbakay, Beskempir, Karyernoye, Aksakal, Svetinskoye, Kenzhem from [Altynalmas (7 June 2022)](https://www.altynalmas.kz/blog/news/37); Shokpar and Gagarinskoye from [Tau-Ken Samruk](https://tks.kz/ru/investmentprojects/razvedka-zolota-na-mestorozhdeniyah-shokpar-i-gagarinskoe-v-zhambylskoj-oblasti/). These are cited *names*, **not geocoded mineral occurrence points**, and no Au grade, vacant land, drill coordinates, or current legal status is inferred.
+
 No field evidence or historical MRDS points have been ingested into production
 by this pull request. `GoldTarget` records, if any, remain separately sourced,
 rights-tagged, access-controlled and subject to review.
@@ -56,4 +58,4 @@ No synthetic results or silent sample coordinates are substituted.
   model validation before constructing a true target prospectivity score.
 
 ## Tests
-`python manage.py test gold_intelligence.tests_chu_ili_research`
+`python manage.py test gold_intelligence.tests_chu_ili_research gold_intelligence.tests_kazakhstan_references`
