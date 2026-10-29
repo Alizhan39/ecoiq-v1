@@ -38,6 +38,7 @@ def process_workspace(request):
         response = render(request, "core/process_workspace.html", {
             "projects": projects,
             "project_list_truncated": truncated,
+            "suppress_analytics": True,
         })
     response["Cache-Control"] = "private, no-store, max-age=0"
     response["Pragma"] = "no-cache"
