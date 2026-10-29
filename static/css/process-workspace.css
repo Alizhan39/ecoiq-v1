@@ -1,0 +1,109 @@
+/* EcoIQ Business OS — internal process workspace.
+   Scoped to .po-workspace; tokens mirror the existing EcoIQ visual system.
+   No external font, second CSS framework or animated dashboard theatre. */
+.po-workspace {
+  --po-ink: var(--ink, #0f1a14);
+  --po-muted: var(--ink-soft, #52685a);
+  --po-line: var(--line, rgba(15,26,20,.12));
+  --po-paper: var(--paper, #ffffff);
+  --po-soft: var(--paper-soft, #f6f8f6);
+  --po-green: var(--accent-strong, #007a51);
+  color: var(--po-ink);
+  max-width: 100%;
+}
+.po-workspace *, .po-workspace *::before, .po-workspace *::after { box-sizing: border-box; }
+.po-workspace .po-eyebrow {
+  display: inline-flex; gap: .55rem; align-items: center;
+  font-size: .76rem; text-transform: uppercase; letter-spacing: .11em;
+  color: #17664a; font-weight: 750; margin: .3rem 0 1rem;
+}
+.po-workspace .po-dot { width: 8px; height: 8px; border-radius: 50%; background: #00a86b; }
+.po-workspace .po-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
+.po-workspace h1 { color: #0f1a14; margin: 0 0 .35rem; font-size: clamp(1.8rem, 4vw, 2.4rem); letter-spacing: -.03em; }
+.po-workspace h2 { font-size: 1.1rem; color: #0f1a14; margin: 0 0 .45rem; line-height: 1.3; }
+.po-workspace .po-intro { color: #52685a; max-width: 60ch; font-size: .95rem; }
+.po-workspace .po-stage {
+  background: #e6f6ef; border: 1px solid #bddccf; border-radius: 50px;
+  color: #175f45; font-size: .72rem; font-weight: 700; letter-spacing: .035em;
+  padding: .45rem .8rem; white-space: nowrap;
+}
+.po-workspace .po-notice {
+  margin: 0 0 1.3rem; padding: .9rem 1rem;
+  border: 1px solid #d6e3dd; background: #f2f7f3;
+  border-radius: 10px; font-size: .88rem; color: #264b38;
+  line-height: 1.6;
+}
+.po-workspace .po-panel, .po-workspace .po-metric {
+  background: #fff; border: 1px solid #dae4dc; border-radius: 12px;
+  padding: 1.25rem; box-shadow: 0 2px 10px rgba(9,30,18,.04); margin: 0 0 1rem;
+}
+.po-workspace .po-panel p { color: #52685a; font-size: .87rem; line-height: 1.55; margin: .4rem 0 .8rem; }
+.po-workspace .po-panel-head { display: flex; justify-content: space-between; gap: .8rem; align-items: start; }
+.po-workspace .po-label { display: block; font-size: .83rem; font-weight: 700; color: #214a34; margin: .75rem 0 .4rem; }
+.po-workspace .po-select, .po-workspace .po-file {
+  display: block; width: 100%; min-width: 0; color: #1d3527;
+  padding: .75rem .85rem; background: #fff;
+  border: 1px solid #abbfb2; border-radius: 8px; font: inherit;
+}
+.po-workspace .po-file { font-size: .82rem; }
+.po-workspace .po-select:focus-visible, .po-workspace .po-file:focus-visible,
+.po-workspace .po-button:focus-visible { outline: 3px solid #2d9265; outline-offset: 3px; }
+.po-workspace .po-hint { color: #59695f; font-size: .8rem; line-height: 1.5; }
+.po-workspace .po-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .8rem; margin-bottom: .4rem;
+}
+.po-workspace .po-metric { min-width: 0; }
+.po-workspace .po-metric-name { color: #52685a; font-size: .75rem; font-weight: 650; }
+.po-workspace .po-metric-value { color: #103823; font-size: clamp(1.55rem, 3vw, 2.25rem); line-height: 1.3; font-weight: 770; overflow-wrap: anywhere; margin: .5rem 0; }
+.po-workspace .po-metric-value--small { font-size: clamp(1rem, 2vw, 1.35rem); }
+.po-workspace .po-metric-note { color: #52685a; font-size: .75rem; line-height: 1.45; }
+.po-workspace .po-columns { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .8rem; }
+.po-workspace .po-button {
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  margin-top: .8rem; padding: .65rem .9rem; background: #007a51;
+  border: 1px solid #007a51; border-radius: 8px; color: #fff;
+  font: inherit; font-size: .85rem; font-weight: 750; min-height: 42px;
+}
+.po-workspace .po-button:hover:not(:disabled) { background: #075d41; }
+.po-workspace .po-button--secondary { background: #f0f7f2; color: #175f45; border-color: #bfddca; margin-top: 0; }
+.po-workspace .po-button--secondary:hover:not(:disabled) { background: #e1f0e5; }
+.po-workspace .po-button:disabled { opacity: .55; cursor: not-allowed; }
+.po-workspace .po-formula { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85rem !important; background: #f2f7f3; border-radius: 7px; padding: .8rem; color: #175f45 !important; overflow-wrap: anywhere; }
+.po-workspace .po-feedback { min-height: 1.5rem; color: #175f45 !important; }
+.po-workspace .po-feedback--error { color: #99262c !important; }
+.po-workspace .po-table-wrap { overflow-x: auto; width: 100%; }
+.po-workspace .po-table { width: 100%; border-collapse: collapse; min-width: 590px; text-align: start; }
+.po-workspace .po-table th, .po-workspace .po-table td {
+  text-align: start; vertical-align: top; padding: .75rem .45rem;
+  border-bottom: 1px solid #e2e9e4; font-size: .83rem;
+}
+.po-workspace .po-table th { font-size: .73rem; letter-spacing: .03em; color: #4a6352; font-weight: 750; }
+.po-workspace .po-table td { color: #283e30; }
+.po-workspace .po-strong { font-weight: 750; color: #123b24; }
+.po-workspace .po-secondary { color: #52685a; display: block; font-size: .77rem; }
+.po-workspace .po-pagination { display: flex; justify-content: space-between; align-items: center; gap: .7rem; padding-top: 1rem; font-size: .8rem; color: #52685a; }
+@media (max-width: 680px) {
+  .po-workspace .po-grid, .po-workspace .po-columns { grid-template-columns: 1fr; }
+  .po-workspace .po-panel, .po-workspace .po-metric { padding: 1rem; }
+  .po-workspace .po-heading { gap: .6rem; }
+  .po-workspace .po-panel-head { align-items: center; }
+  .po-workspace .po-stage { white-space: normal; }
+}
+@media (prefers-color-scheme: dark) {
+  .po-workspace .po-panel, .po-workspace .po-metric { background: #131c17; border-color: #39473d; }
+  .po-workspace h1, .po-workspace h2, .po-workspace .po-metric-value,
+  .po-workspace .po-strong, .po-workspace .po-table td { color: #edf3ed; }
+  .po-workspace .po-intro, .po-workspace .po-panel p,
+  .po-workspace .po-hint, .po-workspace .po-metric-name,
+  .po-workspace .po-metric-note, .po-workspace .po-secondary { color: #aec2b2; }
+  .po-workspace .po-label, .po-workspace .po-eyebrow { color: #9ee5bf; }
+  .po-workspace .po-notice, .po-workspace .po-formula { background: #172920; color: #b7e3c7 !important; border-color: #3d5b47; }
+  .po-workspace .po-stage { background: #173629; color: #b7e3c7; border-color: #3d5b47; }
+  .po-workspace .po-select, .po-workspace .po-file { color: #edf3ed; background: #132019; border-color: #59715e; }
+  .po-workspace .po-table th { color: #bfd3c2; }
+  .po-workspace .po-table td, .po-workspace .po-table th { border-color: #3a4b40; }
+  .po-workspace .po-button { background: #00a86b; color: #092518; border-color: #00a86b; }
+  .po-workspace .po-button--secondary { background: #213c2c; color: #b7e3c7; border-color: #45664d; }
+  .po-workspace .po-feedback { color: #b7e3c7 !important; }
+  .po-workspace .po-feedback--error { color: #ffb5ba !important; }
+}
