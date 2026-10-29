@@ -80,6 +80,13 @@ reconcile completeness and dates; evaluate worker safety, environment and
 affected groups; test and falsify causal hypotheses; simulate any proposed
 Islah change and obtain human review; independently measure before/after impact.
 
+## Stage 3: private project upload and history
+
+See [Project Process History v1](PROCESS_PROJECT_HISTORY_V1.md) for a
+permissioned Django session endpoint with role checks, CSRF protection,
+minimal private history and no raw CSV persistence. It is a separate,
+review-only increment and must not be treated as an approved deployment.
+
 ## Developer checks
 
     python -m unittest ecoiq_os.test_process_csv ecoiq_os.test_process_diagnostic ecoiq_os.test_kernel
