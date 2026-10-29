@@ -27,7 +27,7 @@ public company leaderboard or institutional API-key authentication surface.
 | Method | Path | Permission | Result |
 |---|---|---|---|
 | POST | `/api/v2/projects/<slug>/process-analyses/` | ANALYSE | Parse one UTF-8 multipart CSV field named `file`; persist one minimal result |
-| GET | `/api/v2/projects/<slug>/process-analyses/` | READ | 50 newest private analyses, total count and has_more |
+| GET | `/api/v2/projects/<slug>/process-analyses/` | READ | 50 private analyses per page (?page=1..200), total count and has_more |
 | GET | `/api/v2/projects/<slug>/process-analyses/<run_id>/` | READ | One private result in the named project |
 
 Role behavior follows the existing project role matrix:
