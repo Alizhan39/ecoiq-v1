@@ -86,7 +86,6 @@ def parse_process_csv(text: str) -> CSVImportSummary:
         raise ValueError("Missing or malformed CSV header.") from exc
     if len(header) != len(FIELDS) or len(set(header)) != len(FIELDS) or set(header) != set(FIELDS):
         raise ValueError("CSV columns must match the documented schema exactly.")
-    index = {key: header.index(key) for key in FIELDS}
     context: tuple[str, ...] | None = None
     seen: set[str] = set()
     totals = {flow: Decimal("0") for flow in FLOW_TYPES}
@@ -144,6 +143,7 @@ def parse_process_csv(text: str) -> CSVImportSummary:
     if context is None:
         raise ValueError("CSV has no observations.")
     case_id, domain, process, resource, period, unit = context
+
     def measure(flow: str) -> ProcessMeasurement:
         quantity = float(totals[flow]) if flow_counts[flow] and not unknown[flow] else None
         return ProcessMeasurement(
