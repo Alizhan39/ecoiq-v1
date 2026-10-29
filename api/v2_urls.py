@@ -14,7 +14,7 @@ from django.urls import path
 
 from api import (
     v2_assessment, v2_contact, v2_interactive, v2_kpi, v2_platform, v2_principles, v2_projects,
-    v2_session, v2_views,
+    v2_process_analyses, v2_session, v2_views,
 )
 
 app_name = 'api_v2'
@@ -37,6 +37,11 @@ urlpatterns = [
     # not optional.
     path('contact/',               v2_contact.contact,   name='contact'),
     path('projects/',              v2_projects.projects, name='projects'),
+    # Private project-specific process inspections; these are NOT public scores.
+    path('projects/<slug:project_slug>/process-analyses/',
+         v2_process_analyses.process_analyses, name='process_analyses'),
+    path('projects/<slug:project_slug>/process-analyses/<int:run_id>/',
+         v2_process_analyses.process_analysis_detail, name='process_analysis_detail'),
     # The 114 stewardship principles EcoIQ assesses against. A fact about the
     # method, not about any organisation — so it takes no slug.
     path('principles/',            v2_principles.principles, name='principles'),
