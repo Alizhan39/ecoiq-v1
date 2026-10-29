@@ -95,6 +95,36 @@ class ProjectProcessHistoryTests(TestCase):
         self.assertEqual(detail.json()["analysis"]["result"]["kpi"]["value"], 12)
         self.assertNotIn("file_fingerprint", detail.content.decode())
 
+    def test_history_pages_are_bounded(self):
+        self.assertEqual(self._post(self.users["analyst"]).status_code, 201)
+        self.client.force_login(self.users["viewer"])
+        self.assertEqual(self.client.get(self.list_url).json()["page"], 1)
+        empty_second_page = self.client.get(self.list_url + "?page=2")
+        self.assertEqual(empty_second_page.status_code, 200)
+        self.assertEqual(empty_second_page.json()["results"], [])
+        self.assertFalse(empty_second_page.json()["has_more"])
+        self.assertEqual(self.client.get(self.list_url + "?page=0").status_code, 400)
+        self.assertEqual(self.client.get(self.list_url + "?page=foo").status_code, 400)
+
+    def test_history_cannot_be_deleted_or_edited_via_api(self):
+        self.assertEqual(self._post(self.users["analyst"]).status_code, 201)
+        run = ProcessAnalysisRun.objects.get()
+        detail_url = reverse("api_v2:process_analysis_detail", kwargs={
+            "project_slug": self.p1.slug, "run_id": run.pk,
+        })
+        self.assertEqual(self.client.delete(detail_url).status_code, 405)
+        self.assertEqual(self.client.patch(detail_url, data={"verified": True},
+                                           content_type="application/json").status_code, 405)
+        self.assertEqual(ProcessAnalysisRun.objects.count(), 1)
+
+    def test_revocation_before_persistence_blocks_write(self):
+        from unittest.mock import patch
+        self.client.force_login(self.users["analyst"])
+        with patch("api.v2_process_analyses.access.can", return_value=False):
+            response = self.client.post(self.list_url, {"file": upload()})
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(ProcessAnalysisRun.objects.exists())
+
     def test_duplicate_file_is_idempotent(self):
         actor = self.users["analyst"]
         self.assertEqual(self._post(actor).status_code, 201)
