@@ -86,12 +86,21 @@ def process_analyses(request, project_slug):
     project = _resolve_project(request, project_slug, permission)
 
     if request.method == "GET":
+        try:
+            page = int(request.query_params.get("page", "1"))
+        except (ValueError, TypeError):
+            return _private({"detail": "page must be a positive integer."}, 400)
+        if page < 1 or page > 200:
+            return _private({"detail": "page must be between 1 and 200."}, 400)
         runs = ProcessAnalysisRun.objects.filter(project=project).order_by("-created_at", "-pk")
+        count = runs.count()
+        start = (page - 1) * 50
         return _private({
             "project_slug": project.slug,
-            "count": runs.count(),
-            "results": [_view_run(run) for run in runs[:50]],
-            "has_more": runs.count() > 50,
+            "count": count,
+            "page": page,
+            "results": [_view_run(run) for run in runs[start:start + 50]],
+            "has_more": count > start + 50,
         })
 
     # Narrow multipart contract: only 'file' is accepted; no actor, approval
