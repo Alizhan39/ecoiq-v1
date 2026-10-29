@@ -96,6 +96,15 @@ def process_analyses(request, project_slug):
 
     # Narrow multipart contract: only 'file' is accepted; no actor, approval
     # state, organisation, cause or arbitrary claimed permission parameters.
+    # Bound the entire HTTP entity before multipart parsing; reverse proxies
+    # should enforce a matching server-level request-body ceiling as well.
+    declared = request.META.get("CONTENT_LENGTH")
+    try:
+        size = int(declared) if declared else 0
+    except (ValueError, TypeError):
+        return _private({"detail": "Invalid content length."}, 400)
+    if size > MAX_CSV_BYTES + 8192:
+        return _private({"detail": "Request exceeds size limit."}, 413)
     if set(request.data.keys()) != {"file"} or len(request.FILES) != 1:
         return _private({"detail": "Upload exactly one CSV field named file."}, 400)
     upload = request.FILES.get("file")
@@ -113,6 +122,11 @@ def process_analyses(request, project_slug):
         # Never echo submitted CSV content; validation errors only name fields
         # and line numbers.
         return _private({"detail": str(exc)}, 400)
+
+    # Recheck the grant immediately before the protected DB write to avoid
+    # honouring a role revoked while a file was being parsed.
+    if not access.can(request.user, project, access.ANALYSE):
+        raise Http404
 
     # Project membership and owner come from server-side context, not CSV.
     # A repeated import is idempotent within one project.
@@ -152,7 +166,7 @@ def process_analyses(request, project_slug):
                     "case_id": snapshot["case_id"],
                     "domain": snapshot["domain"],
                     "process_name": snapshot["process_name"],
-                    "resource_type": kpi and snapshot["flow_graph"]["edges"][0]["resource_type"],
+                    "resource_type": snapshot["flow_graph"]["edges"][0]["resource_type"],
                     "period": kpi["period"],
                     "unit": kpi["source_unit"],
                     "summary": report,
