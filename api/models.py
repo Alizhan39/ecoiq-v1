@@ -190,3 +190,47 @@ class APIRequestLog(models.Model):
 
     def __str__(self):
         return f'{self.method} {self.endpoint} -> {self.status_code}'
+
+class ProcessAnalysisRun(models.Model):
+    """Immutable-by-API, project-scoped result of a *reported* CSV analysis.
+
+    This is a private diagnostic history, not verified evidence. The original
+    CSV, individual observations and source-reference identifiers are not
+    stored. Access is enforced in the API using gold_intelligence.access on
+    every read and creation; model access is not an organisation-wide grant.
+    """
+
+    project = models.ForeignKey(
+        'gold_intelligence.GoldProject',
+        on_delete=models.PROTECT,
+        related_name='process_analysis_runs',
+    )
+    created_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name='process_analysis_runs',
+    )
+    case_id = models.CharField(max_length=96)
+    domain = models.CharField(max_length=40)
+    process_name = models.CharField(max_length=128)
+    resource_type = models.CharField(max_length=32)
+    period = models.CharField(max_length=7)
+    unit = models.CharField(max_length=128)
+    # HMAC-keyed file fingerprint (never the plaintext file or a publicly
+    # guessable unsalted digest). Used for idempotent imports inside a project.
+    file_fingerprint = models.CharField(max_length=64, editable=False)
+    summary = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['project', 'file_fingerprint'],
+                name='unique_project_process_csv_file',
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=['project', '-created_at'],
+                name='api_process_project_time_idx',
+            ),
+        ]
