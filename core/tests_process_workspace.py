@@ -43,6 +43,15 @@ class ProcessWorkspaceTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith("/login/?next="))
 
+    @override_settings(GTM_CONTAINER_ID="GTM-TEST-PRIVATE")
+    def test_private_workspace_does_not_load_marketing_analytics(self):
+        self.client.force_login(self.viewer)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "ecoiq-analytics-loader")
+        self.assertNotContains(response, "googletagmanager.com")
+        self.assertNotContains(response, "GTM-TEST-PRIVATE")
+
     def test_viewer_sees_only_their_project_with_read_only_marker(self):
         self.client.force_login(self.viewer)
         response = self.client.get(self.url)
