@@ -215,6 +215,13 @@ contracts as any other input.
 
 No unevaluated prompt should be presented as an operational OS capability.
 
+## First executable diagnostic adapter
+
+The internal, read-only [Process Diagnostic v1](PROCESS_DIAGNOSTIC_V1.md)
+reuses the flow, evidence and Mizan contracts to calculate one observed
+loss-rate KPI without inventing causal support or changing company data.
+It is not yet an OS case API, published score or production integration.
+
 ## Next implementation boundary
 
 The next reviewable increments are:
