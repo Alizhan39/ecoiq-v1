@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
                     models.Index(fields=['project', '-created_at'], name='api_process_project_time_idx'),
                 ],
                 'constraints': [
-                    models.UniqueConstraint(fields=('project', 'file_fingerprint'), name='unique_project_process_csv_file'),
+                    models.UniqueConstraint(fields=('project', 'file_fingerprint'), name='api_unique_proj_csv_v1'),
                 ],
             },
         ),
