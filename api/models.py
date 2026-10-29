@@ -225,7 +225,7 @@ class ProcessAnalysisRun(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['project', 'file_fingerprint'],
-                name='unique_project_process_csv_file',
+                name='api_unique_proj_csv_v1',
             ),
         ]
         indexes = [
