@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Business OS · Process Intelligence — EcoIQ{% endblock %}
+{% block meta_description_content %}Private workspace for evidence-aware process diagnostics. Data is not independently verified.{% endblock %}
+{% block extra_head %}
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="{% static 'css/process-workspace.css' %}">
+{% endblock %}
+{% block content %}
+<section class="po-workspace" id="po-workspace" aria-labelledby="po-title">
+  <div class="po-eyebrow"><span class="po-dot" aria-hidden="true"></span> EcoIQ Business OS · Private pilot</div>
+  <div class="po-heading">
+    <div>
+      <h1 id="po-title">Process Intelligence</h1>
+      <p class="po-intro">Analyse reported resource flows, inspect KPI history and identify what evidence is still missing.</p>
+    </div>
+    <span class="po-stage">Read-only diagnostics</span>
+  </div>
+
+  <div class="po-notice" role="note">
+    <strong>Evidence boundary.</strong> These are reported quantities, not audited results.
+    EcoIQ cannot conclude that a loss is avoidable or approve a business change from a ratio alone.
+  </div>
+
+  {% if project_list_truncated %}
+  <p class="po-hint" role="status">Showing the first 100 accessible projects. Ask an administrator about additional projects.</p>
+  {% endif %}
+
+  {% if projects %}
+    <section class="po-panel" aria-labelledby="po-select-title">
+      <div class="po-panel-head">
+        <div>
+          <h2 id="po-select-title">Your project</h2>
+          <p>Only projects assigned to your account are shown.</p>
+        </div>
+      </div>
+      <label class="po-label" for="po-project">Select project</label>
+      <select class="po-select" id="po-project">
+        {% for project in projects %}
+          <option value="{{ project.slug }}" data-upload="{{ project.can_upload|yesno:'1,0' }}">{{ project.name }}</option>
+        {% endfor %}
+      </select>
+      <p class="po-hint" id="po-permission" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="po-grid" aria-label="Latest diagnostic">
+      <div class="po-metric">
+        <div class="po-metric-name">Recorded loss rate</div>
+        <div class="po-metric-value" id="po-kpi">—</div>
+        <div class="po-metric-note" id="po-kpi-note">No report selected</div>
+      </div>
+      <div class="po-metric">
+        <div class="po-metric-name">Evidence status</div>
+        <div class="po-metric-value po-metric-value--small" id="po-evidence">—</div>
+        <div class="po-metric-note">Source identifiers have not been authenticated</div>
+      </div>
+      <div class="po-metric">
+        <div class="po-metric-name">Next justified step</div>
+        <div class="po-metric-value po-metric-value--small" id="po-next">—</div>
+        <div class="po-metric-note">Determined by the existing Mizan and causal evidence gates</div>
+      </div>
+    </section>
+
+    <div class="po-columns">
+      <section class="po-panel" aria-labelledby="po-upload-title">
+        <h2 id="po-upload-title">Upload process observations</h2>
+        <p>One CSV file per process, reporting period, resource and unit. Maximum 512 KiB / 1,000 rows.</p>
+        <form id="po-upload-form" enctype="multipart/form-data">
+          {% csrf_token %}
+          <label class="po-label" for="po-file">CSV observations file</label>
+          <input id="po-file" class="po-file" type="file" accept=".csv,text/csv" required>
+          <button type="button" class="po-button" id="po-submit">Analyse CSV</button>
+        </form>
+        <p class="po-hint">Do not upload personal data, payroll records, client identities or confidential business files until the pilot has passed security and data-protection review.</p>
+        <p id="po-upload-feedback" class="po-feedback" role="status" aria-live="polite"></p>
+      </section>
+      <section class="po-panel" aria-labelledby="po-method-title">
+        <h2 id="po-method-title">What the calculation means</h2>
+        <p class="po-formula">Reported loss ÷ reported input × 100</p>
+        <p>Unknown values remain unknown. A reported zero is shown as zero, not as missing.</p>
+        <p>Input and loss must use the same unit, period and accounting boundary. No automatic operational action follows.</p>
+        <p class="po-hint">This interface sends one file to the authorised Django API. The raw CSV is not stored in the new analysis-history table.</p>
+      </section>
+    </div>
+
+    <section class="po-panel" aria-labelledby="po-history-title">
+      <div class="po-panel-head">
+        <div>
+          <h2 id="po-history-title">Private analysis history</h2>
+          <p>Reported KPI results for this project. Not independent verification.</p>
+        </div>
+        <button type="button" class="po-button po-button--secondary" id="po-refresh">Refresh</button>
+      </div>
+      <p id="po-history-status" class="po-hint" role="status" aria-live="polite">Loading…</p>
+      <div class="po-table-wrap">
+        <table class="po-table" aria-label="Private process analysis history">
+          <thead><tr>
+            <th scope="col">Date</th>
+            <th scope="col">Case / process</th>
+            <th scope="col">Reported loss</th>
+            <th scope="col">Next step</th>
+          </tr></thead>
+          <tbody id="po-history-rows"></tbody>
+        </table>
+      </div>
+      <div class="po-pagination">
+        <button type="button" class="po-button po-button--secondary" id="po-prev" disabled>Previous</button>
+        <span id="po-page" aria-live="polite">Page 1</span>
+        <button type="button" class="po-button po-button--secondary" id="po-next-page" disabled>Next</button>
+      </div>
+    </section>
+  {% else %}
+    <div class="po-panel" role="status">
+      <h2>No accessible projects yet</h2>
+      <p>Your account does not currently have an assigned project. An administrator must explicitly grant access through the existing EcoIQ project roles.</p>
+      <p>No example records or fabricated business KPIs are displayed.</p>
+    </div>
+  {% endif %}
+
+  <noscript><p class="po-notice">JavaScript is required for loading private history and sending a CSV. All permissions are checked by the server.</p></noscript>
+</section>
+<script src="{% static 'js/process-workspace.js' %}" defer></script>
+{% endblock %}
