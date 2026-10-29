@@ -101,6 +101,14 @@ independent security and operational review.
     python manage.py check
     ruff check api/v2_process_analyses.py api/tests_v2_process_analyses.py api/models.py
 
+## Stage 4: private responsive browser workspace
+
+The optional, Django-rendered [Process Workspace v1](PROCESS_WORKSPACE_V1.md)
+provides an authenticated project selector, CSV upload, reported KPI and
+private history using the existing API. No public SPA build or new
+permission engine is introduced. The workspace remains a reviewed pilot,
+not a verified or production-ready client integration.
+
 ## Next increment
 
 Run first in a private staging environment with consented or synthetic
