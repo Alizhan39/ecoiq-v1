@@ -73,6 +73,12 @@ the KPI, explicit source references, limitations and the existing kernel gate.
 - No public or staff HTTP route, database table, connector, execution agent,
   99-name compliance score or production deployment is added.
 
+## Next increment: local CSV pilot
+
+A strict, offline, read-only CSV importer is documented in
+[Stage 2: Process CSV v1](PROCESS_CSV_V1.md). It remains internal,
+with no authenticated project API or verified company records.
+
 ## Run tests
 
 ```bash
