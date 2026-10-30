@@ -21,7 +21,7 @@ SCHEMA = (
 
 
 def reply(*, expression="downtime_hours / scheduled_hours * 100",
-          output_unit="1", key="S1", quote="recorded 12 hours of downtime",
+          output_unit="%", key="S1", quote="recorded 12 hours of downtime",
           extra=None):
     result = {
         "title": "Reported equipment downtime percentage",
@@ -49,7 +49,7 @@ class FormulaProposalGuardTests(TestCase):
             reply(), inputs=SCHEMA, source_excerpts=self.sources,
         )
         self.assertEqual(result["status"], "FORMULA_CANDIDATE_REQUIRES_REVIEW")
-        self.assertEqual(result["candidate"]["output_unit"], "1")
+        self.assertEqual(result["candidate"]["output_unit"], "%")
         self.assertEqual(result["candidate"]["citations"][0]["memory_id"], 8)
         self.assertEqual(result["candidate"]["validation_status"], "AI_PROPOSED_NOT_APPROVED")
         self.assertFalse(result["implementation_permitted"])
