@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ · AI Human Review{% endblock %}
+{% block meta_description_content %}Private AI question and citation review.{% endblock %}
+{% block extra_head %}
+<meta name="robots" content="noindex, nofollow">
+<style>
+.ec-review{max-width:980px;margin:3rem auto;padding:0 1.25rem}
+.ec-review h1{font-size:clamp(1.65rem,3vw,2.4rem)}
+.ec-review .ec-alert,.ec-review section{border:1px solid #8196a366;border-radius:.65rem;padding:1.2rem;margin:1rem 0}
+.ec-review .ec-alert{border-color:#a77b48}
+.ec-review .ec-error{border-color:#b55252}
+.ec-review blockquote{border-left:3px solid #8196a3;padding:.5rem 1rem;white-space:pre-wrap;overflow-wrap:anywhere}
+.ec-review .ec-meta{opacity:.8;font-size:.9rem}
+.ec-review label{display:block;margin:.7rem 0}
+.ec-review select,.ec-review button{padding:.55rem .85rem}
+.ec-review a{text-decoration:underline}
+</style>
+{% endblock %}
+{% block content %}
+<main class="ec-review" aria-labelledby="ai-review-heading">
+  <p><a href="{% url 'ai_review_queue' %}">All reviews</a></p>
+  <h1 id="ai-review-heading">Review #{{ review.pk }} · {{ review.analysis.process_name }}</h1>
+  <p class="ec-meta">Project: {{ review.project.name }} · Status: {{ review.get_status_display }} · Submitted by {{ review.submitted_by.username }}</p>
+  <div class="ec-alert"><strong>Study-only boundary.</strong> Acceptance does not prove causation, independently verify KPI, approve an Islah change or grant data transfer to an external model.</div>
+  {% if error %}<div class="ec-alert ec-error" role="alert">{{ error }}</div>{% endif %}
+  {% if not snapshot.is_current %}
+    <div class="ec-alert ec-error" role="alert"><strong>Review blocked:</strong> source verification, permission or content integrity has changed. Generate a new question draft using currently reviewed evidence.</div>
+  {% else %}
+    <section aria-label="Source excerpts">
+      <h2>Current reviewed source excerpts</h2>
+      <p class="ec-meta">These excerpts are bounded previews of project-private source records, not verified causal conclusions. Original documents must still be checked separately.</p>
+      {% for source in snapshot.sources %}
+        <article>
+          <h3>{{ source.key }} · Evidence #{{ source.memory_id }}</h3>
+          <blockquote>{{ source.excerpt }}</blockquote>
+        </article>
+      {% endfor %}
+    </section>
+    <section aria-label="Questions and citations">
+      <h2>AI investigation questions</h2>
+      {% for question in snapshot.questions %}
+        <article>
+          <h3>Question {{ forloop.counter }}</h3>
+          <p>{{ question.question }}</p>
+          <p class="ec-meta">UNTESTED · no operational permission</p>
+          {% for cite in question.citations %}
+            <p>Exact quote {{ cite.key }} (record #{{ cite.memory_id }}):</p>
+            <blockquote>{{ cite.quote }}</blockquote>
+          {% endfor %}
+        </article>
+      {% endfor %}
+    </section>
+  {% endif %}
+  <section aria-label="Review decision">
+    <h2>Independent human decision</h2>
+    {% if snapshot.is_current and review.status == 'pending' and request.user.pk != review.submitted_by_id %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="decision">
+        <label for="ec-decision">Decision</label>
+        <select name="decision" id="ec-decision" required>
+          <option value="accept">Accept questions for further study</option>
+          <option value="reject">Reject draft</option>
+          <option value="revise">Needs revision</option>
+        </select>
+        <label for="ec-reason">Reason (acceptance requires citations checked)</label>
+        <select name="reason_code" id="ec-reason" required>
+          <option value="citations_checked">Source quotes and their context checked</option>
+          <option value="needs_more_evidence">More evidence required</option>
+          <option value="misleading_interpretation">Misleading interpretation</option>
+          <option value="confidentiality_concern">Confidentiality concern</option>
+          <option value="out_of_scope">Out of scope</option>
+        </select>
+        <button type="submit">Record human review</button>
+      </form>
+    {% else %}
+      <p>This draft cannot be decided here (already decided, changed source, or submitted by you).</p>
+    {% endif %}
+  </section>
+  <section aria-label="Data-processing readiness">
+    <h2>Data-processing readiness checklist</h2>
+    <p><strong>This is a record of checks only; it NEVER authorises external AI transmission.</strong> Provider contracts, client permission and any applicable data protection assessment must be separately established.</p>
+    {% if snapshot.is_current %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="readiness">
+        <label><input type="checkbox" name="source_rights" required> Reviewed source-processing rights</label>
+        <label><input type="checkbox" name="privacy" required> Reviewed privacy/data-minimisation requirements</label>
+        <label><input type="checkbox" name="provider_terms" required> Reviewed provider retention and training terms</label>
+        <button type="submit">Record checklist (not transfer approval)</button>
+      </form>
+    {% else %}
+      <p>Refresh evidence before recording a checklist.</p>
+    {% endif %}
+    <h3>Latest checklist records</h3>
+    {% for item in readiness %}
+      <p class="ec-meta">Record #{{ item.pk }} · {{ item.recorded_by.username }} · {{ item.created_at }} · expires {{ item.expires_at }} · external transfer authorised: NO</p>
+    {% empty %}
+      <p>No readiness records yet.</p>
+    {% endfor %}
+  </section>
+  <section aria-label="Audit trail">
+    <h2>Review audit trail</h2>
+    {% for event in events %}
+      <p class="ec-meta">{{ event.created_at }} · {{ event.actor.username }} · {{ event.action }} · {{ event.reason_code|default:'—' }}</p>
+    {% empty %}
+      <p>No events.</p>
+    {% endfor %}
+  </section>
+</main>
+{% endblock %}
