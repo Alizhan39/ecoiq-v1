@@ -76,6 +76,8 @@ def review_detail(request, project_slug, review_id):
                     reason_code=request.POST.get("reason_code"),
                 )
             elif action == "readiness":
+                if not inspect_review_case(project=project, actor=request.user, case=case)["is_current"]:
+                    raise ReviewBlocked("Source content or verification has changed.")
                 if set(request.POST.keys()) != {
                     "csrfmiddlewaretoken", "action", "source_rights",
                     "privacy", "provider_terms",
