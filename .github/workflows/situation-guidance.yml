@@ -12,6 +12,8 @@ on:
       - "api/tests_v2_decision_islah.py"
       - "templates/core/process_workspace.html"
       - "static/js/process-workspace.js"
+      - "scripts/native/offline_situation_demo.py"
+      - "native/cpp_twin_geometry/**"
       - "docs/architecture/SITUATION_QURANIC_GUIDANCE_V1.md"
       - ".github/workflows/situation-guidance.yml"
   push:
@@ -19,6 +21,7 @@ on:
     paths:
       - "ecoiq_os/situation_guidance.py"
       - "ecoiq_os/test_situation_guidance.py"
+      - "scripts/native/offline_situation_demo.py"
       - ".github/workflows/situation-guidance.yml"
 
 permissions:
@@ -59,6 +62,18 @@ jobs:
           python manage.py check
           python manage.py makemigrations --check --dry-run
           python manage.py test ecoiq_os.test_situation_guidance api.tests_v2_decision_islah core.tests_process_workspace ecoiq_os.test_kernel ecoiq_os.test_knowledge --noinput
+      - name: Rust and C++ synthetic native bridge proof
+        run: |
+          rustup toolchain install 1.85.1 --profile minimal
+          rustup default 1.85.1
+          cargo test --offline --manifest-path native/rust_resource_kernel/Cargo.toml
+          cargo build --offline --manifest-path native/rust_resource_kernel/Cargo.toml
+          cmake -S native/cpp_twin_geometry -B /tmp/ecoiq-situation-cpp \\
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build /tmp/ecoiq-situation-cpp --parallel 2
+          ctest --test-dir /tmp/ecoiq-situation-cpp --output-on-failure
+          ECOIQ_CPP_CANDIDATE_BIN=/tmp/ecoiq-situation-cpp/ecoiq-twin-preview \\
+            python scripts/native/offline_situation_demo.py
       - name: Scope must not enable native code or external providers
         run: |
           git diff --exit-code HEAD -- render.yaml requirements.txt ecoiq/settings.py
