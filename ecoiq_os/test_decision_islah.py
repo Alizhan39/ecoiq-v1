@@ -126,8 +126,9 @@ class PreliminaryBriefTests(TestCase):
     def test_studies_are_not_implementation_permissions(self):
         for item in brief()["islah_studies"]:
             self.assertEqual(item["status"], "STUDY_ONLY")
-            self.assertIn("worker", item["affected_dimensions"] if item["key"] == "TEST_HANDLING"
-                          else ("worker",))
+            self.assertIn("resource_efficiency", item["affected_dimensions"])
+            if item["key"] == "TEST_HANDLING":
+                self.assertIn("worker", item["affected_dimensions"])
             self.assertTrue(item["possible_unintended_effects"])
 
     def test_generated_hypotheses_must_never_be_causal_support(self):
