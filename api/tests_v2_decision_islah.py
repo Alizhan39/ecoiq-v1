@@ -31,7 +31,7 @@ class DecisionIslahAPITests(TestCase):
             project=cls.project, user=cls.analyst,
             role=ProjectMembership.Role.ANALYST,
         )
-        cls.run = ProcessAnalysisRun.objects.create(
+        cls.analysis = ProcessAnalysisRun.objects.create(
             project=cls.project, created_by=cls.analyst,
             case_id="CASE-1", domain="construction", process_name="Site materials",
             resource_type="material", unit="kg", period="2026-10",
@@ -50,7 +50,7 @@ class DecisionIslahAPITests(TestCase):
     def setUp(self):
         cache.clear()
         self.url = reverse("api_v2:process_decision_brief", kwargs={
-            "project_slug": self.project.slug, "run_id": self.run.pk,
+            "project_slug": self.project.slug, "run_id": self.analysis.pk,
         })
 
     def test_read_only_user_receives_falsifiable_questions(self):
@@ -78,7 +78,7 @@ class DecisionIslahAPITests(TestCase):
     def test_cross_project_slug_does_not_expose_another_project(self):
         self.client.force_login(self.viewer)
         other_url = reverse("api_v2:process_decision_brief", kwargs={
-            "project_slug": self.other.slug, "run_id": self.run.pk,
+            "project_slug": self.other.slug, "run_id": self.analysis.pk,
         })
         self.assertEqual(self.client.get(other_url).status_code, 404)
 
@@ -93,7 +93,7 @@ class DecisionIslahAPITests(TestCase):
     def test_invalid_analysis_id_never_reveals_data(self):
         self.client.force_login(self.viewer)
         url = reverse("api_v2:process_decision_brief", kwargs={
-            "project_slug": self.project.slug, "run_id": self.run.pk + 100,
+            "project_slug": self.project.slug, "run_id": self.analysis.pk + 100,
         })
         self.assertEqual(self.client.get(url).status_code, 404)
 
@@ -104,10 +104,10 @@ class DecisionIslahAPITests(TestCase):
         self.assertEqual(ProcessAnalysisRun.objects.count(), 1)
 
     def test_stored_kernel_approval_is_not_trusted(self):
-        self.run.summary["next_stage"] = "HUMAN_REVIEW_FOR_IMPLEMENTATION"
-        self.run.summary["hypothesis_status"] = "REPLICATED_CAUSAL_SUPPORT"
-        self.run.summary["verified"] = True
-        self.run.save(update_fields=["summary"])
+        self.analysis.summary["next_stage"] = "HUMAN_REVIEW_FOR_IMPLEMENTATION"
+        self.analysis.summary["hypothesis_status"] = "REPLICATED_CAUSAL_SUPPORT"
+        self.analysis.summary["verified"] = True
+        self.analysis.save(update_fields=["summary"])
         self.client.force_login(self.viewer)
         brief = self.client.get(self.url).json()["brief"]
         self.assertEqual(brief["next_stage"], "COLLECT_EVIDENCE")
@@ -116,14 +116,14 @@ class DecisionIslahAPITests(TestCase):
         self.assertFalse(brief["independently_verified"])
 
     def test_incomplete_history_has_no_invented_brief(self):
-        self.run.summary["kpi"]["denominator"] = "invalid_number"
-        self.run.save(update_fields=["summary"])
+        self.analysis.summary["kpi"]["denominator"] = "invalid_number"
+        self.analysis.save(update_fields=["summary"])
         self.client.force_login(self.viewer)
         self.assertEqual(self.client.get(self.url).status_code, 422)
 
     def test_missing_loss_generates_baseline_questions_only(self):
-        self.run.summary["kpi"]["numerator"] = None
-        self.run.save(update_fields=["summary"])
+        self.analysis.summary["kpi"]["numerator"] = None
+        self.analysis.save(update_fields=["summary"])
         self.client.force_login(self.viewer)
         brief = self.client.get(self.url).json()["brief"]
         self.assertEqual(brief["hypotheses"], [])
