@@ -9,6 +9,7 @@
   const select = document.getElementById('po-project');
   if (!root || !select) return;
 
+  const formulaStudioLink = document.getElementById('po-formula-studio-link');
   const fileInput = document.getElementById('po-file');
   const submit = document.getElementById('po-submit');
   const refresh = document.getElementById('po-refresh');
@@ -60,6 +61,10 @@
   function endpoint(slug) {
     // Encode only the selected, server-rendered project slug.
     return '/api/v2/projects/' + encodeURIComponent(slug) + '/process-analyses/';
+  }
+
+  function syncFormulaLink() {
+    if (formulaStudioLink) formulaStudioLink.href = '/business-os/formulas/' + encodeURIComponent(select.value) + '/';
   }
 
   function canUpload() {
@@ -344,6 +349,7 @@
   }
 
   select.addEventListener('change', () => {
+    syncFormulaLink();
     page = 1;
     if (controller) controller.abort();
     ++requestSequence;

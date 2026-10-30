@@ -1,0 +1,66 @@
+name: EcoIQ 20 KPI Formula and AI Designer Safety
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "ecoiq_os/formula_registry.py"
+      - "ecoiq_os/formula_designer.py"
+      - "ecoiq_os/test_formula_registry.py"
+      - "ecoiq_os/tests_formula_designer.py"
+      - "core/formula_studio.py"
+      - "core/tests_formula_studio.py"
+      - "core/urls.py"
+      - "templates/core/formula_studio.html"
+      - "templates/core/process_workspace.html"
+      - "static/js/process-workspace.js"
+      - "docs/architecture/FORMULA_STUDIO_20_PLUS_AI_V1.md"
+      - ".github/workflows/kpi-formula-designer.yml"
+  push:
+    branches: [main]
+    paths:
+      - "ecoiq_os/formula_registry.py"
+      - "ecoiq_os/formula_designer.py"
+      - ".github/workflows/kpi-formula-designer.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  formula-proposals-fail-closed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DJANGO_SECRET_KEY: test-secret-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: sqlite:///db.sqlite3
+      ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED: "False"
+      ECOIQ_FORMULA_AI_EXTERNAL_ENABLED: "False"
+      AI_ENABLED: "false"
+      ECOIQ_BILLING_PROVIDER: none
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Syntax, Ruff and JS validation
+        run: |
+          python -m compileall -q ecoiq_os/formula_registry.py ecoiq_os/formula_designer.py ecoiq_os/test_formula_registry.py ecoiq_os/tests_formula_designer.py core/formula_studio.py core/tests_formula_studio.py
+          ruff check ecoiq_os/formula_registry.py ecoiq_os/formula_designer.py ecoiq_os/test_formula_registry.py ecoiq_os/tests_formula_designer.py core/formula_studio.py core/tests_formula_studio.py
+          node --check static/js/process-workspace.js
+      - name: All 20 formula contracts and existing Business OS regression
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+          python manage.py test ecoiq_os.test_formula_registry ecoiq_os.tests_formula_designer core.tests_formula_studio core.tests_process_workspace ecoiq_os.test_foundation_training ecoiq_os.tests_grounded_ai --noinput
+      - name: No production infra or AI-provider changes
+        run: git diff --exit-code HEAD -- render.yaml requirements.txt ecoiq/settings.py

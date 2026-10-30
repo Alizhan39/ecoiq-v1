@@ -44,6 +44,7 @@
           <option value="{{ project.slug }}" data-upload="{{ project.can_upload|yesno:'1,0' }}">{{ project.name }}</option>
         {% endfor %}
       </select>
+      <p><a id="po-formula-studio-link" href="{% url 'formula_studio' projects.0.slug %}">View 20 KPI formulas and additional situation templates</a></p>
       <p class="po-hint" id="po-permission" role="status" aria-live="polite"></p>
     </section>
 
