@@ -66,8 +66,8 @@ def review_detail(request, project_slug, review_id):
         action = request.POST.get("action")
         try:
             if action == "decision":
-                if set(request.POST.keys()) != {
-                    "csrfmiddlewaretoken", "action", "decision", "reason_code",
+                if (set(request.POST.keys()) - {"csrfmiddlewaretoken"}) != {
+                    "action", "decision", "reason_code",
                 }:
                     raise ReviewBlocked("Unsupported form fields.")
                 decide_grounded_review(
@@ -78,9 +78,8 @@ def review_detail(request, project_slug, review_id):
             elif action == "readiness":
                 if not inspect_review_case(project=project, actor=request.user, case=case)["is_current"]:
                     raise ReviewBlocked("Source content or verification has changed.")
-                if set(request.POST.keys()) != {
-                    "csrfmiddlewaretoken", "action", "source_rights",
-                    "privacy", "provider_terms",
+                if (set(request.POST.keys()) - {"csrfmiddlewaretoken"}) != {
+                    "action", "source_rights", "privacy", "provider_terms",
                 }:
                     raise ReviewBlocked("Unsupported form fields.")
                 record_processing_readiness(
