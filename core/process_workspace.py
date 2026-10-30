@@ -39,6 +39,9 @@ def process_workspace(request):
             "projects": projects,
             "project_list_truncated": truncated,
             "suppress_analytics": True,
+            "has_review_access": access.projects_for(
+                request.user, access.APPROVE,
+            ).exists(),
         })
     response["Cache-Control"] = "private, no-store, max-age=0"
     response["Pragma"] = "no-cache"
