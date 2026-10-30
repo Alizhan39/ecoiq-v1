@@ -23,6 +23,12 @@
   const kpiNote = document.getElementById('po-kpi-note');
   const evidence = document.getElementById('po-evidence');
   const nextStage = document.getElementById('po-next');
+  const decisionPanel = document.getElementById('po-decision-panel');
+  const decisionStatus = document.getElementById('po-decision-status');
+  const hypothesesList = document.getElementById('po-hypotheses');
+  const studiesList = document.getElementById('po-islah-studies');
+  const evidenceGaps = document.getElementById('po-evidence-gaps');
+  const closeDecision = document.getElementById('po-close-decision');
   const token = root.querySelector('input[name=csrfmiddlewaretoken]');
   const limit = 512 * 1024;
 
@@ -30,6 +36,8 @@
   let controller = null;
   let busy = false;
   let requestSequence = 0;
+  let decisionRequest = null;
+  let decisionSequence = 0;
 
   const stages = {
     COLLECT_EVIDENCE: 'Collect evidence',
@@ -83,6 +91,92 @@
     nextStage.textContent = stages[result.next_stage] || 'Needs evidence review';
   }
 
+  function hideDecisionPanel() {
+    if (decisionRequest) decisionRequest.abort();
+    ++decisionSequence;
+    decisionPanel.hidden = true;
+    decisionStatus.textContent = '';
+    hypothesesList.replaceChildren();
+    studiesList.replaceChildren();
+    evidenceGaps.replaceChildren();
+  }
+
+  function makeItem(title, detail, secondary) {
+    const item = document.createElement('li');
+    const heading = document.createElement('strong');
+    heading.textContent = title;
+    const description = document.createElement('p');
+    description.textContent = detail;
+    item.appendChild(heading);
+    item.appendChild(description);
+    if (secondary) {
+      const note = document.createElement('p');
+      note.className = 'po-secondary';
+      note.textContent = secondary;
+      item.appendChild(note);
+    }
+    return item;
+  }
+
+  function renderDecisionBrief(brief) {
+    hypothesesList.replaceChildren();
+    studiesList.replaceChildren();
+    evidenceGaps.replaceChildren();
+    const hypotheses = Array.isArray(brief.hypotheses) ? brief.hypotheses : [];
+    const studies = Array.isArray(brief.islah_studies) ? brief.islah_studies : [];
+    for (const item of hypotheses) {
+      hypothesesList.appendChild(makeItem(
+        item.question,
+        'Could be disproved if: ' + item.disconfirming_observation,
+        'Evidence required: ' + (item.evidence_needed || []).join('; ') + ' · UNTESTED',
+      ));
+    }
+    if (!hypotheses.length) {
+      hypothesesList.appendChild(makeItem(
+        'No causal hypothesis justified',
+        'A usable, positive reported loss baseline is required first.',
+      ));
+    }
+    for (const item of studies) {
+      studiesList.appendChild(makeItem(
+        item.question, 'Before studying: ' + item.prerequisite,
+        'Potential effects to review: ' + (item.possible_unintended_effects || []).join('; '),
+      ));
+    }
+    const missing = Array.isArray(brief.missing_evidence) ? brief.missing_evidence : [];
+    for (const gap of missing) {
+      const item = document.createElement('li');
+      item.textContent = String(gap).replaceAll('_', ' ');
+      evidenceGaps.appendChild(item);
+    }
+    decisionStatus.textContent = 'UNTESTED · Collect evidence · No approval to implement changes';
+  }
+
+  async function loadDecisionBrief(runId) {
+    hideDecisionPanel();
+    const current = select.value;
+    const sequence = ++decisionSequence;
+    const controller = new AbortController();
+    decisionRequest = controller;
+    decisionPanel.hidden = false;
+    decisionStatus.textContent = 'Loading evidence questions…';
+    try {
+      const response = await fetch(
+        endpoint(current) + encodeURIComponent(String(runId)) + '/decision-brief/', {
+          credentials: 'same-origin', cache: 'no-store',
+          headers: { Accept: 'application/json' }, signal: controller.signal,
+        },
+      );
+      const data = await parse(response);
+      if (controller.signal.aborted || sequence !== decisionSequence || current !== select.value) return;
+      renderDecisionBrief(data.brief || {});
+      decisionPanel.scrollIntoView({ behavior: 'auto', block: 'start' });
+    } catch (error) {
+      if (controller.signal.aborted || sequence !== decisionSequence) return;
+      decisionStatus.textContent = error.message || 'Cannot load evidence questions.';
+    }
+  }
+
   function emptyRows() {
     rows.replaceChildren();
     previous.disabled = true;
@@ -123,6 +217,15 @@
       tr.appendChild(td(kpi && kpi.value !== null && kpi.value !== undefined
         ? number(kpi.value) + '% (reported)' : '— (unknown)'));
       tr.appendChild(td(stages[run.result && run.result.next_stage] || 'Evidence review needed'));
+      const actions = document.createElement('td');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'po-button po-button--secondary';
+      button.textContent = 'Review questions';
+      button.setAttribute('aria-label', 'Review evidence questions for ' + (run.case_id || 'analysis'));
+      button.addEventListener('click', () => loadDecisionBrief(run.id));
+      actions.appendChild(button);
+      tr.appendChild(actions);
       rows.appendChild(tr);
     }
     // Summary on page 1 is the newest saved observation, never a fake average.
@@ -152,6 +255,7 @@
   }
 
   async function loadHistory() {
+    hideDecisionPanel();
     if (controller) controller.abort();
     const current = select.value;
     const sequence = ++requestSequence;
@@ -258,6 +362,7 @@
   next.addEventListener('click', () => {
     if (page < 200 && !next.disabled) { page += 1; loadHistory(); }
   });
+  closeDecision.addEventListener('click', hideDecisionPanel);
 
   applyPermission();
   loadHistory();
