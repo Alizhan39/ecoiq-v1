@@ -112,6 +112,30 @@ python manage.py test ecoiq_os.test_situation_guidance api.tests_v2_decision_isl
 node --check static/js/process-workspace.js
 ```
 
+
+## Joined offline Rust + C++ + Python proof
+
+A separate developer-only command compiles the existing Rust resource
+calculator and the C++20 twin geometry library's bounded preview CLI.
+`scripts/native/offline_situation_demo.py` then runs:
+- Rust: reported 120 / 1000 = **12%**, no independent verification or action.
+- C++: a synthetic 2×3×4 local box at 2 m/unit = **192 m³**.
+- Python: canonical reported loss formula, unknown economic savings,
+  five unreviewed Quran locator lens labels, and `COLLECT_EVIDENCE`.
+
+The script fails if Rust disagrees with the Python result, C++ produces a
+different fixture volume, or either native component claims unsupported
+verification/approval. CI runs this proof automatically. **No production
+Python–native FFI or spatial engineering calibration exists yet.**
+
+```bash
+cargo build --offline --manifest-path native/rust_resource_kernel/Cargo.toml
+cmake -S native/cpp_twin_geometry -B /tmp/ecoiq-situation-cpp
+cmake --build /tmp/ecoiq-situation-cpp --parallel 2
+ECOIQ_CPP_CANDIDATE_BIN=/tmp/ecoiq-situation-cpp/ecoiq-twin-preview \\
+  python scripts/native/offline_situation_demo.py
+```
+
 ## To reach paid customer readiness
 
 1. Obtain explicit rights and sector data contracts; use real private staging
