@@ -131,6 +131,21 @@ class FormulaRegistryTests(unittest.TestCase):
         self.assertIsNone(result["value_decimal"])
         self.assertEqual(result["status"], "REVIEW_UNPLAUSIBLE_RATIO")
 
+    def test_unbounded_variance_and_pressure_are_not_falsely_clamped(self):
+        variance = EXTRA_SITUATION_FORMULAS["project_schedule_variance"]
+        result = calculate_formula(variance, observations(variance, {
+            "actual_project_hours": "350", "baseline_planned_hours": "100",
+        }))
+        self.assertEqual(result["value_decimal"], "250")
+        self.assertEqual(result["status"], "REPORTED_NOT_VERIFIED")
+        pressure = FORMULAS_BY_KEY["freshwater_stress"]
+        high = calculate_formula(pressure, observations(pressure, {
+            "site_freshwater_withdrawal": "200",
+            "local_available_freshwater": "100",
+        }))
+        self.assertEqual(high["value_decimal"], "200")
+        self.assertEqual(high["status"], "REPORTED_NOT_VERIFIED")
+
     def test_additional_scenarios_are_separately_reviewed(self):
         self.assertGreaterEqual(len(EXTRA_SITUATION_FORMULAS), 6)
         row = suggest_offline_formula("equipment_downtime")
