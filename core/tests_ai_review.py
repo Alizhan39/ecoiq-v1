@@ -124,6 +124,19 @@ class HumanReviewWorkflowTests(TestCase):
             self.assertNotContains(response, "Private Stage 7 project")
             self.assertNotContains(response, case.questions[0]["question"])
 
+    def test_business_os_shows_review_link_only_to_authorised_reviewers(self):
+        for actor, permitted in (
+            (self.analyst, False), (self.viewer, False),
+            (self.reviewer, True), (self.manager, True),
+        ):
+            with self.subTest(actor=actor.username):
+                self.client.force_login(actor)
+                page = self.client.get(reverse("process_workspace"))
+                self.assertEqual(page.status_code, 200)
+                self.assertEqual(
+                    self.queue_url in page.content.decode("utf-8"), permitted,
+                )
+
     def test_detail_requires_review_role_and_same_project(self):
         case = self.make_case()
         self.assertEqual(self.client.get(self.detail_url(case)).status_code, 302)
