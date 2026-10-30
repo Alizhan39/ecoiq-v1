@@ -30,10 +30,7 @@ used by production automatically.
 ## 20 initial **draft** operational formulas
 
 These are **proposals linked to the 20 KPI keys merged in PR #369**,
-not recovered/final approved corporate metric definitions. Percent is
-displayed in output-unit symbol `1` (dimensionless percentage number); the
-formula multiplies a dimensionless ratio by 100. Further review should give
-this representation a distinct semantic `percent` unit in a future API.
+not recovered/final approved corporate metric definitions. Percentage formulas use the output-unit symbol `%` and explicitly multiply a dimensionless ratio by 100. The true current/liability ratio uses unit `1`. These units describe arithmetic dimensions, not verified business semantics.
 
 | Category | Candidate KPI | Expression | Essential caveat |
 |---|---|---|---|
