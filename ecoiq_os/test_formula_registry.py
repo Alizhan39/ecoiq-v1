@@ -90,9 +90,9 @@ class FormulaRegistryTests(unittest.TestCase):
             "__import__('os').system('whoami')", "a.__class__",
             "[a for a in [1]]", "a ** 8", "a // b",
             "a if b else b", "a[0]", "(lambda: 1)()",
-            "a / missing", "a + (b * 100)",
+            "a / missing", "a + (b / a)",
             "2.0 * a", "a + (-1)", "a + 1e3",
-            "a / b + 1", "a ** (100000000)",
+            "a / b + a", "a ** (100000000)",
         ):
             with self.subTest(expr=expression), self.assertRaises(FormulaRejected):
                 validate_formula_expression(expression, variables, "kg")
