@@ -7,6 +7,8 @@ on:
       - feature/native-rust-cpp-kernels-v1-20261030
     paths:
       - "ecoiq_os/situation_guidance.py"
+      - "ecoiq_os/situation_ai.py"
+      - "ecoiq_os/tests_situation_ai.py"
       - "ecoiq_os/test_situation_guidance.py"
       - "api/v2_decision_islah.py"
       - "api/tests_v2_decision_islah.py"
@@ -54,14 +56,14 @@ jobs:
           pip install -r requirements-dev.txt
       - name: Syntax, lint and JS validity
         run: |
-          python -m compileall -q ecoiq_os/situation_guidance.py ecoiq_os/test_situation_guidance.py api/v2_decision_islah.py
-          ruff check ecoiq_os/situation_guidance.py ecoiq_os/test_situation_guidance.py api/v2_decision_islah.py
+          python -m compileall -q ecoiq_os/situation_guidance.py ecoiq_os/situation_ai.py ecoiq_os/test_situation_guidance.py ecoiq_os/tests_situation_ai.py api/v2_decision_islah.py
+          ruff check ecoiq_os/situation_guidance.py ecoiq_os/situation_ai.py ecoiq_os/test_situation_guidance.py ecoiq_os/tests_situation_ai.py api/v2_decision_islah.py
           node --check static/js/process-workspace.js
       - name: Tenant-level API and human safety tests
         run: |
           python manage.py check
           python manage.py makemigrations --check --dry-run
-          python manage.py test ecoiq_os.test_situation_guidance api.tests_v2_decision_islah core.tests_process_workspace ecoiq_os.test_kernel ecoiq_os.test_knowledge --noinput
+          python manage.py test ecoiq_os.test_situation_guidance ecoiq_os.tests_situation_ai ecoiq_os.tests_grounded_ai api.tests_v2_decision_islah core.tests_process_workspace ecoiq_os.test_kernel ecoiq_os.test_knowledge --noinput
       - name: Rust and C++ synthetic native bridge proof
         run: |
           rustup toolchain install 1.85.1 --profile minimal
