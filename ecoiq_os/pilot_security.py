@@ -47,7 +47,15 @@ def assess_pilot_preflight(config: object, environ: Mapping[str, str]) -> dict[s
         "private_access_attested": _is_true(environ.get("ECOIQ_PILOT_PRIVATE_ACCESS_ATTESTED", "")),
         "separate_database_attested": _is_true(environ.get("ECOIQ_PILOT_DB_ISOLATION_ATTESTED", "")),
         "no_background_jobs_attested": _is_true(environ.get("ECOIQ_PILOT_JOBS_DISABLED_ATTESTED", "")),
+        "cache_isolation_attested": _is_true(environ.get("ECOIQ_PILOT_CACHE_ISOLATION_ATTESTED", "")),
+        "external_egress_block_attested": _is_true(environ.get("ECOIQ_PILOT_EGRESS_BLOCK_ATTESTED", "")),
         "debug_disabled": getattr(config, "DEBUG", True) is False,
+        "non_development_secret": (
+            len(str(getattr(config, "SECRET_KEY", ""))) >= 32
+            and not str(getattr(config, "SECRET_KEY", "")).startswith(
+                ("django-insecure", "REPLACE", "change-me")
+            )
+        ),
         "staging_only_hosts": pilot_hosts,
         "separate_postgres_name": (
             db_engine.endswith("postgresql")
@@ -61,7 +69,14 @@ def assess_pilot_preflight(config: object, environ: Mapping[str, str]) -> dict[s
             getattr(config, "AI_ENABLED", True) is False
             and not _is_true(environ.get("AI_ENABLED", ""))
         ),
-        "billing_disabled": str(getattr(config, "ECOIQ_BILLING_PROVIDER", "none")).lower() == "none",
+        "billing_disabled": (
+            str(getattr(config, "ECOIQ_BILLING_PROVIDER", "none")).lower() == "none"
+            and str(environ.get("ECOIQ_BILLING_PROVIDER", "none")).lower() == "none"
+        ),
+        "no_provider_credentials": not any(environ.get(k, "").strip() for k in (
+            "OPENROUTER_API_KEY", "BYTEZ_API_KEY", "NVIDIA_NIM_API_KEY",
+            "ANTHROPIC_API_KEY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET",
+        )),
         "email_transport_disabled": getattr(config, "EMAIL_BACKEND", "") in _SAFE_EMAIL_BACKENDS,
         "secure_session_cookies": getattr(config, "SESSION_COOKIE_SECURE", False) is True,
         "secure_csrf_cookies": getattr(config, "CSRF_COOKIE_SECURE", False) is True,
