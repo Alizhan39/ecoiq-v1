@@ -1,0 +1,16 @@
+[package]
+name = "ecoiq-resource-kernel"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "UNLICENSED"
+
+[lib]
+name = "ecoiq_resource_kernel"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ecoiq-resource-kernel"
+path = "src/main.rs"
+
+# No crates.io dependencies. The Rust prototype is offline.
