@@ -68,11 +68,11 @@ jobs:
           rustup default 1.85.1
           cargo test --offline --manifest-path native/rust_resource_kernel/Cargo.toml
           cargo build --offline --manifest-path native/rust_resource_kernel/Cargo.toml
-          cmake -S native/cpp_twin_geometry -B /tmp/ecoiq-situation-cpp \\
+          cmake -S native/cpp_twin_geometry -B /tmp/ecoiq-situation-cpp \
             -DCMAKE_BUILD_TYPE=Release
           cmake --build /tmp/ecoiq-situation-cpp --parallel 2
           ctest --test-dir /tmp/ecoiq-situation-cpp --output-on-failure
-          ECOIQ_CPP_CANDIDATE_BIN=/tmp/ecoiq-situation-cpp/ecoiq-twin-preview \\
+          ECOIQ_CPP_CANDIDATE_BIN=/tmp/ecoiq-situation-cpp/ecoiq-twin-preview \
             python scripts/native/offline_situation_demo.py
       - name: Scope must not enable native code or external providers
         run: |
