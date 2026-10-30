@@ -66,6 +66,15 @@ class ProcessWorkspaceTests(TestCase):
         self.assertContains(response, "process-workspace.css")
         self.assertContains(response, "csrfmiddlewaretoken")
 
+    def test_decision_studies_are_hidden_until_requested(self):
+        self.client.force_login(self.viewer)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'id="po-decision-panel"')
+        self.assertContains(response, "Hypotheses and Islah studies")
+        self.assertContains(response, "deterministic list of questions")
+        self.assertContains(response, "not a generative AI finding")
+        self.assertNotContains(response, "120 kg")
+
     def test_analyst_and_manager_can_upload_but_not_approve(self):
         for actor in (self.analyst, self.manager):
             with self.subTest(actor=actor.username):
