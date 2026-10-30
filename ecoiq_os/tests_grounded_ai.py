@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 
 from api.models import ProcessAnalysisRun
+from ecoiq_os.grounded_ai_eval import evaluate_citation_guard
 from ecoiq_os.grounded_ai import (
     GroundedSource, collect_reviewed_sources, prepare_grounded_draft,
     validate_grounded_questions,
@@ -184,6 +185,15 @@ class GroundedAIProjectTests(TestCase):
             )
         self.assertFalse(out["approval_recorded"])
         self.assertIsNone(out["causal_conclusion"])
+
+
+class GroundedGateBenchmarkTests(TestCase):
+    def test_synthetic_citation_benchmark(self):
+        benchmark = evaluate_citation_guard()
+        self.assertEqual(benchmark["passed"], benchmark["total"])
+        self.assertEqual(benchmark["total"], 7)
+        self.assertFalse(benchmark["measures_llm_truthfulness"])
+        self.assertFalse(benchmark["ready_for_production"])
 
 
 class ModelCitationGateTests(TestCase):
