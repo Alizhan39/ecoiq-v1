@@ -27,7 +27,8 @@ def safe_config():
             "ENGINE": "django.db.backends.postgresql",
             "NAME": "ecoiq_pilot_stage8",
         }},
-        DEBUG=False, ALLOWED_HOSTS=["pilot-stage8.example.invalid"],
+        DEBUG=False, SECRET_KEY="stage8-nonproduction-synthetic-secret-123456789",
+        ALLOWED_HOSTS=["pilot-stage8.example.invalid"],
         AI_ENABLED=False, ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED=False,
         ECOIQ_BILLING_PROVIDER="none",
         EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
@@ -43,6 +44,8 @@ def safe_env():
         "ECOIQ_PILOT_PRIVATE_ACCESS_ATTESTED": "true",
         "ECOIQ_PILOT_DB_ISOLATION_ATTESTED": "true",
         "ECOIQ_PILOT_JOBS_DISABLED_ATTESTED": "true",
+        "ECOIQ_PILOT_CACHE_ISOLATION_ATTESTED": "true",
+        "ECOIQ_PILOT_EGRESS_BLOCK_ATTESTED": "true",
         "AI_ENABLED": "false",
         "ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED": "false",
     }
@@ -99,9 +102,13 @@ class PilotPreflightTests(SimpleTestCase):
         env = safe_env()
         env["ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED"] = "true"
         env["AI_ENABLED"] = "true"
+        env["OPENROUTER_API_KEY"] = "synthetic-not-a-key"
+        env["ECOIQ_BILLING_PROVIDER"] = "stripe"
         result = assess_pilot_preflight(safe_config(), env)
         self.assertFalse(result["checks"]["external_model_disabled"])
         self.assertFalse(result["checks"]["all_gateway_models_disabled"])
+        self.assertFalse(result["checks"]["no_provider_credentials"])
+        self.assertFalse(result["checks"]["billing_disabled"])
 
     def test_synthetic_citation_dataset_is_fully_deterministic(self):
         result = synthetic_pilot_benchmark()
