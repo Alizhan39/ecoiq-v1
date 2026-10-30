@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ · Private AI Review Queue{% endblock %}
+{% block meta_description_content %}Private human review of AI investigation questions.{% endblock %}
+{% block extra_head %}
+<meta name="robots" content="noindex, nofollow">
+<style>
+.ec-review{max-width:980px;margin:3rem auto;padding:0 1.25rem;color:inherit}
+.ec-review h1{font-size:clamp(1.65rem,3vw,2.4rem);margin-bottom:1rem}
+.ec-review .ec-alert{padding:1rem 1.2rem;border:1px solid currentColor;border-radius:.65rem;margin:1rem 0}
+.ec-review .ec-item{padding:1rem;border:1px solid #8196a366;border-radius:.65rem;margin:1rem 0}
+.ec-review a{text-decoration:underline;text-underline-offset:3px}
+.ec-review .ec-meta{opacity:.8;font-size:.9rem}
+</style>
+{% endblock %}
+{% block content %}
+<main class="ec-review" aria-labelledby="ai-review-title">
+  <h1 id="ai-review-title">EcoIQ · Human AI review</h1>
+  <p class="ec-alert"><strong>Private investigation only.</strong> An accepted question is not a verified cause, a savings forecast, Mizan approval, permission to change a process, or permission to send source documents to external AI providers.</p>
+  <p>Only projects in which you have the active reviewer or manager role appear below.</p>
+  {% if project_list_truncated %}<p>Only the first 100 projects are shown.</p>{% endif %}
+  {% if not projects %}
+    <p>No projects are available for AI review.</p>
+  {% elif not cases %}
+    <p>No human-review drafts have been queued. AI drafts can only be queued by a trusted internal service.</p>
+  {% else %}
+    {% for review in cases %}
+      <article class="ec-item">
+        <h2><a href="{% url 'ai_review_detail' review.project.slug review.pk %}">{{ review.analysis.process_name }}</a></h2>
+        <p class="ec-meta">Project: {{ review.project.name }} · Review #{{ review.pk }} · Status: {{ review.get_status_display }} · Submitted {{ review.created_at }}</p>
+        <p>Questions: {{ review.questions|length }} · Submitted by: {{ review.submitted_by.username }}</p>
+      </article>
+    {% endfor %}
+    <p class="ec-meta">Showing up to 50 latest reviews for your visible projects.</p>
+  {% endif %}
+  <p><a href="{% url 'process_workspace' %}">Return to Process Intelligence</a></p>
+</main>
+{% endblock %}

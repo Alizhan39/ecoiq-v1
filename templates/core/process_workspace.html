@@ -17,6 +17,10 @@
     <span class="po-stage">Read-only diagnostics</span>
   </div>
 
+  {% if has_review_access %}
+  <p><a href="{% url 'ai_review_queue' %}">Human AI review queue (approved reviewers only)</a></p>
+  {% endif %}
+
   <div class="po-notice" role="note">
     <strong>Evidence boundary.</strong> These are reported quantities, not audited results.
     EcoIQ cannot conclude that a loss is avoidable or approve a business change from a ratio alone.

@@ -6,8 +6,12 @@ from . import why_views
 from harvester import views as harvester_views
 from . import spa
 from . import process_workspace
+from . import ai_review
 
 urlpatterns = [
+    path('business-os/ai-review/', ai_review.review_queue, name='ai_review_queue'),
+    path('business-os/ai-review/<slug:project_slug>/<int:review_id>/',
+         ai_review.review_detail, name='ai_review_detail'),
     # Authenticated Business OS pilot UI. API retains all project permissions.
     path('business-os/processes/', process_workspace.process_workspace, name='process_workspace'),
     path('labs/interactive/', spa.spa_view, name='interactive_lab'),
