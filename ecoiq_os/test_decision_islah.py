@@ -13,7 +13,7 @@ from ecoiq_os.flow import FlowEdge, FlowNode, UniversalFlowGraph
 from ecoiq_os.islah import IslahProposal
 from ecoiq_os.kernel import EcoIQOSCase, COLLECT_EVIDENCE
 from mizan.system_balance import (
-    CRITICAL, HEALTHY, IMBALANCED, INSUFFICIENT_DATA, BalanceDimension,
+    HEALTHY, IMBALANCED, INSUFFICIENT_DATA, BalanceDimension,
     MizanConstraint, assess_balance,
 )
 
@@ -118,6 +118,10 @@ class PreliminaryBriefTests(TestCase):
             brief(case_id="")
         with self.assertRaises(ValueError):
             brief(unit="")
+        with self.assertRaises(ValueError):
+            brief(period="2026-13")
+        with self.assertRaises(ValueError):
+            brief(resource_type="fake")
 
     def test_studies_are_not_implementation_permissions(self):
         for item in brief()["islah_studies"]:
