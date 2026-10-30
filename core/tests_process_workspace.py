@@ -60,7 +60,9 @@ class ProcessWorkspaceTests(TestCase):
         self.assertNotContains(response, "Site Bravo Classified")
         self.assertContains(response, 'value="site-alpha-private" data-upload="0"')
         self.assertContains(response, 'meta name="robots" content="noindex, nofollow"')
-        self.assertEqual(response["Cache-Control"], "private, no-store, max-age=0")
+        cache_directives = {part.strip() for part in response["Cache-Control"].split(",")}
+        self.assertTrue({"private", "no-store", "max-age=0"} <= cache_directives)
+        self.assertNotIn("public", cache_directives)
         self.assertEqual(response["X-Robots-Tag"], "noindex, nofollow")
         self.assertContains(response, "process-workspace.js")
         self.assertContains(response, "process-workspace.css")
