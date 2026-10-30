@@ -32,6 +32,8 @@ class FormulaRejected(ValueError):
 
 
 def _dimensions(unit: str) -> dict[str, int]:
+    if unit == "%":
+        return {}
     if not isinstance(unit, str) or not UNIT_LABEL.fullmatch(unit):
         raise FormulaRejected("Invalid or unsupported unit notation.")
     items = unit.split("/")
@@ -167,6 +169,11 @@ def _parse_expression(expression: str, variables: Mapping[str, str],
     computed = dimension(root, 0)
     if computed != _dimensions(output_unit):
         raise FormulaRejected("Output unit incompatible with expression dimensions.")
+    if output_unit == "%" and not any(
+        isinstance(node, ast.Constant) and type(node.value) is int and node.value == 100
+        for node in ast.walk(root)
+    ):
+        raise FormulaRejected("A percentage must multiply the ratio by 100.")
     return root
 
 
@@ -232,7 +239,7 @@ def calculate_formula(spec: FormulaSpec, observations: Mapping[str, Observation]
         raise FormulaRejected("Result not a bounded finite number.")
     # Over-100% claims for subset ratios are not silently accepted. The
     # caller and reviewer must verify denominator scope / units.
-    if spec.output_unit == "1" and result > 100 and "*" in spec.expression:
+    if spec.output_unit == "%" and result > 100:
         return _response(spec, None, "REVIEW_UNPLAUSIBLE_RATIO", refs, periods.pop())
     return _response(spec, result, "REPORTED_NOT_VERIFIED", refs, periods.pop())
 
@@ -267,7 +274,7 @@ def _spec(key: str, expression: str, unit: str, variables: tuple[tuple[str, str]
 PROVISIONAL_KPI_FORMULAS = (
     _spec("revenue", "reported_revenue", "GBP", (("reported_revenue", "GBP"),),
           "Use a specified accounting standard, currency, period and legal entity; reported revenue is not audited."),
-    _spec("gross_margin", "(revenue - cost_of_goods_sold) / revenue * 100", "1",
+    _spec("gross_margin", "(revenue - cost_of_goods_sold) / revenue * 100", "%",
           (("revenue", "GBP"), ("cost_of_goods_sold", "GBP")),
           "Requires consistent COGS policy and revenue exclusions; negative gross margin is possible."),
     _spec("operating_cash_flow", "operating_cash_inflows - operating_cash_outflows", "GBP",
@@ -276,7 +283,7 @@ PROVISIONAL_KPI_FORMULAS = (
     _spec("liquidity_ratio", "current_assets / current_liabilities", "1",
           (("current_assets", "GBP"), ("current_liabilities", "GBP")),
           "Current ratio, not cash coverage or a guarantee of liquidity."),
-    _spec("material_loss_rate", "recorded_material_loss / material_input * 100", "1",
+    _spec("material_loss_rate", "recorded_material_loss / material_input * 100", "%",
           (("recorded_material_loss", "kg"), ("material_input", "kg")),
           "Recorded material loss may include necessary process yield; cannot infer avoidable waste."),
     _spec("energy_intensity", "total_energy / produced_units", "kWh/unit",
@@ -285,16 +292,16 @@ PROVISIONAL_KPI_FORMULAS = (
     _spec("water_intensity", "water_withdrawal / produced_units", "m3/unit",
           (("water_withdrawal", "m3"), ("produced_units", "unit")),
           "Withdrawal differs from consumption and discharge; define water accounting boundary."),
-    _spec("asset_utilisation", "productive_asset_hours / available_asset_hours * 100", "1",
+    _spec("asset_utilisation", "productive_asset_hours / available_asset_hours * 100", "%",
           (("productive_asset_hours", "hour"), ("available_asset_hours", "hour")),
           "Define available hours, downtime and overlapping shifts; >100% requires review."),
     _spec("ghg_intensity", "reported_emissions / produced_units", "tCO2e/unit",
           (("reported_emissions", "tCO2e"), ("produced_units", "unit")),
           "No scope 1/2/3, emission factors or GHG verification are assumed."),
-    _spec("waste_recovery", "recovered_waste / total_generated_waste * 100", "1",
+    _spec("waste_recovery", "recovered_waste / total_generated_waste * 100", "%",
           (("recovered_waste", "kg"), ("total_generated_waste", "kg")),
           "Recovery may include recycling, reuse or other pathways; define boundary."),
-    _spec("freshwater_stress", "site_freshwater_withdrawal / local_available_freshwater * 100", "1",
+    _spec("freshwater_stress", "site_freshwater_withdrawal / local_available_freshwater * 100", "%",
           (("site_freshwater_withdrawal", "m3"), ("local_available_freshwater", "m3")),
           "This is a proposed local withdrawal pressure ratio, NOT a recognised basin stress metric; hydrologist review required."),
     _spec("worker_incident_rate", "recordable_incidents / worked_hours * 1000000", "incident/hour",
@@ -303,25 +310,25 @@ PROVISIONAL_KPI_FORMULAS = (
     _spec("training_hours", "total_training_hours / eligible_workers", "hour/person",
           (("total_training_hours", "hour"), ("eligible_workers", "person")),
           "Eligible workforce and course inclusion must be consistently defined."),
-    _spec("living_wage_coverage", "eligible_workers_at_or_above_local_benchmark / assessed_workers * 100", "1",
+    _spec("living_wage_coverage", "eligible_workers_at_or_above_local_benchmark / assessed_workers * 100", "%",
           (("eligible_workers_at_or_above_local_benchmark", "person"), ("assessed_workers", "person")),
           "Requires jurisdiction-specific, documented living wage and worker eligibility."),
-    _spec("adjusted_pay_gap", "(adjusted_reference_pay - adjusted_comparison_pay) / adjusted_reference_pay * 100", "1",
+    _spec("adjusted_pay_gap", "(adjusted_reference_pay - adjusted_comparison_pay) / adjusted_reference_pay * 100", "%",
           (("adjusted_reference_pay", "GBP"), ("adjusted_comparison_pay", "GBP")),
           "Only valid if pay is independently adjusted for defensible comparable roles; does not itself prove discrimination."),
-    _spec("fair_procurement", "audited_procedures_meeting_criteria / assessed_procurements * 100", "1",
+    _spec("fair_procurement", "audited_procedures_meeting_criteria / assessed_procurements * 100", "%",
           (("audited_procedures_meeting_criteria", "count"), ("assessed_procurements", "count")),
           "Process-criteria coverage; cannot establish actual legal fairness or absence of bias."),
-    _spec("benefit_distribution", "documented_group_benefit / total_documented_benefit * 100", "1",
+    _spec("benefit_distribution", "documented_group_benefit / total_documented_benefit * 100", "%",
           (("documented_group_benefit", "GBP"), ("total_documented_benefit", "GBP")),
           "A specific, consented beneficiary group must be defined; share is not a fairness verdict."),
-    _spec("evidence_coverage", "kpi_with_traceable_sources / eligible_kpi * 100", "1",
+    _spec("evidence_coverage", "kpi_with_traceable_sources / eligible_kpi * 100", "%",
           (("kpi_with_traceable_sources", "count"), ("eligible_kpi", "count")),
           "Traceable identifiers do not prove authenticity or correctness."),
-    _spec("independent_verification", "independently_reviewed_kpi / eligible_kpi * 100", "1",
+    _spec("independent_verification", "independently_reviewed_kpi / eligible_kpi * 100", "%",
           (("independently_reviewed_kpi", "count"), ("eligible_kpi", "count")),
           "Verify reviewer independence, credentials and bound source version first."),
-    _spec("decision_review_coverage", "independently_reviewed_decisions / consequential_decisions * 100", "1",
+    _spec("decision_review_coverage", "independently_reviewed_decisions / consequential_decisions * 100", "%",
           (("independently_reviewed_decisions", "count"), ("consequential_decisions", "count")),
           "Human review is not the same as adequate rationale or authorised implementation."),
 )
