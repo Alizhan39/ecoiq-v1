@@ -73,7 +73,7 @@ approved workflow, ask an AI model for *falsifiable questions citing independent
 reviewed project-private evidence*, but it is DISABLED by default and cannot
 generate scriptural rulings or override this API.
 
-A later read-only AI narrative must use strictly validated input schemas,
+New internal service `ecoiq_os.situation_ai.prepare_research_situation` now composes the deterministic situation/formulas with Stage 6 source-grounded AI **research questions**. It reuses Stage 6's project access checks, verified-source requirement, explicit per-transfer permission and server-side feature flag, which is OFF by default. It has no HTTP route, so the normal web interface does not send data to a model. Output remains `UNTESTED`, `REVIEW_REQUIRED`, and never includes a religious ruling or operational approval. Stage 7's independent human review is still required.\n\nA later read-only AI narrative must use strictly validated input schemas,
 source citations, explicit abstention and human scrutiny. Approved verses,
 tafsir and qualified reviews must be stored with provenance in the
 existing `islamic_knowledge.contracts` and not invented by prompts.
@@ -108,7 +108,7 @@ canonical decision authority.
 
 Run:
 ```bash
-python manage.py test ecoiq_os.test_situation_guidance api.tests_v2_decision_islah core.tests_process_workspace --noinput
+python manage.py test ecoiq_os.test_situation_guidance ecoiq_os.tests_situation_ai api.tests_v2_decision_islah core.tests_process_workspace --noinput
 node --check static/js/process-workspace.js
 ```
 
