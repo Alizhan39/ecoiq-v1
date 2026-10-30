@@ -107,3 +107,23 @@
   .po-workspace .po-feedback { color: #b7e3c7 !important; }
   .po-workspace .po-feedback--error { color: #ffb5ba !important; }
 }
+
+
+/* Stage 5: low-risk evidence questions and Islah study cards. */
+.po-workspace .po-decision-list { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: .7rem; }
+.po-workspace .po-decision-list li {
+  padding: .85rem; border: 1px solid #dae4dc; border-radius: 9px;
+  background: #f7faf8; overflow-wrap: anywhere;
+}
+.po-workspace .po-decision-list li strong { color: #103823; font-size: .86rem; line-height: 1.5; }
+.po-workspace .po-decision-list li p { margin: .4rem 0 0; line-height: 1.5; font-size: .8rem; }
+.po-workspace .po-decision-details { margin-top: .6rem; border-top: 1px solid #dae4dc; padding-top: .9rem; }
+.po-workspace .po-decision-details summary { cursor: pointer; font-weight: 700; color: #175f45; padding: .4rem 0; }
+.po-workspace .po-decision-details .po-decision-list { margin-top: .7rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.po-workspace .po-table .po-button { margin: 0; white-space: nowrap; }
+@media (prefers-color-scheme: dark) {
+  .po-workspace .po-decision-list li { background: #172920; border-color: #405846; }
+  .po-workspace .po-decision-list li strong { color: #e6f3e9; }
+  .po-workspace .po-decision-details { border-top-color: #405846; }
+  .po-workspace .po-decision-details summary { color: #a5ecc3; }
+}
