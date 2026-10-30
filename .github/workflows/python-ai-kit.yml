@@ -1,0 +1,32 @@
+name: EcoIQ Python AI Kit (offline smoke)
+
+on:
+  pull_request:
+    branches:
+      - main
+      - integration/ecoiq-os-stages-2-to-5-20261030
+    paths:
+      - "examples/python_ai_devops/**"
+      - "scripts/dev/verify_python_ai_examples.sh"
+      - "docs/engineering/PYTHON_AI_DEVOPS_GUIDE_RU.md"
+      - ".github/workflows/python-ai-kit.yml"
+  push:
+    branches: [main]
+    paths:
+      - "examples/python_ai_devops/**"
+      - "scripts/dev/verify_python_ai_examples.sh"
+      - ".github/workflows/python-ai-kit.yml"
+
+jobs:
+  python-language-and-os-examples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+      # No third-party pip packages, no AI provider keys, no client data.
+      # Optional PyTorch model tests correctly skip on the standard runner.
+      - name: Compile and run safe synthetic tests
+        run: bash scripts/dev/verify_python_ai_examples.sh
