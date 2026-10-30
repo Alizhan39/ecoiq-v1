@@ -88,6 +88,12 @@ audit remain required before merging. The preceding Stage 1/2/3 parent PRs
 must be merged/rebased and re-tested in CI before deployment. No claim of
 live client integration or production approval is made.
 
+## Stage 5: evidence-planning Decision & Islah
+
+The [Decision & Islah V1](DECISION_ISLAH_V1.md) adds a read-only,
+project-scoped investigation panel for competing causal questions and
+study-only changes. It does not call an LLM or approve an intervention.
+
 ## Next stage (bounded)
 
 Staging with synthetic observations, end-to-end browser checks, private

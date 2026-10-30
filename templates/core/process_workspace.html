@@ -99,6 +99,7 @@
             <th scope="col">Case / process</th>
             <th scope="col">Reported loss</th>
             <th scope="col">Next step</th>
+            <th scope="col">Decision questions</th>
           </tr></thead>
           <tbody id="po-history-rows"></tbody>
         </table>
@@ -108,6 +109,35 @@
         <span id="po-page" aria-live="polite">Page 1</span>
         <button type="button" class="po-button po-button--secondary" id="po-next-page" disabled>Next</button>
       </div>
+    </section>
+
+    <section class="po-panel" id="po-decision-panel" aria-labelledby="po-decision-title" hidden>
+      <div class="po-panel-head">
+        <div>
+          <p class="po-eyebrow">EcoIQ Decision &amp; Islah · Evidence planning</p>
+          <h2 id="po-decision-title">Hypotheses and Islah studies</h2>
+        </div>
+        <button type="button" class="po-button po-button--secondary" id="po-close-decision">Close</button>
+      </div>
+      <p class="po-notice">
+        This is a deterministic list of questions, not a generative AI finding.
+        No causal mechanism, savings amount, Mizan outcome or implementation approval has been established.
+      </p>
+      <p id="po-decision-status" role="status" aria-live="polite">Select an analysis to review.</p>
+      <div class="po-columns">
+        <div>
+          <h3>Competing explanations to test</h3>
+          <ul id="po-hypotheses" class="po-decision-list"></ul>
+        </div>
+        <div>
+          <h3>Islah studies — not approved changes</h3>
+          <ul id="po-islah-studies" class="po-decision-list"></ul>
+        </div>
+      </div>
+      <details class="po-decision-details">
+        <summary>Evidence still needed before any decision</summary>
+        <ul id="po-evidence-gaps" class="po-decision-list"></ul>
+      </details>
     </section>
   {% else %}
     <div class="po-panel" role="status">
