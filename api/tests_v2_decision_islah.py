@@ -70,6 +70,46 @@ class DecisionIslahAPITests(TestCase):
         self.assertEqual(response["Cache-Control"], "private, no-store, max-age=0")
         self.assertNotIn("file_fingerprint", response.content.decode())
 
+    def test_guided_situation_includes_formula_and_draft_verses_without_verdict(self):
+        self.client.force_login(self.viewer)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        guidance = response.json()["situation_guidance"]
+        self.assertEqual(guidance["engine"], "ECOIQ_SITUATION_GUIDANCE_V1")
+        self.assertEqual(guidance["formulas"][0]["value"], 12)
+        self.assertEqual(guidance["formulas"][1]["value"], 880)
+        self.assertIsNone(guidance["formulas"][2]["value"])
+        self.assertEqual(guidance["situation"], "REPORTED_LOSS_REQUIRES_INVESTIGATION")
+        self.assertFalse(guidance["ai_model_called"])
+        self.assertFalse(guidance["safety_constraints"]["implementation_permitted"])
+        self.assertIsNone(guidance["safety_constraints"]["shariah_verdict"])
+        self.assertIn("SCHOLAR_REVIEW_REQUIRED",
+            [lens["review_state"] for lens in guidance["guidance_lenses"]])
+        self.assertNotIn("source_passage", response.json())
+        self.assertNotIn("file_fingerprint", response.content.decode())
+
+    def test_guidance_missing_quantity_is_not_imputed_as_zero(self):
+        self.analysis.summary["kpi"]["numerator"] = None
+        self.analysis.save(update_fields=["summary"])
+        self.client.force_login(self.viewer)
+        result = self.client.get(self.url).json()["situation_guidance"]
+        self.assertIsNone(result["formulas"][0]["value"])
+        self.assertEqual(result["situation"], "INSUFFICIENT_REPORTED_DATA")
+        self.assertFalse(any(
+            row["concept"] == "israf" for row in result["guidance_lenses"]
+        ))
+
+    def test_stored_approval_fields_cannot_change_guidance(self):
+        self.analysis.summary["approval_recorded"] = True
+        self.analysis.summary["savings_forecast"] = 5000000
+        self.analysis.summary["religious_approval"] = "confirmed"
+        self.analysis.save(update_fields=["summary"])
+        self.client.force_login(self.viewer)
+        result = self.client.get(self.url).json()["situation_guidance"]
+        self.assertFalse(result["safety_constraints"]["implementation_permitted"])
+        self.assertIsNone(result["safety_constraints"]["religious_approval"])
+        self.assertIsNone(result["safety_constraints"]["savings_forecast"])
+
     def test_unlogged_and_unauthorised_users_fail_closed(self):
         self.assertIn(self.client.get(self.url).status_code, (401, 403))
         self.client.force_login(self.stranger)

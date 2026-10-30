@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from api.models import ProcessAnalysisRun
 from api.v2_process_analyses import _private, _resolve_project
 from ecoiq_os.decision_islah import build_preliminary_brief
+from ecoiq_os.situation_guidance import assemble_situation_guidance
 from gold_intelligence import access
 
 
@@ -36,6 +37,7 @@ def process_decision_brief(request, project_slug, run_id):
             reported_input=kpi["denominator"],
             reported_loss=kpi["numerator"],
         )
+        guidance = assemble_situation_guidance(brief)
     except (KeyError, ValueError, TypeError):
         # Legacy, malformed or migrated data cannot be silently upgraded.
         # No internals or commercial amounts are returned in the error.
@@ -46,4 +48,5 @@ def process_decision_brief(request, project_slug, run_id):
         "analysis_id": run.pk,
         "project_slug": project.slug,
         "brief": brief,
+        "situation_guidance": guidance,
     })

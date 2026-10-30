@@ -1,0 +1,81 @@
+name: EcoIQ Situation Formula and Quran Research Safety
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/native-rust-cpp-kernels-v1-20261030
+    paths:
+      - "ecoiq_os/situation_guidance.py"
+      - "ecoiq_os/situation_ai.py"
+      - "ecoiq_os/tests_situation_ai.py"
+      - "ecoiq_os/test_situation_guidance.py"
+      - "api/v2_decision_islah.py"
+      - "api/tests_v2_decision_islah.py"
+      - "templates/core/process_workspace.html"
+      - "static/js/process-workspace.js"
+      - "scripts/native/offline_situation_demo.py"
+      - "native/cpp_twin_geometry/**"
+      - "docs/architecture/SITUATION_QURANIC_GUIDANCE_V1.md"
+      - ".github/workflows/situation-guidance.yml"
+  push:
+    branches: [main]
+    paths:
+      - "ecoiq_os/situation_guidance.py"
+      - "ecoiq_os/test_situation_guidance.py"
+      - "scripts/native/offline_situation_demo.py"
+      - ".github/workflows/situation-guidance.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-and-religious-review-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DJANGO_SECRET_KEY: test-secret-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: sqlite:///db.sqlite3
+      ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED: "False"
+      AI_ENABLED: "false"
+      ECOIQ_BILLING_PROVIDER: none
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Syntax, lint and JS validity
+        run: |
+          python -m compileall -q ecoiq_os/situation_guidance.py ecoiq_os/situation_ai.py ecoiq_os/test_situation_guidance.py ecoiq_os/tests_situation_ai.py api/v2_decision_islah.py
+          ruff check ecoiq_os/situation_guidance.py ecoiq_os/situation_ai.py ecoiq_os/test_situation_guidance.py ecoiq_os/tests_situation_ai.py api/v2_decision_islah.py
+          node --check static/js/process-workspace.js
+      - name: Tenant-level API and human safety tests
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+          python manage.py test ecoiq_os.test_situation_guidance ecoiq_os.tests_situation_ai ecoiq_os.tests_grounded_ai api.tests_v2_decision_islah core.tests_process_workspace ecoiq_os.test_kernel ecoiq_os.test_knowledge --noinput
+      - name: Rust and C++ synthetic native bridge proof
+        run: |
+          rustup toolchain install 1.85.1 --profile minimal
+          rustup default 1.85.1
+          cargo test --offline --manifest-path native/rust_resource_kernel/Cargo.toml
+          cargo build --offline --manifest-path native/rust_resource_kernel/Cargo.toml
+          cmake -S native/cpp_twin_geometry -B /tmp/ecoiq-situation-cpp \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build /tmp/ecoiq-situation-cpp --parallel 2
+          ctest --test-dir /tmp/ecoiq-situation-cpp --output-on-failure
+          ECOIQ_CPP_CANDIDATE_BIN=/tmp/ecoiq-situation-cpp/ecoiq-twin-preview \
+            python scripts/native/offline_situation_demo.py
+      - name: Scope must not enable native code or external providers
+        run: |
+          git diff --exit-code HEAD -- render.yaml requirements.txt ecoiq/settings.py

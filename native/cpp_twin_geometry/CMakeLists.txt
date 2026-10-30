@@ -12,3 +12,7 @@ add_executable(ecoiq_twin_geometry_tests tests/test_twin_geometry.cpp)
 target_link_libraries(ecoiq_twin_geometry_tests PRIVATE ecoiq_twin_geometry)
 enable_testing()
 add_test(NAME safe_geometry_math COMMAND ecoiq_twin_geometry_tests)
+
+# Offline synthetic-only preview, not linked into Django.
+add_executable(ecoiq-twin-preview src/demo_cli.cpp)
+target_link_libraries(ecoiq-twin-preview PRIVATE ecoiq_twin_geometry)

@@ -28,6 +28,9 @@
   const hypothesesList = document.getElementById('po-hypotheses');
   const studiesList = document.getElementById('po-islah-studies');
   const evidenceGaps = document.getElementById('po-evidence-gaps');
+  const situationStatus = document.getElementById('po-situation-status');
+  const situationFormulas = document.getElementById('po-situation-formulas');
+  const quranReferences = document.getElementById('po-quran-references');
   const closeDecision = document.getElementById('po-close-decision');
   const token = root.querySelector('input[name=csrfmiddlewaretoken]');
   const limit = 512 * 1024;
@@ -118,6 +121,58 @@
     return item;
   }
 
+  function renderSituationGuidance(guidance) {
+    situationFormulas.replaceChildren();
+    quranReferences.replaceChildren();
+    if (!guidance || guidance.engine !== 'ECOIQ_SITUATION_GUIDANCE_V1') {
+      situationStatus.textContent = 'Situation assessment unavailable.';
+      return;
+    }
+    const situationLabels = {
+      REPORTED_LOSS_REQUIRES_INVESTIGATION: 'Reported loss: investigate before interpreting',
+      NO_REPORTED_LOSS_IN_THIS_BOUNDARY: 'No loss reported in this measurement boundary',
+      INSUFFICIENT_REPORTED_DATA: 'Missing inputs: no numerical conclusion',
+    };
+    situationStatus.textContent = situationLabels[guidance.situation] || 'Further evidence required';
+    const formulas = Array.isArray(guidance.formulas) ? guidance.formulas : [];
+    for (const formula of formulas) {
+      const value = typeof formula.value === 'number' && Number.isFinite(formula.value)
+        ? number(formula.value) + ' ' + (formula.unit || '')
+        : 'Unknown / not justified';
+      situationFormulas.appendChild(makeItem(
+        String(formula.label || 'Formula') + ': ' + value,
+        String(formula.formula || ''),
+        String(formula.interpretation_limit || '') + ' · ' + String(formula.status || ''),
+      ));
+    }
+    const lenses = Array.isArray(guidance.guidance_lenses) ? guidance.guidance_lenses : [];
+    for (const lens of lenses) {
+      const item = makeItem(
+        String(lens.concept || 'Research lens').toUpperCase(),
+        String(lens.research_question || ''),
+        'DRAFT RESEARCH ONLY · qualified scholarly review required',
+      );
+      for (const reference of (Array.isArray(lens.references) ? lens.references : [])) {
+        // Never create arbitrary script/file/external links from API data.
+        if (!/^https:\/\/quran\.com\/[0-9]{1,3}\/[0-9]{1,3}(?:-[0-9]{1,3})?$/.test(reference.url || '')) continue;
+        const link = document.createElement('a');
+        link.href = reference.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Qur’an ' + String(reference.locator || '');
+        item.appendChild(link);
+        item.appendChild(document.createTextNode(' · '));
+      }
+      quranReferences.appendChild(item);
+    }
+    if (lenses.length === 0) {
+      quranReferences.appendChild(makeItem(
+        'No eligible research locators',
+        'No unreviewed reference should be fabricated.',
+      ));
+    }
+  }
+
   function renderDecisionBrief(brief) {
     hypothesesList.replaceChildren();
     studiesList.replaceChildren();
@@ -159,6 +214,9 @@
     const controller = new AbortController();
     decisionRequest = controller;
     decisionPanel.hidden = false;
+    situationStatus.textContent = 'Loading situation assessment…';
+    situationFormulas.replaceChildren();
+    quranReferences.replaceChildren();
     decisionStatus.textContent = 'Loading evidence questions…';
     try {
       const response = await fetch(
@@ -170,6 +228,7 @@
       const data = await parse(response);
       if (controller.signal.aborted || sequence !== decisionSequence || current !== select.value) return;
       renderDecisionBrief(data.brief || {});
+      renderSituationGuidance(data.situation_guidance || null);
       decisionPanel.scrollIntoView({ behavior: 'auto', block: 'start' });
     } catch (error) {
       if (controller.signal.aborted || sequence !== decisionSequence) return;
