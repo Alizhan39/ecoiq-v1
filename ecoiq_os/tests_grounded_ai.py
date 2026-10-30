@@ -48,7 +48,7 @@ class GroundedAIProjectTests(TestCase):
             ProjectMembership.objects.create(
                 project=cls.project, user=user, role=role,
             )
-        cls.run = ProcessAnalysisRun.objects.create(
+        cls.analysis = ProcessAnalysisRun.objects.create(
             project=cls.project, created_by=cls.analyst,
             case_id="CASE-001", domain="construction", process_name="Materials",
             resource_type="material", period="2026-10", unit="kg",
@@ -78,7 +78,7 @@ class GroundedAIProjectTests(TestCase):
         gateway = Mock()
         with override_settings(ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED=True):
             out = prepare_grounded_draft(
-                project=self.project, user=self.analyst, run=self.run,
+                project=self.project, user=self.analyst, run=self.analysis,
                 external_transfer_approved=True, gateway=gateway,
             )
         self.assertEqual(out["status"], "NO_REVIEWED_SOURCES")
@@ -88,7 +88,7 @@ class GroundedAIProjectTests(TestCase):
         source = self.add_source()
         gateway = Mock()
         out = prepare_grounded_draft(
-            project=self.project, user=self.analyst, run=self.run,
+            project=self.project, user=self.analyst, run=self.analysis,
             external_transfer_approved=True, gateway=gateway,
         )
         self.assertEqual(out["status"], "EXTERNAL_MODEL_DISABLED")
@@ -103,7 +103,7 @@ class GroundedAIProjectTests(TestCase):
         gateway = Mock()
         with override_settings(ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED=True):
             out = prepare_grounded_draft(
-                project=self.project, user=self.analyst, run=self.run,
+                project=self.project, user=self.analyst, run=self.analysis,
                 external_transfer_approved=False, gateway=gateway,
             )
         self.assertEqual(out["status"], "EXTERNAL_MODEL_DISABLED")
@@ -115,7 +115,7 @@ class GroundedAIProjectTests(TestCase):
         gateway.chat.return_value = {"answer": model_json()}
         with override_settings(ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED=True):
             out = prepare_grounded_draft(
-                project=self.project, user=self.analyst, run=self.run,
+                project=self.project, user=self.analyst, run=self.analysis,
                 external_transfer_approved=True, gateway=gateway,
             )
         self.assertEqual(out["status"], "REVIEW_REQUIRED")
@@ -137,12 +137,12 @@ class GroundedAIProjectTests(TestCase):
         gateway = Mock()
         for user in (self.viewer, self.stranger):
             out = prepare_grounded_draft(
-                project=self.project, user=user, run=self.run,
+                project=self.project, user=user, run=self.analysis,
                 external_transfer_approved=True, gateway=gateway,
             )
             self.assertEqual(out["status"], "ACCESS_DENIED")
         other = prepare_grounded_draft(
-            project=self.other_project, user=self.analyst, run=self.run,
+            project=self.other_project, user=self.analyst, run=self.analysis,
             external_transfer_approved=True, gateway=gateway,
         )
         self.assertEqual(other["status"], "ACCESS_DENIED")
@@ -172,14 +172,14 @@ class GroundedAIProjectTests(TestCase):
 
     def test_does_not_trust_stored_claim_of_verified_approval(self):
         self.add_source()
-        self.run.summary["approval_recorded"] = True
-        self.run.summary["causal_conclusion"] = "proven savings"
-        self.run.save(update_fields=["summary"])
+        self.analysis.summary["approval_recorded"] = True
+        self.analysis.summary["causal_conclusion"] = "proven savings"
+        self.analysis.save(update_fields=["summary"])
         gateway = Mock()
         gateway.chat.return_value = {"answer": model_json()}
         with override_settings(ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED=True):
             out = prepare_grounded_draft(
-                project=self.project, user=self.analyst, run=self.run,
+                project=self.project, user=self.analyst, run=self.analysis,
                 external_transfer_approved=True, gateway=gateway,
             )
         self.assertFalse(out["approval_recorded"])
