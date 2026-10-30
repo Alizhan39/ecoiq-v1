@@ -1,0 +1,64 @@
+name: EcoIQ Stage 8 Synthetic Enterprise Pilot Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/grounded-ai-evidence-gateway-v1-20261030
+    paths:
+      - "ecoiq_os/pilot_*.py"
+      - "ecoiq_os/tests_pilot_security.py"
+      - "ecoiq/settings_pilot.py"
+      - "scripts/pilot/**"
+      - "infra/staging/**"
+      - "docs/operations/STAGE8_SYNTHETIC_PILOT.md"
+      - ".github/workflows/enterprise-pilot.yml"
+  push:
+    branches: [main]
+    paths:
+      - "ecoiq_os/pilot_*.py"
+      - "ecoiq/settings_pilot.py"
+      - "scripts/pilot/**"
+      - ".github/workflows/enterprise-pilot.yml"
+
+jobs:
+  synthetic-security-and-retention:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DJANGO_SECRET_KEY: test-secret-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: sqlite:///db.sqlite3
+      AI_ENABLED: "false"
+      ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED: "false"
+      ECOIQ_BILLING_PROVIDER: "none"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install pinned dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Syntax, Ruff, Django and migration integrity
+        run: |
+          python -m compileall -q ecoiq_os/pilot_security.py ecoiq_os/pilot_retention.py ecoiq_os/pilot_evaluation.py ecoiq_os/tests_pilot_security.py ecoiq/settings_pilot.py scripts/pilot
+          ruff check ecoiq_os/pilot_security.py ecoiq_os/pilot_retention.py ecoiq_os/pilot_evaluation.py ecoiq_os/tests_pilot_security.py ecoiq/settings_pilot.py scripts/pilot
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+      - name: Stage 8 security + Stage 7/6 regression
+        run: python manage.py test ecoiq_os.tests_pilot_security core.tests_ai_review ecoiq_os.tests_grounded_ai --noinput
+      - name: Synthetic-only multilingual citation benchmark
+        run: python -m ecoiq_os.pilot_evaluation
+      - name: Unsafe pilot environment must fail closed
+        run: |
+          if DJANGO_SETTINGS_MODULE=ecoiq.settings_pilot python scripts/pilot/preflight.py; then
+            echo "ERROR: production-like CI should NOT pass staging preflight without attestations" >&2
+            exit 1
+          fi
