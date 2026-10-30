@@ -59,9 +59,8 @@ jobs:
           node --check static/js/process-workspace.js
       - name: All 20 formula contracts and existing Business OS regression
         run: |
-          python -m unittest ecoiq_os.test_formula_registry -v
           python manage.py check
           python manage.py makemigrations --check --dry-run
-          python manage.py test ecoiq_os.tests_formula_designer core.tests_formula_studio core.tests_process_workspace ecoiq_os.test_foundation_training ecoiq_os.tests_grounded_ai --noinput
+          python manage.py test ecoiq_os.test_formula_registry ecoiq_os.tests_formula_designer core.tests_formula_studio core.tests_process_workspace ecoiq_os.test_foundation_training ecoiq_os.tests_grounded_ai --noinput
       - name: No production infra or AI-provider changes
         run: git diff --exit-code HEAD -- render.yaml requirements.txt ecoiq/settings.py
