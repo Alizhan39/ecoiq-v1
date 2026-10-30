@@ -222,6 +222,13 @@ reuses the flow, evidence and Mizan contracts to calculate one observed
 loss-rate KPI without inventing causal support or changing company data.
 It is not yet an OS case API, published score or production integration.
 
+## Decision & Islah evidence planning
+
+The [Decision & Islah V1](DECISION_ISLAH_V1.md) provides falsifiable
+hypothesis questions and non-executable Islah study directions over
+reported process aggregates. It cannot turn reported loss into confirmed
+avoidable waste or infer implementation permission.
+
 ## Next implementation boundary
 
 The next reviewable increments are:
