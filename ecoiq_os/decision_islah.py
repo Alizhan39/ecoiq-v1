@@ -9,11 +9,13 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from math import isfinite
+import re
 from typing import Any
 
 from ecoiq_os.domains import get_domain
 from ecoiq_os.evidence import UNTESTED
 from ecoiq_os.islah import IslahProposal
+from ecoiq_os.flow import RESOURCE_TYPES
 from ecoiq_os.kernel import (
     COLLECT_EVIDENCE, DESIGN_ISLAH, HUMAN_REVIEW_FOR_IMPLEMENTATION,
     SIMULATE_ISLAH, EcoIQOSCase, evaluate_case,
@@ -90,6 +92,10 @@ def build_preliminary_brief(
     ):
         if not isinstance(value, str) or not value.strip() or len(value) > 128:
             raise ValueError(f"Invalid {label}.")
+    if resource_type not in RESOURCE_TYPES:
+        raise ValueError("Unknown EcoIQ OS resource type.")
+    if re.fullmatch(r"[0-9]{4}-(?:0[1-9]|1[0-2])", period) is None:
+        raise ValueError("Period must use YYYY-MM.")
     total = _reported_quantity(reported_input, "reported_input")
     loss = _reported_quantity(reported_loss, "reported_loss")
     if total is not None and loss is not None and loss > total:
