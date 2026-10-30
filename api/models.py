@@ -234,3 +234,96 @@ class ProcessAnalysisRun(models.Model):
                 name='api_process_project_time_idx',
             ),
         ]
+
+
+class ProcessAIReviewCase(models.Model):
+    """Human inspection of AI-drafted *questions*, never an implementation approval.
+
+    Created only by a trusted server service, not via a browser-submitted draft.
+    Stores bounded questions and exact source quotes, not original documents,
+    full model output or provider credentials. RBAC belongs to its views/service.
+    """
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending human review'
+        ACCEPTED = 'accepted_for_study', 'Accepted as study questions'
+        REJECTED = 'rejected', 'Rejected'
+        REVISION = 'needs_revision', 'Needs revision'
+
+    project = models.ForeignKey(
+        'gold_intelligence.GoldProject', on_delete=models.PROTECT,
+        related_name='process_ai_review_cases',
+    )
+    analysis = models.ForeignKey(
+        ProcessAnalysisRun, on_delete=models.PROTECT,
+        related_name='ai_review_cases',
+    )
+    submitted_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name='submitted_ai_reviews',
+    )
+    reviewed_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.PROTECT,
+        related_name='completed_ai_reviews',
+    )
+    questions = models.JSONField(default=list)
+    source_manifest = models.JSONField(default=list)
+    # Hash of canonical question+source manifest snapshot, not an authenticity
+    # signature or tamper-proof audit log.
+    content_sha256 = models.CharField(max_length=64)
+    status = models.CharField(max_length=24, choices=Status.choices, default=Status.PENDING)
+    reason_code = models.CharField(max_length=32, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        indexes = [
+            models.Index(fields=['project', 'status'], name='api_ai_review_project_status'),
+        ]
+
+
+class ProcessAIReviewEvent(models.Model):
+    """Append-only through the application service; not cryptographically immutable."""
+    case = models.ForeignKey(
+        ProcessAIReviewCase, on_delete=models.PROTECT, related_name='events',
+    )
+    actor = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name='process_ai_review_events',
+    )
+    action = models.CharField(max_length=24)
+    reason_code = models.CharField(max_length=32, blank=True)
+    content_sha256 = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at', 'pk']
+
+
+class ProcessAIProcessingReadiness(models.Model):
+    """Time-bounded assessment, NOT authorisation to transmit data to an LLM.
+
+    No coupling to the Stage 6 external feature flag; it never enables
+    a provider call. Records a reviewer-completed checklist about one analysis.
+    """
+    project = models.ForeignKey(
+        'gold_intelligence.GoldProject', on_delete=models.PROTECT,
+        related_name='process_ai_readiness',
+    )
+    analysis = models.ForeignKey(
+        ProcessAnalysisRun, on_delete=models.PROTECT,
+        related_name='ai_processing_readiness',
+    )
+    recorded_by = models.ForeignKey(
+        User, on_delete=models.PROTECT,
+        related_name='recorded_ai_processing_readiness',
+    )
+    purpose = models.CharField(max_length=50, default='investigation_questions')
+    source_rights_reviewed = models.BooleanField(default=False)
+    privacy_reviewed = models.BooleanField(default=False)
+    provider_terms_reviewed = models.BooleanField(default=False)
+    # Explicitly never represents active transfer permission.
+    authorises_external_transfer = models.BooleanField(default=False, editable=False)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
