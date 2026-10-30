@@ -32,6 +32,16 @@ class FormulaRegistryTests(unittest.TestCase):
         self.assertTrue(all(not item["production_approved"] for item in formula_catalogue_view()))
         self.assertEqual(len(formula_catalogue_view()), 20)
 
+    def test_every_initial_formula_evaluates_from_declared_synthetic_inputs(self):
+        for spec in PROVISIONAL_KPI_FORMULAS:
+            with self.subTest(kpi=spec.key):
+                samples = {input_spec.key: "10" for input_spec in spec.inputs}
+                out = calculate_formula(spec, observations(spec, samples))
+                self.assertEqual(out["formula_key"], spec.key)
+                self.assertIn(out["status"], ("REPORTED_NOT_VERIFIED", "REVIEW_UNPLAUSIBLE_RATIO"))
+                self.assertFalse(out["approved_for_implementation"])
+                self.assertFalse(out["verified_evidence"])
+
     def test_gross_margin_and_cash_flow_with_exact_decimal(self):
         margin = FORMULAS_BY_KEY["gross_margin"]
         result = calculate_formula(margin, observations(
