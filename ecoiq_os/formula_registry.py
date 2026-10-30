@@ -20,6 +20,12 @@ MAX_EXPRESSION_DEPTH = 8
 MAX_VARIABLES = 12
 MAX_ABS_VALUE = Decimal("1e24")
 MAX_OUTPUT = Decimal("1e30")
+BOUNDED_PERCENT_FORMULA_KEYS = frozenset({
+    "gross_margin", "material_loss_rate", "asset_utilisation",
+    "waste_recovery", "living_wage_coverage", "adjusted_pay_gap",
+    "fair_procurement", "benefit_distribution", "evidence_coverage",
+    "independent_verification", "decision_review_coverage",
+})
 SAFE_UNIT_SYMBOLS = frozenset({
     "GBP", "kg", "kWh", "m3", "unit", "hour", "person", "incident",
     "tCO2e", "count", "1",
@@ -239,7 +245,7 @@ def calculate_formula(spec: FormulaSpec, observations: Mapping[str, Observation]
         raise FormulaRejected("Result not a bounded finite number.")
     # Over-100% claims for subset ratios are not silently accepted. The
     # caller and reviewer must verify denominator scope / units.
-    if spec.output_unit == "%" and result > 100:
+    if spec.output_unit == "%" and spec.key in BOUNDED_PERCENT_FORMULA_KEYS and result > 100:
         return _response(spec, None, "REVIEW_UNPLAUSIBLE_RATIO", refs, periods.pop())
     return _response(spec, result, "REPORTED_NOT_VERIFIED", refs, periods.pop())
 
