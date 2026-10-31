@@ -1,4 +1,5 @@
 from django.test import TestCase
+from core.staff_page_testcase import StaffPageTestCase
 
 RAW_TEMPLATE_TOKENS = [
     '{% load', '{% for', '{% include', '{% intelligence_block', '{% extends', '{% block',
@@ -6,7 +7,7 @@ RAW_TEMPLATE_TOKENS = [
 ]
 
 
-class InstitutionalFinanceEnginePageTests(TestCase):
+class InstitutionalFinanceEnginePageTests(StaffPageTestCase):
     def test_page_returns_200(self):
         response = self.client.get('/institutional-finance-engine/')
         self.assertEqual(response.status_code, 200)
@@ -58,21 +59,3 @@ class InstitutionalFinanceEnginePageTests(TestCase):
         for token in RAW_TEMPLATE_TOKENS:
             self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')
 
-
-class PlatformPageInstitutionalFinanceEngineTeaserTests(TestCase):
-    def test_platform_page_no_longer_mentions_institutional_finance_engine(self):
-        """
-        Phase 1A follow-up: institutional_finance_engine is deprecated in
-        favour of financial_intelligence_cloud, and its module card + promo
-        section were removed from /platform/. This guards against the
-        deprecated module's teaser silently reappearing.
-        """
-        response = self.client.get('/platform/')
-        self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, 'EcoIQ Institutional Finance Engine')
-
-    def test_platform_page_has_no_raw_template_tags(self):
-        response = self.client.get('/platform/')
-        content = response.content.decode()
-        for token in RAW_TEMPLATE_TOKENS:
-            self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')

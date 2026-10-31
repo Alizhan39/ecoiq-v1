@@ -1,12 +1,15 @@
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.contrib.sitemaps.views import sitemap
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 
 from companies.sitemaps import CompanySitemap, StaticSitemap
+from core import health as health_views
+from companies.throttle import rate_limit
+from core import spa
 from leads import views as leads_views
 
 _sitemaps = {
@@ -16,6 +19,15 @@ _sitemaps = {
 
 urlpatterns = [
 
+    # Liveness probe for the Render health check (render.yaml healthCheckPath).
+    # First so it resolves without walking the rest of this URLconf, and so it
+    # can never be shadowed by a later prefix. Touches no database — see
+    # core/health.py for why a liveness probe must not.
+    path('healthz/', health_views.healthz, name='healthz'),
+    # Readiness. Deliberately NOT render.yaml's healthCheckPath: a dependency
+    # outage should stop traffic, not restart a healthy process. See core/health.py.
+    path('readyz/', health_views.readyz, name='readyz'),
+
     # i18n — language switcher endpoint (set_language view, POST)
     path('i18n/', include('django.conf.urls.i18n')),
 
@@ -23,7 +35,13 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Auth
-    path('login/',  auth_views.LoginView.as_view(template_name='registration/login.html'),  name='login'),
+    # Rate-limited: the sign-in form is an unauthenticated write surface and
+    # was previously unlimited (DRF's throttles cover /api/, not Django's auth
+    # views). staff_exempt=False on purpose — the request that needs limiting
+    # is made by someone who is not signed in as anybody yet.
+    path('login/',  rate_limit('auth_login_web', anon_per_min='LOGIN_RATE_PER_MIN',
+                               auth_per_min='LOGIN_RATE_PER_MIN', staff_exempt=False)(
+        auth_views.LoginView.as_view(template_name='registration/login.html')),  name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/'),                           name='logout'),
 
     # Existing Django apps (unchanged)
@@ -43,8 +61,13 @@ urlpatterns = [
     # AI company ingestion
     path('ingest/', include('ingestion.urls', namespace='ingestion')),
 
-    # Environmental Intelligence OS
-    path('intelligence/', include('intelligence.urls', namespace='intelligence')),
+    # Environmental Intelligence OS — moved off /intelligence/ so that path can
+    # carry the PUBLIC Intelligence page (see core.urls). Every view in this app
+    # is already @staff_member_required, it is absent from sitemap.xml and
+    # robots.txt, and every inbound link uses {% url 'intelligence:...' %}, so
+    # the namespace is unchanged and those links follow this move automatically.
+    # /intelligence/ itself is NOT redirected here: it is now a public page.
+    path('intelligence-os/', include('intelligence.urls', namespace='intelligence')),
 
     # Industrial Transition Engine
     path('transition/', include('transition.urls', namespace='transition')),
@@ -90,6 +113,15 @@ urlpatterns = [
     path('api/',        __import__('core.views', fromlist=['api_docs']).api_docs, name='api_docs_root'),
     path('api/v1/',     include('api.urls',   namespace='api')),
 
+    # EcoIQ REST API v2 — the canonical contract, with explicit evidence
+    # semantics: a score is null when EcoIQ cannot support it with evidence,
+    # and score_status/evidence_coverage say so rather than a stand-in number.
+    #
+    # Purely additive. v1 above is unchanged and stays mounted for existing
+    # integrators; see docs/product/API_EVIDENCE_MIGRATION.md for the
+    # deprecation conditions.
+    path('api/v2/',     include('api.v2_urls', namespace='api_v2')),
+
     # EcoIQ AI Gateway — one provider-neutral, free-only AI system over
     # OpenRouter / Bytez / NVIDIA NIM, with automatic free-only model routing.
     path('api/ai/',     include('ai_gateway.urls',     namespace='ai_gateway')),
@@ -103,6 +135,7 @@ urlpatterns = [
 
     # EcoIQ Quranic Decision Filter — "Create rizq without zulm"
     path('api/qdf/',    include('qdf.urls',           namespace='qdf')),
+    path('api/islamic/', include('islamic_knowledge.urls', namespace='islamic_knowledge')),
     path('decisions/',  include('qdf.web_urls',       namespace='qdf_web')),
 
     # EcoIQ LegacySafe AI — hackathon module (started 2026-07-01), Conduct AI / BasedAI
@@ -294,4 +327,68 @@ urlpatterns = [
 
     # SEO — sitemap and robots
     path('sitemap.xml', sitemap, {'sitemaps': _sitemaps}, name='sitemap'),
+
+    # ── React SPA ────────────────────────────────────────────────────────────
+    #
+    # Routes that exist ONLY in the React app — they have no Django template
+    # equivalent and never had one. Registered explicitly rather than left to
+    # the catch-all so they answer 200 rather than 404, and so `{% url %}` can
+    # reach them from the templates that are still server-rendered.
+    #
+    # The routes that ARE being migrated off Django templates keep their
+    # registration where it already is (core/urls.py, companies/urls.py,
+    # league/urls.py) and swap their view for spa.spa_view there, so URL names,
+    # ordering and prefix behaviour are unchanged. See core/spa.py.
+    # The framework itself. Registered explicitly, like the routes below it,
+    # so a direct hit answers 200 rather than falling to the catch-all's 404.
+    # The detail route validates the 1-114 bound server-side and 404s outside
+    # it — React can show a reader "no such principle", but a crawler reads the
+    # status line, and 200 for a principle that does not exist misstates how
+    # big the framework is. Same rule company_kpi_spa_view already applies.
+    path('principles/', spa.spa_view, name='principles'),
+    path('principles/<int:kpi_id>/', spa.principle_spa_view, name='principle_detail'),
+    path('tours/', spa.spa_view, name='tours'),
+    path('labs/',  spa.spa_view, name='labs'),
+    path('trust/', spa.spa_view, name='trust'),
+    # The industrial-modernisation product page. PUBLIC and deliberately not
+    # in core/access.py's gated list: unlike the preview beside it, this one
+    # states what does and does not exist on its face, so it is presentable.
+    path('industrial-modernisation/', spa.spa_view,
+         name='industrial_modernisation'),
+    # Internal preview of the industrial-modernisation scene. Registered so it
+    # answers 200 rather than falling through the catch-all with a 404 status,
+    # and gated in core/access.py because it is an unfinished prototype — the
+    # same policy that module already applies to every other experimental
+    # surface. Not in the navigation, not in the sitemap, not linked.
+    path('industrial-modernisation-preview/', spa.spa_view,
+         name='industrial_modernisation_preview'),
+
+    # ── Public sector ────────────────────────────────────────────────────────
+    #
+    # ONE route. The borough demonstration and the procurement information are
+    # sections of this page, not destinations — a buyer should never need a
+    # second URL to understand the proposition, and two URLs holding the same
+    # subject is duplicate content a canonical tag then has to apologise for.
+    #
+    # PUBLIC, like /industrial-modernisation/ and unlike the preview beside
+    # it: every claim on the page is one the repository supports.
+    #
+    # Registered explicitly rather than left to the catch-all so a direct hit
+    # answers 200 rather than the shell-with-404 an unknown frontend path gets.
+    path('public-sector/', spa.spa_view, name='public_sector'),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# ── SPA history fallback ─────────────────────────────────────────────────────
+#
+# LAST, and it must stay last: it matches everything, so anything appended
+# below it becomes unreachable.
+#
+# It is a fallback, not a router. Server-owned prefixes (/api/, /admin/,
+# /static/, the Stripe webhook, …) are refused inside spa_catch_all with a
+# plain 404 — a mistyped API route must never answer `200 text/html`. Unknown
+# frontend paths get the React shell with HTTP 404: the NotFound page for a
+# person, the true status code for a crawler.
+urlpatterns += [
+    re_path(r'^(?P<path>.*)$', spa.spa_catch_all, name='spa_catch_all'),
+]

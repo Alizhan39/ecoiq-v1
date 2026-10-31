@@ -1,0 +1,55 @@
+name: EcoIQ Human AI Review Safety Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/grounded-ai-evidence-gateway-v1-20261030
+    paths:
+      - "api/models.py"
+      - "api/migrations/0004_process_ai_review.py"
+      - "ecoiq_os/human_review.py"
+      - "core/ai_review.py"
+      - "core/urls.py"
+      - "core/tests_ai_review.py"
+      - "templates/core/ai_review_*.html"
+      - ".github/workflows/human-ai-review.yml"
+  push:
+    branches: [main]
+    paths:
+      - "ecoiq_os/human_review.py"
+      - "core/ai_review.py"
+      - "core/tests_ai_review.py"
+      - ".github/workflows/human-ai-review.yml"
+
+jobs:
+  human-review-rbac-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DJANGO_SECRET_KEY: test-secret-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: sqlite:///db.sqlite3
+      ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED: "False"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Syntax, lint, schema and system check
+        run: |
+          python -m compileall -q ecoiq_os/human_review.py core/ai_review.py core/tests_ai_review.py
+          ruff check ecoiq_os/human_review.py core/ai_review.py core/tests_ai_review.py
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+      - name: Human review / Stage 6 regression tests
+        run: python manage.py test core.tests_ai_review ecoiq_os.tests_grounded_ai api.tests_v2_decision_islah --noinput

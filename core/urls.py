@@ -4,10 +4,29 @@ from . import views
 from . import globe as globe_views
 from . import why_views
 from harvester import views as harvester_views
+from . import spa
+from . import process_workspace
+from . import ai_review
+from . import formula_studio
 
 urlpatterns = [
+    path('business-os/formulas/<slug:project_slug>/', formula_studio.formula_studio, name='formula_studio'),
+    path('business-os/ai-review/', ai_review.review_queue, name='ai_review_queue'),
+    path('business-os/ai-review/<slug:project_slug>/<int:review_id>/',
+         ai_review.review_detail, name='ai_review_detail'),
+    # Authenticated Business OS pilot UI. API retains all project permissions.
+    path('business-os/processes/', process_workspace.process_workspace, name='process_workspace'),
+    path('labs/interactive/', spa.spa_view, name='interactive_lab'),
     # Landing page — public homepage
-    path('',                                        views.landing,           name='home'),
+    # ── React SPA ─────────────────────────────────────────────────────────
+    #
+    # These routes keep their PATH and their URL NAME and change only their
+    # view, so `{% url 'home' %}` and friends still resolve from the ~100
+    # pages that are still server-rendered, and nothing about ordering or
+    # prefix behaviour changes. The Django views and templates they used to
+    # render are removed in the follow-up commit, AFTER the React routing has
+    # been verified in production — see docs/product/FRONTEND_DEPLOYMENT.md.
+    path('',                                        spa.spa_view,            name='home'),
 
     # /rankings/ → canonical company rankings (alias for /companies/)
     path('rankings/', RedirectView.as_view(url='/companies/', permanent=False), name='rankings'),
@@ -44,13 +63,18 @@ urlpatterns = [
     path('share/<uuid:token>/',                      views.share_report,      name='share_report'),
 
     # EcoIQ Methodology — public Ethical Intelligence Framework page
-    path('methodology/',                             views.methodology,        name='methodology'),
 
     # EcoIQ About — founder story, mission, framework
-    path('about/',                                   views.about,              name='about'),
+    path('about/',                                   spa.spa_view,             name='about'),
+
+    # EcoIQ Intelligence — public. A deliberate placeholder until the full
+    # experience ships; the primary navigation needs a destination and the path
+    # was freed by moving the staff-only Environmental Intelligence OS to
+    # /intelligence-os/. Claims no capability and shows no figures.
+    path('intelligence/',                            spa.spa_view,             name='intelligence'),
 
     # EcoIQ Pricing — plan comparison, billing toggle, FAQ
-    path('pricing/',                                 views.pricing,            name='pricing'),
+    path('pricing/',                                 spa.spa_view,             name='pricing'),
 
     # EcoIQ API Documentation — v1 endpoints, auth, rate limits, SDK quick-start
     path('api-docs/',                                views.api_docs,           name='api_docs'),
@@ -65,7 +89,6 @@ urlpatterns = [
     path('claim/', RedirectView.as_view(url='/request-access/claim/', permanent=False), name='claim'),
 
     # EcoIQ Platform — five intelligence modules overview
-    path('platform/',              views.platform,              name='platform'),
 
     # EcoIQ Ethical Governance Intelligence Framework
     path('ethical-governance/',    views.ethical_governance,    name='ethical_governance'),
@@ -83,17 +106,12 @@ urlpatterns = [
     path('newsletter/signup/',  views.newsletter_signup,  name='newsletter_signup'),
 
     # EcoIQ Value Distribution — stakeholder value map + Rizq model
-    path('value-distribution/', views.value_distribution, name='value_distribution'),
 
     # EcoIQ Visual Intelligence — Khalifa Impact + Kazakhstan transition map
-    path('khalifa-impact/', views.khalifa_impact,  name='khalifa_impact'),
-    path('kazakhstan-map/', views.kazakhstan_map,  name='kazakhstan_map'),
 
     # EcoIQ Sample Investor Readiness Report — public demo report
-    path('sample-report/', views.sample_report, name='sample_report'),
 
     # EcoIQ Stewardship — climate intelligence + real-world stewardship
-    path('stewardship/', views.stewardship, name='stewardship'),
 
     # Tazkiyah 114 — PUBLIC concept/marketing landing page (no draft content).
     # Detailed Surah/reflection content stays in the staff-only previews
@@ -102,16 +120,13 @@ urlpatterns = [
     path('surah-map/',    views.tazkiyah_landing, name='surah_map'),   # public alias
 
     # EcoIQ Global Intelligence — interactive country coverage map
-    path('global-intelligence/', views.global_intelligence, name='global_intelligence'),
 
     # EcoIQ Khalifa Tours Impact Story — flagship visual narrative
-    path('khalifa-tours-impact/', views.khalifa_tours_impact, name='khalifa_tours_impact'),
 
     # Khalifa Stewardship Tours — premium institutional landing page
     path('khalifa-tours/', views.khalifa_stewardship_tours, name='khalifa_stewardship_tours'),
 
     # EcoIQ Kazakhstan Transition Brief — flagship visual intelligence page
-    path('kazakhstan-transition-brief/', views.kazakhstan_transition_brief, name='kazakhstan_transition_brief'),
 
     # EcoIQ Visual Lab — staff-only verification page for Visual Intelligence islands
     path('visual-lab/', views.visual_lab, name='visual_lab'),
@@ -137,9 +152,38 @@ urlpatterns = [
     # Hikma Company Intelligence — Evidence Layer terminal (read-only, API-driven)
     path('company-intelligence/<slug:slug>/', views.company_intelligence, name='company_intelligence'),
 
-    # EcoIQ Contact — enquiry form + founder/company details
-    path('contact/',        views.contact,        name='contact'),
-    path('contact/submit/', views.contact_submit, name='contact_submit'),
+    # EcoIQ Contact — React, posting to /api/v2/contact/.
+    #
+    # /contact/submit/ is gone with the server-rendered form. It was the only
+    # thing that posted to it, and leaving a second public write endpoint into
+    # the same notification table would be a second door into the same room —
+    # which is exactly how the June-August abuse incident got in. The abuse
+    # screening moved with it: see api/v2_contact.py and
+    # notifications/tests_antispam.py.
+    path('contact/',        spa.spa_view,         name='contact'),
+
+    # ── Permanent redirects to the React app ─────────────────────────────
+    #
+    # These paths kept their URL NAMES, so `{% url 'methodology' %}` in the
+    # templates that are still server-rendered continues to resolve — it now
+    # resolves to a 301. See core/redirects.py for why each destination is the
+    # one it is.
+    *[
+        path(old.strip('/') + '/', RedirectView.as_view(url=new, permanent=True),
+             name=name)
+        for old, new, name in (
+            ('/methodology/', '/trust/', 'methodology'),
+            ('/platform/', '/labs/', 'platform'),
+            ('/value-distribution/', '/about/', 'value_distribution'),
+            ('/stewardship/', '/intelligence/', 'stewardship'),
+            ('/global-intelligence/', '/intelligence/', 'global_intelligence'),
+            ('/kazakhstan-map/', '/intelligence/', 'kazakhstan_map'),
+            ('/kazakhstan-transition-brief/', '/intelligence/', 'kazakhstan_transition_brief'),
+            ('/khalifa-impact/', '/intelligence/', 'khalifa_impact'),
+            ('/sample-report/', '/intelligence/', 'sample_report'),
+            ('/khalifa-tours-impact/', '/tours/', 'khalifa_tours_impact'),
+        )
+    ],
 
     # SEO — robots.txt served as plain text from templates/robots.txt
     path('robots.txt', views.robots_txt, name='robots_txt'),

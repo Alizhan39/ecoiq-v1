@@ -104,8 +104,16 @@ def kpi_alignment_profile(company_profile):
     from company_intelligence.models import KPI_STATUS_CHOICES
 
     status_display = dict(KPI_STATUS_CHOICES)
+    # prefetch_related('evidence_links') matters: the pending-review count
+    # below reads assessment.evidence_links for every assessed principle, which
+    # without it is one query per principle. A fully assessed company turns
+    # that into 114 queries for a page that needs two.
     assessments_by_kpi = {
-        a.kpi_id: a for a in company_profile.kpi_assessments.select_related('company').all()
+        a.kpi_id: a
+        for a in (company_profile.kpi_assessments
+                  .select_related('company')
+                  .prefetch_related('evidence_links')
+                  .all())
     }
 
     counts = {key: 0 for key, _ in KPI_STATUS_CHOICES}

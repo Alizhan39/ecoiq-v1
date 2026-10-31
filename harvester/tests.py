@@ -23,6 +23,7 @@ from harvester.constants import (
 )
 from harvester.source_registry import CATALOG, catalog_rows
 from harvester import adapters, verification, dedup
+from core.testing_access import SignedIn
 
 
 def make_company(slug="national-grid"):
@@ -519,9 +520,12 @@ class DashboardDataTests(TestCase):
         self.assertEqual(len(d["missing_categories"]), 25)
 
 
-class DashboardViewTests(TestCase):
+class DashboardViewTests(SignedIn, TestCase):
     def setUp(self):
         self.client = Client(SERVER_NAME="localhost")
+        self.client.force_login(self.signed_in_user)  # page now requires sign-in
+        # This setUp replaces the mixin's client, so re-authenticate it.
+        self.client.force_login(self.signed_in_user)
         self.company, self.profile = make_company("national-grid")
         from harvester.models import HarvestJob
         from harvester.pipeline import run_harvest
@@ -762,6 +766,14 @@ from harvester.rollups import company_rollup as _rollup
 class CompanyEvidencePanelTests(TestCase):
     def setUp(self):
         self.company, self.profile = make_company("national-grid")
+        # The public company page is evidence-gated (D1.5): an anonymous visitor
+        # now receives the "Evidence assessment pending" page. This suite is about
+        # what the FULL profile renders, so it asks as staff — the audience that
+        # still sees it. See companies/tests_public_containment.py for the
+        # anonymous contract.
+        from django.contrib.auth import get_user_model
+        self.client.force_login(get_user_model().objects.create_user(
+            username='harvester-panel-staff', is_staff=True))
         from harvester.pipeline import run_harvest
         run_harvest(_HJ.objects.create(
             company=self.profile, company_slug="national-grid", status="pending"))
@@ -800,9 +812,15 @@ class CompanyEvidencePanelTests(TestCase):
         self.assertIn("No evidence harvested", html)
 
     def test_panel_on_canonical_company_page(self):
+        # Builds its own Client, so setUp's staff login does not apply here —
+        # authenticate explicitly. The full company page is evidence-gated
+        # (D1.5) and this asserts what the full page renders.
+        from django.contrib.auth import get_user_model
         from django.test import Client
         c = Client(SERVER_NAME="localhost")
-        r = c.get("/companies/national-grid/")
+        c.force_login(get_user_model().objects.create_user(
+            username="harvester-panel-page-staff", is_staff=True))
+        r = c.get("/companies/national-grid/internal/")
         self.assertEqual(r.status_code, 200)
         body = r.content.decode()
         self.assertIn("hv-ev-panel", body)             # panel injected
@@ -837,7 +855,14 @@ class _SeededHarvest(TestCase):
             run_harvest(_HJ.objects.create(company_slug=slug, status="pending"))
 
 
-class RankingsTests(_SeededHarvest):
+class RankingsTests(SignedIn, _SeededHarvest):
+    def setUp(self):
+        super().setUp()
+        # _SeededHarvest.setUp builds its own client, which discards the
+        # mixin's signed-in one. The shared base is used by ungated
+        # classes too, so re-authenticate here rather than there.
+        self.client.force_login(self.signed_in_user)
+
     def test_rankings_sorted_by_operating_profit_desc(self):
         rows = _rdata()
         self.assertEqual(len(rows), 25)                       # all active registry
@@ -855,7 +880,14 @@ class RankingsTests(_SeededHarvest):
         self.assertIn("National Grid", body)
 
 
-class EvidenceExplorerTests(_SeededHarvest):
+class EvidenceExplorerTests(SignedIn, _SeededHarvest):
+    def setUp(self):
+        super().setUp()
+        # _SeededHarvest.setUp builds its own client, which discards the
+        # mixin's signed-in one. The shared base is used by ungated
+        # classes too, so re-authenticate here rather than there.
+        self.client.force_login(self.signed_in_user)
+
     def test_explorer_page_renders(self):
         r = self.client.get("/evidence/")
         self.assertEqual(r.status_code, 200)
@@ -893,14 +925,28 @@ class HomepageIntelligenceBlockTests(_SeededHarvest):
         self.assertEqual(s["rankings_url"], "/rankings/utilities/")
         self.assertEqual(s["evidence_url"], "/evidence/")
 
-    def test_block_renders_on_homepage(self):
-        r = self.client.get("/")
-        self.assertEqual(r.status_code, 200)
-        body = r.content.decode()
-        self.assertIn("Companies tracked", body)
-        self.assertIn("Evidence collected", body)
-        self.assertIn("Datapoints extracted", body)
-        self.assertIn("View Rankings", body)
+    def test_block_is_no_longer_on_the_homepage(self):
+        """
+        The homepage is React and does not carry this block.
+
+        Kept as an assertion rather than deleted, because the counters it
+        rendered — companies tracked, evidence collected, datapoints extracted
+        — are exactly the kind of figure that gets re-added to a marketing page
+        without going through the platform SSOT. The React homepage shows only
+        `is_proof` counters from /api/v2/platform/, and omits any that are zero.
+
+        The block itself still renders on /evidence/, which is its own surface.
+        """
+        body = self.client.get("/").content.decode()
+
+        self.assertNotIn("Companies tracked", body)
+        self.assertNotIn("Datapoints extracted", body)
+
+    def test_the_stats_the_block_used_are_still_computed(self):
+        """The data source is unaffected by where it is displayed."""
+        stats = _pstats()
+        self.assertEqual(stats["companies_tracked"], 25)
+        self.assertGreater(stats["evidence_count"], 0)
 
     def test_company_panel_exposes_confidence(self):
         from harvester.rollups import company_rollup

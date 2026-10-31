@@ -133,6 +133,58 @@ class EvidenceMemory(models.Model):
     # Honesty flag, same convention as geo_intelligence/backend_intelligence_engine —
     # defaults False because the primary real-world path (memory built from
     # real harvester.Evidence / real AgentRun output) is genuinely real, not demo.
+    # ── Evidentiary standing ──────────────────────────────────────────────
+    #
+    # WHAT THIS IS NOT
+    #
+    # `source_type` says where a record came from, `verification_status` says
+    # whether EcoIQ verified it, and `review_tier` says how deeply. None of
+    # them says what the record IS in evidentiary terms — and the difference
+    # between a company saying something about itself, a regulator opening a
+    # case, and a regulator concluding one is the difference between an
+    # allegation and a finding.
+    #
+    # Presenting those identically is the failure this field exists to prevent.
+    # Blank is the honest default for the existing corpus: unclassified is not
+    # the same as "company policy", and back-filling a guess would manufacture
+    # standing the record never had.
+    LEGAL_STATUS_CHOICES = [
+        ('company_policy', 'Company Policy'),
+        ('company_disclosure', 'Company Disclosure'),
+        ('third_party_analysis', 'Third-Party Analysis'),
+        ('preliminary_regulatory_finding', 'Preliminary Regulatory Finding'),
+        ('final_regulatory_finding', 'Final Regulatory Finding'),
+        ('court_finding', 'Court Finding'),
+        ('remediation_record', 'Remediation Record'),
+        ('disputed', 'Disputed'),
+        ('superseded', 'Superseded'),
+    ]
+
+    #: Ranked weakest-to-strongest. Used for presentation ordering and to stop
+    #: a preliminary finding ever being rendered with a final finding's weight.
+    LEGAL_STATUS_STRENGTH = {
+        'company_policy': 1,
+        'company_disclosure': 1,
+        'third_party_analysis': 2,
+        'remediation_record': 2,
+        'disputed': 1,
+        'superseded': 0,
+        'preliminary_regulatory_finding': 3,
+        'final_regulatory_finding': 4,
+        'court_finding': 5,
+    }
+
+    legal_status = models.CharField(
+        max_length=40, choices=LEGAL_STATUS_CHOICES, blank=True, default='',
+        help_text='Evidentiary standing. Blank means unclassified — which is NOT the same as '
+                  'a company policy, and must never be rendered as though it were a finding.',
+    )
+    source_authority = models.CharField(
+        max_length=200, blank=True, default='',
+        help_text='The body that issued it, e.g. "European Commission". Named separately from '
+                  'source_url because authority is what a reader weighs, not a hostname.',
+    )
+
     is_demo = models.BooleanField(default=False)
 
     # --- feat/evidence-memory-hardening: structured access model + provenance ---

@@ -2,12 +2,14 @@
 train_ml_models — Train and optionally apply all EcoIQ ML models.
 
 Usage:
-    python manage.py train_ml_models                         # train all, no apply
-    python manage.py train_ml_models --apply                 # train all + write to DB
-    python manage.py train_ml_models --model=scoring         # only GBR scoring
-    python manage.py train_ml_models --model=anomaly --apply
-    python manage.py train_ml_models --model=clustering --apply
-    python manage.py train_ml_models --model=prediction --apply
+    python manage.py train_ml_models --output-dir=/secure/ecoiq/candidates/run-001
+    python manage.py train_ml_models --model=prediction  # read-only OLS preview
+
+Training requires a new candidate output directory by default. The explicit
+--allow-legacy-write escape hatch permits legacy artefact replacement and
+--apply database updates. It is NOT an approval of model quality.
+Candidate output never applies scores to database records. OLS is a preview,
+not an independently trained neural model.
 
 Models:
     scoring    — GradientBoostingRegressor (writes ml_score)
@@ -15,7 +17,9 @@ Models:
     clustering — KMeans (writes ml_cluster, ml_cluster_label)
     prediction — 12-month OLS forecast (writes ml_predicted_score_12m)
 """
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
+from django.db import OperationalError, ProgrammingError
+from pathlib import Path
 import time
 
 
@@ -23,6 +27,26 @@ class Command(BaseCommand):
     help = 'Train EcoIQ ML models (scoring, anomaly, clustering, prediction)'
 
     def add_arguments(self, parser):
+        parser.add_argument(
+            '--dask-scheduler',
+            help='Existing TLS Dask scheduler; distributes outer scoring folds only',
+        )
+        parser.add_argument(
+            '--training-jobs', type=int, choices=range(1, 9), default=1,
+            help='CPU budget for training: native threads and IsolationForest workers (1..8)',
+        )
+        parser.add_argument(
+            '--tune-scoring', action='store_true',
+            help='Evaluate eight GBR candidates with nested CV; requires candidate output',
+        )
+        parser.add_argument(
+            '--output-dir', type=Path,
+            help='New directory for candidate models and JSON evaluation reports (no DB apply)',
+        )
+        parser.add_argument(
+            '--allow-legacy-write', action='store_true',
+            help='Explicitly permit legacy artefact replacement / DB apply; not quality approval',
+        )
         parser.add_argument(
             '--model',
             type=str,
@@ -42,6 +66,44 @@ class Command(BaseCommand):
 
         model_choice = options['model']
         apply        = options['apply']
+        self.output_dir = Path(options['output_dir']) if options['output_dir'] else None
+        self.training_jobs = options['training_jobs']
+        self.tune_scoring = options['tune_scoring']
+        self.scheduler_address = options['dask_scheduler']
+        if self.scheduler_address:
+            from ml.distributed_training import validate_scheduler
+
+            try:
+                validate_scheduler(self.scheduler_address)
+            except ValueError as exc:
+                raise CommandError(str(exc)) from exc
+            if (model_choice != 'scoring' or not self.tune_scoring or not self.output_dir
+                    or apply or options['allow_legacy_write']):
+                raise CommandError('--dask-scheduler requires --model=scoring --tune-scoring '
+                                   'and a new --output-dir, without apply or legacy writes.')
+        from ml.training import validate_training_jobs
+
+        try:
+            validate_training_jobs(self.training_jobs)
+        except ValueError as exc:
+            raise CommandError(str(exc)) from exc
+        if self.tune_scoring and (not self.output_dir or apply or model_choice not in ('all', 'scoring')):
+            raise CommandError('--tune-scoring requires candidate output and --model=scoring or all, without apply.')
+        if apply and self.output_dir:
+            raise CommandError('--output-dir candidates cannot be combined with --apply.')
+        legacy_write = options['allow_legacy_write']
+        if legacy_write and self.output_dir:
+            raise CommandError('--allow-legacy-write cannot be combined with --output-dir.')
+        if not self.output_dir and not legacy_write and (model_choice != 'prediction' or apply):
+            raise CommandError(
+                'Use --output-dir for safe candidate training. Legacy writes require '
+                '--allow-legacy-write after independent review; --apply alone is not sufficient.'
+            )
+        if legacy_write:
+            self.stderr.write(self.style.WARNING(
+                'Legacy writes enabled: training may replace active artefacts; --apply also '
+                'updates company records. This flag does not establish production readiness.'
+            ))
         width        = 60
 
         self.stdout.write('═' * width)
@@ -50,30 +112,32 @@ class Command(BaseCommand):
         self.stdout.write('═' * width)
 
         # Pre-fetch all companies once (shared across models)
-        companies = list(
-            Company.objects.filter(ecoiq_score__gt=0).select_related('profile')
-        )
+        try:
+            companies = list(Company.objects.filter(ecoiq_score__gt=0).select_related('profile').order_by('pk'))
+        except (OperationalError, ProgrammingError) as exc:
+            raise CommandError('Training data unavailable. Check database access and migrations.') from exc
         self.stdout.write(f'\n  Companies with scores: {len(companies)}')
 
         if not companies:
-            self.stdout.write(self.style.WARNING(
-                '  No companies with ecoiq_score > 0. Add data first.'
-            ))
-            return
+            raise CommandError('No companies with ecoiq_score > 0. Import reviewed data first.')
 
         start_total = time.time()
 
-        if model_choice in ('all', 'scoring'):
-            self._run_scoring(companies, apply)
+        from sklearn import config_context
+        from threadpoolctl import threadpool_limits
 
-        if model_choice in ('all', 'anomaly'):
-            self._run_anomaly(companies, apply)
-
-        if model_choice in ('all', 'clustering'):
-            self._run_clustering(companies, apply)
-
-        if model_choice in ('all', 'prediction'):
-            self._run_prediction(companies, apply)
+        # Import sklearn before constructing the controller: otherwise its
+        # subsequently loaded OpenMP library would escape the limit.
+        # Both contexts restore previous process configuration even on failure.
+        with config_context(assume_finite=False), threadpool_limits(limits=self.training_jobs):
+            if model_choice in ('all', 'scoring'):
+                self._run_scoring(companies, apply)
+            if model_choice in ('all', 'anomaly'):
+                self._run_anomaly(companies, apply)
+            if model_choice in ('all', 'clustering'):
+                self._run_clustering(companies, apply)
+            if model_choice in ('all', 'prediction'):
+                self._run_prediction(companies, apply)
 
         total = time.time() - start_total
         self.stdout.write('\n' + '═' * width)
@@ -88,22 +152,22 @@ class Command(BaseCommand):
         try:
             from ml.scoring_model import EcoIQScoringModel
             scorer = EcoIQScoringModel()
-            result = scorer.train(companies=companies, apply=apply)
+            result = scorer.train(companies=companies, apply=apply, **self._candidate_options('scoring'))
             if 'error' in result:
-                self.stdout.write(self.style.WARNING(f'  Skipped: {result["error"]}'))
+                raise CommandError(f'Scoring not trained: {result["error"]}; eligible={result["n_samples"]}.')
             else:
                 self.stdout.write(self.style.SUCCESS(
                     f'  ✓ n={result["n_samples"]}  '
-                    f'R²={result["r2_mean"]:.3f}±{result["r2_std"]:.3f}'
+                    + (f'CV R²={result["r2_mean"]:.3f}±{result["r2_std"]:.3f}  '
+                       f'MAE={result["evaluation"]["mae"]:.3f}  '
+                       f'baseline MAE={result["evaluation"]["baseline_mae"]:.3f}'
+                       if result['r2_mean'] is not None else 'quality=NOT_MEASURED')
                     + ('  [applied]' if apply else '')
                 ))
         except ImportError as exc:
-            self.stdout.write(self.style.ERROR(
-                f'  scikit-learn / shap not installed: {exc}\n'
-                f'  Run: pip install scikit-learn shap'
-            ))
+            raise CommandError(f'Scoring dependencies unavailable: {exc}') from exc
         except Exception as exc:
-            self.stdout.write(self.style.ERROR(f'  Scoring error: {exc}'))
+            raise CommandError(f'Scoring training failed: {exc}') from exc
         self.stdout.write(f'  ({time.time() - t0:.1f}s)')
 
     def _run_anomaly(self, companies, apply: bool):
@@ -112,9 +176,9 @@ class Command(BaseCommand):
         try:
             from ml.anomaly_detection import AnomalyDetector
             detector = AnomalyDetector()
-            result   = detector.train(companies=companies, apply=apply)
+            result   = detector.train(companies=companies, apply=apply, **self._candidate_options('anomaly'))
             if 'error' in result:
-                self.stdout.write(self.style.WARNING(f'  Skipped: {result["error"]}'))
+                raise CommandError(f'Anomaly not trained: {result["error"]}; eligible={result["n_samples"]}.')
             else:
                 self.stdout.write(self.style.SUCCESS(
                     f'  ✓ n={result["n_samples"]}  '
@@ -122,9 +186,9 @@ class Command(BaseCommand):
                     + ('  [applied]' if apply else '')
                 ))
         except ImportError as exc:
-            self.stdout.write(self.style.ERROR(f'  scikit-learn not installed: {exc}'))
+            raise CommandError(f'Anomaly dependencies unavailable: {exc}') from exc
         except Exception as exc:
-            self.stdout.write(self.style.ERROR(f'  Anomaly error: {exc}'))
+            raise CommandError(f'Anomaly training failed: {exc}') from exc
         self.stdout.write(f'  ({time.time() - t0:.1f}s)')
 
     def _run_clustering(self, companies, apply: bool):
@@ -133,9 +197,9 @@ class Command(BaseCommand):
         try:
             from ml.clustering import CompanyClusterer
             clusterer = CompanyClusterer()
-            result    = clusterer.train(companies=companies, apply=apply)
+            result    = clusterer.train(companies=companies, apply=apply, **self._candidate_options('clustering'))
             if 'error' in result:
-                self.stdout.write(self.style.WARNING(f'  Skipped: {result["error"]}'))
+                raise CommandError(f'Clustering not trained: {result["error"]}; eligible={result["n_samples"]}.')
             else:
                 labels_str = '  '.join(
                     f'{k}:{v}' for k, v in result.get('cluster_labels', {}).items()
@@ -146,10 +210,20 @@ class Command(BaseCommand):
                 ))
                 self.stdout.write(f'  Labels: {labels_str}')
         except ImportError as exc:
-            self.stdout.write(self.style.ERROR(f'  scikit-learn not installed: {exc}'))
+            raise CommandError(f'Clustering dependencies unavailable: {exc}') from exc
         except Exception as exc:
-            self.stdout.write(self.style.ERROR(f'  Clustering error: {exc}'))
+            raise CommandError(f'Clustering training failed: {exc}') from exc
         self.stdout.write(f'  ({time.time() - t0:.1f}s)')
+
+    def _candidate_options(self, name):
+        options = {'output_dir': self.output_dir / name} if self.output_dir else {}
+        if name == 'scoring' and getattr(self, 'tune_scoring', False):
+            options['tune'] = True
+        if name == 'scoring' and getattr(self, 'scheduler_address', None):
+            options['scheduler_address'] = self.scheduler_address
+        if name == 'anomaly':
+            options['n_jobs'] = getattr(self, 'training_jobs', 1)
+        return options
 
     def _run_prediction(self, companies, apply: bool):
         self.stdout.write('\n→ 12-Month Score Prediction (OLS trend)…')
@@ -158,6 +232,8 @@ class Command(BaseCommand):
             from ml.prediction import apply_predictions
             if apply:
                 result = apply_predictions(companies=companies)
+                if result['failed']:
+                    raise CommandError(f'Prediction application failed for {result["failed"]} companies.')
                 self.stdout.write(self.style.SUCCESS(
                     f'  ✓ updated={result["updated"]}  failed={result["failed"]}  [applied]'
                 ))
@@ -176,5 +252,5 @@ class Command(BaseCommand):
                     f'  ✓ previewed {previewed} companies (use --apply to save)'
                 ))
         except Exception as exc:
-            self.stdout.write(self.style.ERROR(f'  Prediction error: {exc}'))
+            raise CommandError(f'Prediction failed: {exc}') from exc
         self.stdout.write(f'  ({time.time() - t0:.1f}s)')

@@ -1,0 +1,606 @@
+{
+  "schema_version": 1,
+  "authoritative": false,
+  "enumeration": "tirmidhi-3507-including-allah",
+  "source_url": "https://sunnah.com/tirmidhi:3507",
+  "authentication": "Daif (Darussalam), as displayed by Sunnah.com; enumeration requires scholar review",
+  "checked_at": "2026-10-07",
+  "enumeration_note": "This source enumeration includes Allah as ordinal 1. Other enumerations differ. Ordinals are local identifiers, not theological ranking or an exhaustive claim. Sahih al-Bukhari 7392 attests the number without this list.",
+  "review_status": "scholar_review_pending",
+  "names": [
+    {
+      "key": "allah",
+      "ordinal": 1,
+      "arabic": "الله",
+      "transliteration": "Allah"
+    },
+    {
+      "key": "ar-rahman",
+      "ordinal": 2,
+      "arabic": "الرحمن",
+      "transliteration": "Ar-Rahman"
+    },
+    {
+      "key": "ar-rahim",
+      "ordinal": 3,
+      "arabic": "الرحيم",
+      "transliteration": "Ar-Rahim"
+    },
+    {
+      "key": "al-malik",
+      "ordinal": 4,
+      "arabic": "الملك",
+      "transliteration": "Al-Malik"
+    },
+    {
+      "key": "al-quddus",
+      "ordinal": 5,
+      "arabic": "القدوس",
+      "transliteration": "Al-Quddus"
+    },
+    {
+      "key": "as-salam",
+      "ordinal": 6,
+      "arabic": "السلام",
+      "transliteration": "As-Salam"
+    },
+    {
+      "key": "al-mumin",
+      "ordinal": 7,
+      "arabic": "المؤمن",
+      "transliteration": "Al-Mu'min"
+    },
+    {
+      "key": "al-muhaymin",
+      "ordinal": 8,
+      "arabic": "المهيمن",
+      "transliteration": "Al-Muhaymin"
+    },
+    {
+      "key": "al-aziz",
+      "ordinal": 9,
+      "arabic": "العزيز",
+      "transliteration": "Al-Aziz"
+    },
+    {
+      "key": "al-jabbar",
+      "ordinal": 10,
+      "arabic": "الجبار",
+      "transliteration": "Al-Jabbar"
+    },
+    {
+      "key": "al-mutakabbir",
+      "ordinal": 11,
+      "arabic": "المتكبر",
+      "transliteration": "Al-Mutakabbir"
+    },
+    {
+      "key": "al-khaliq",
+      "ordinal": 12,
+      "arabic": "الخالق",
+      "transliteration": "Al-Khaliq"
+    },
+    {
+      "key": "al-bari",
+      "ordinal": 13,
+      "arabic": "البارئ",
+      "transliteration": "Al-Bari'"
+    },
+    {
+      "key": "al-musawwir",
+      "ordinal": 14,
+      "arabic": "المصور",
+      "transliteration": "Al-Musawwir"
+    },
+    {
+      "key": "al-ghaffar",
+      "ordinal": 15,
+      "arabic": "الغفار",
+      "transliteration": "Al-Ghaffar"
+    },
+    {
+      "key": "al-qahhar",
+      "ordinal": 16,
+      "arabic": "القهار",
+      "transliteration": "Al-Qahhar"
+    },
+    {
+      "key": "al-wahhab",
+      "ordinal": 17,
+      "arabic": "الوهاب",
+      "transliteration": "Al-Wahhab"
+    },
+    {
+      "key": "ar-razzaq",
+      "ordinal": 18,
+      "arabic": "الرزاق",
+      "transliteration": "Ar-Razzaq"
+    },
+    {
+      "key": "al-fattah",
+      "ordinal": 19,
+      "arabic": "الفتاح",
+      "transliteration": "Al-Fattah"
+    },
+    {
+      "key": "al-alim",
+      "ordinal": 20,
+      "arabic": "العليم",
+      "transliteration": "Al-Alim"
+    },
+    {
+      "key": "al-qabid",
+      "ordinal": 21,
+      "arabic": "القابض",
+      "transliteration": "Al-Qabid"
+    },
+    {
+      "key": "al-basit",
+      "ordinal": 22,
+      "arabic": "الباسط",
+      "transliteration": "Al-Basit"
+    },
+    {
+      "key": "al-khafid",
+      "ordinal": 23,
+      "arabic": "الخافض",
+      "transliteration": "Al-Khafid"
+    },
+    {
+      "key": "ar-rafi",
+      "ordinal": 24,
+      "arabic": "الرافع",
+      "transliteration": "Ar-Rafi'"
+    },
+    {
+      "key": "al-muizz",
+      "ordinal": 25,
+      "arabic": "المعز",
+      "transliteration": "Al-Mu'izz"
+    },
+    {
+      "key": "al-mudhill",
+      "ordinal": 26,
+      "arabic": "المذل",
+      "transliteration": "Al-Mudhill"
+    },
+    {
+      "key": "as-sami",
+      "ordinal": 27,
+      "arabic": "السميع",
+      "transliteration": "As-Sami'"
+    },
+    {
+      "key": "al-basir",
+      "ordinal": 28,
+      "arabic": "البصير",
+      "transliteration": "Al-Basir"
+    },
+    {
+      "key": "al-hakam",
+      "ordinal": 29,
+      "arabic": "الحكم",
+      "transliteration": "Al-Hakam"
+    },
+    {
+      "key": "al-adl",
+      "ordinal": 30,
+      "arabic": "العدل",
+      "transliteration": "Al-Adl"
+    },
+    {
+      "key": "al-latif",
+      "ordinal": 31,
+      "arabic": "اللطيف",
+      "transliteration": "Al-Latif"
+    },
+    {
+      "key": "al-khabir",
+      "ordinal": 32,
+      "arabic": "الخبير",
+      "transliteration": "Al-Khabir"
+    },
+    {
+      "key": "al-halim",
+      "ordinal": 33,
+      "arabic": "الحليم",
+      "transliteration": "Al-Halim"
+    },
+    {
+      "key": "al-azim",
+      "ordinal": 34,
+      "arabic": "العظيم",
+      "transliteration": "Al-Azim"
+    },
+    {
+      "key": "al-ghafur",
+      "ordinal": 35,
+      "arabic": "الغفور",
+      "transliteration": "Al-Ghafur"
+    },
+    {
+      "key": "ash-shakur",
+      "ordinal": 36,
+      "arabic": "الشكور",
+      "transliteration": "Ash-Shakur"
+    },
+    {
+      "key": "al-ali",
+      "ordinal": 37,
+      "arabic": "العلي",
+      "transliteration": "Al-Ali"
+    },
+    {
+      "key": "al-kabir",
+      "ordinal": 38,
+      "arabic": "الكبير",
+      "transliteration": "Al-Kabir"
+    },
+    {
+      "key": "al-hafiz",
+      "ordinal": 39,
+      "arabic": "الحفيظ",
+      "transliteration": "Al-Hafiz"
+    },
+    {
+      "key": "al-muqit",
+      "ordinal": 40,
+      "arabic": "المقيت",
+      "transliteration": "Al-Muqit"
+    },
+    {
+      "key": "al-hasib",
+      "ordinal": 41,
+      "arabic": "الحسيب",
+      "transliteration": "Al-Hasib"
+    },
+    {
+      "key": "al-jalil",
+      "ordinal": 42,
+      "arabic": "الجليل",
+      "transliteration": "Al-Jalil"
+    },
+    {
+      "key": "al-karim",
+      "ordinal": 43,
+      "arabic": "الكريم",
+      "transliteration": "Al-Karim"
+    },
+    {
+      "key": "ar-raqib",
+      "ordinal": 44,
+      "arabic": "الرقيب",
+      "transliteration": "Ar-Raqib"
+    },
+    {
+      "key": "al-mujib",
+      "ordinal": 45,
+      "arabic": "المجيب",
+      "transliteration": "Al-Mujib"
+    },
+    {
+      "key": "al-wasi",
+      "ordinal": 46,
+      "arabic": "الواسع",
+      "transliteration": "Al-Wasi'"
+    },
+    {
+      "key": "al-hakim",
+      "ordinal": 47,
+      "arabic": "الحكيم",
+      "transliteration": "Al-Hakim"
+    },
+    {
+      "key": "al-wadud",
+      "ordinal": 48,
+      "arabic": "الودود",
+      "transliteration": "Al-Wadud"
+    },
+    {
+      "key": "al-majid",
+      "ordinal": 49,
+      "arabic": "المجيد",
+      "transliteration": "Al-Majid"
+    },
+    {
+      "key": "al-baith",
+      "ordinal": 50,
+      "arabic": "الباعث",
+      "transliteration": "Al-Ba'ith"
+    },
+    {
+      "key": "ash-shahid",
+      "ordinal": 51,
+      "arabic": "الشهيد",
+      "transliteration": "Ash-Shahid"
+    },
+    {
+      "key": "al-haqq",
+      "ordinal": 52,
+      "arabic": "الحق",
+      "transliteration": "Al-Haqq"
+    },
+    {
+      "key": "al-wakil",
+      "ordinal": 53,
+      "arabic": "الوكيل",
+      "transliteration": "Al-Wakil"
+    },
+    {
+      "key": "al-qawiyy",
+      "ordinal": 54,
+      "arabic": "القوي",
+      "transliteration": "Al-Qawiyy"
+    },
+    {
+      "key": "al-matin",
+      "ordinal": 55,
+      "arabic": "المتين",
+      "transliteration": "Al-Matin"
+    },
+    {
+      "key": "al-waliyy",
+      "ordinal": 56,
+      "arabic": "الولي",
+      "transliteration": "Al-Waliyy"
+    },
+    {
+      "key": "al-hamid",
+      "ordinal": 57,
+      "arabic": "الحميد",
+      "transliteration": "Al-Hamid"
+    },
+    {
+      "key": "al-muhsi",
+      "ordinal": 58,
+      "arabic": "المحصي",
+      "transliteration": "Al-Muhsi"
+    },
+    {
+      "key": "al-mubdi",
+      "ordinal": 59,
+      "arabic": "المبدئ",
+      "transliteration": "Al-Mubdi'"
+    },
+    {
+      "key": "al-muid",
+      "ordinal": 60,
+      "arabic": "المعيد",
+      "transliteration": "Al-Mu'id"
+    },
+    {
+      "key": "al-muhyi",
+      "ordinal": 61,
+      "arabic": "المحيي",
+      "transliteration": "Al-Muhyi"
+    },
+    {
+      "key": "al-mumit",
+      "ordinal": 62,
+      "arabic": "المميت",
+      "transliteration": "Al-Mumit"
+    },
+    {
+      "key": "al-hayy",
+      "ordinal": 63,
+      "arabic": "الحي",
+      "transliteration": "Al-Hayy"
+    },
+    {
+      "key": "al-qayyum",
+      "ordinal": 64,
+      "arabic": "القيوم",
+      "transliteration": "Al-Qayyum"
+    },
+    {
+      "key": "al-wajid",
+      "ordinal": 65,
+      "arabic": "الواجد",
+      "transliteration": "Al-Wajid"
+    },
+    {
+      "key": "al-maajid",
+      "ordinal": 66,
+      "arabic": "الماجد",
+      "transliteration": "Al-Maajid"
+    },
+    {
+      "key": "al-wahid",
+      "ordinal": 67,
+      "arabic": "الواحد",
+      "transliteration": "Al-Wahid"
+    },
+    {
+      "key": "as-samad",
+      "ordinal": 68,
+      "arabic": "الصمد",
+      "transliteration": "As-Samad"
+    },
+    {
+      "key": "al-qadir",
+      "ordinal": 69,
+      "arabic": "القادر",
+      "transliteration": "Al-Qadir"
+    },
+    {
+      "key": "al-muqtadir",
+      "ordinal": 70,
+      "arabic": "المقتدر",
+      "transliteration": "Al-Muqtadir"
+    },
+    {
+      "key": "al-muqaddim",
+      "ordinal": 71,
+      "arabic": "المقدم",
+      "transliteration": "Al-Muqaddim"
+    },
+    {
+      "key": "al-muakhkhir",
+      "ordinal": 72,
+      "arabic": "المؤخر",
+      "transliteration": "Al-Mu'akhkhir"
+    },
+    {
+      "key": "al-awwal",
+      "ordinal": 73,
+      "arabic": "الأول",
+      "transliteration": "Al-Awwal"
+    },
+    {
+      "key": "al-akhir",
+      "ordinal": 74,
+      "arabic": "الآخر",
+      "transliteration": "Al-Akhir"
+    },
+    {
+      "key": "az-zahir",
+      "ordinal": 75,
+      "arabic": "الظاهر",
+      "transliteration": "Az-Zahir"
+    },
+    {
+      "key": "al-batin",
+      "ordinal": 76,
+      "arabic": "الباطن",
+      "transliteration": "Al-Batin"
+    },
+    {
+      "key": "al-wali",
+      "ordinal": 77,
+      "arabic": "الوالي",
+      "transliteration": "Al-Wali"
+    },
+    {
+      "key": "al-mutaali",
+      "ordinal": 78,
+      "arabic": "المتعالي",
+      "transliteration": "Al-Muta'ali"
+    },
+    {
+      "key": "al-barr",
+      "ordinal": 79,
+      "arabic": "البر",
+      "transliteration": "Al-Barr"
+    },
+    {
+      "key": "at-tawwab",
+      "ordinal": 80,
+      "arabic": "التواب",
+      "transliteration": "At-Tawwab"
+    },
+    {
+      "key": "al-muntaqim",
+      "ordinal": 81,
+      "arabic": "المنتقم",
+      "transliteration": "Al-Muntaqim"
+    },
+    {
+      "key": "al-afuww",
+      "ordinal": 82,
+      "arabic": "العفو",
+      "transliteration": "Al-Afuww"
+    },
+    {
+      "key": "ar-rauf",
+      "ordinal": 83,
+      "arabic": "الرؤوف",
+      "transliteration": "Ar-Ra'uf"
+    },
+    {
+      "key": "malik-al-mulk",
+      "ordinal": 84,
+      "arabic": "مالك الملك",
+      "transliteration": "Malik al-Mulk"
+    },
+    {
+      "key": "dhul-jalali-wal-ikram",
+      "ordinal": 85,
+      "arabic": "ذو الجلال والإكرام",
+      "transliteration": "Dhul-Jalali wal-Ikram"
+    },
+    {
+      "key": "al-muqsit",
+      "ordinal": 86,
+      "arabic": "المقسط",
+      "transliteration": "Al-Muqsit"
+    },
+    {
+      "key": "al-jami",
+      "ordinal": 87,
+      "arabic": "الجامع",
+      "transliteration": "Al-Jami'"
+    },
+    {
+      "key": "al-ghani",
+      "ordinal": 88,
+      "arabic": "الغني",
+      "transliteration": "Al-Ghani"
+    },
+    {
+      "key": "al-mughni",
+      "ordinal": 89,
+      "arabic": "المغني",
+      "transliteration": "Al-Mughni"
+    },
+    {
+      "key": "al-mani",
+      "ordinal": 90,
+      "arabic": "المانع",
+      "transliteration": "Al-Mani'"
+    },
+    {
+      "key": "ad-darr",
+      "ordinal": 91,
+      "arabic": "الضار",
+      "transliteration": "Ad-Darr"
+    },
+    {
+      "key": "an-nafi",
+      "ordinal": 92,
+      "arabic": "النافع",
+      "transliteration": "An-Nafi'"
+    },
+    {
+      "key": "an-nur",
+      "ordinal": 93,
+      "arabic": "النور",
+      "transliteration": "An-Nur"
+    },
+    {
+      "key": "al-hadi",
+      "ordinal": 94,
+      "arabic": "الهادي",
+      "transliteration": "Al-Hadi"
+    },
+    {
+      "key": "al-badi",
+      "ordinal": 95,
+      "arabic": "البديع",
+      "transliteration": "Al-Badi'"
+    },
+    {
+      "key": "al-baqi",
+      "ordinal": 96,
+      "arabic": "الباقي",
+      "transliteration": "Al-Baqi"
+    },
+    {
+      "key": "al-warith",
+      "ordinal": 97,
+      "arabic": "الوارث",
+      "transliteration": "Al-Warith"
+    },
+    {
+      "key": "ar-rashid",
+      "ordinal": 98,
+      "arabic": "الرشيد",
+      "transliteration": "Ar-Rashid"
+    },
+    {
+      "key": "as-sabur",
+      "ordinal": 99,
+      "arabic": "الصبور",
+      "transliteration": "As-Sabur"
+    }
+  ]
+}

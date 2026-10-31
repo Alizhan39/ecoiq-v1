@@ -1,3 +1,4 @@
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
 
 CONNECTED_MODULES = [
@@ -329,6 +330,10 @@ CTA_BUTTONS = [
 ]
 
 
+# Internal concept page — staff-only. This app is a hard-coded architecture
+# description with no models, no migrations and no ORM access; it was never a
+# customer-facing product surface. See docs/product/PHASE_1_ARCHITECTURE.md §3.
+@staff_member_required(login_url='/login/')
 def overview(request):
     return render(request, 'mrv_agent_training_pack/overview.html', {
         'connected_modules': CONNECTED_MODULES,

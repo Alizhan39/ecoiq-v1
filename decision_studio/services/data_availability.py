@@ -5,27 +5,27 @@ instead of generating a confident-sounding but unsupported answer. Reads
 only existing data (CompanyScoreSnapshot, EvidenceMemory) — computes
 nothing new itself.
 """
-from evidence_memory.models import EvidenceMemory
+from evidence_memory.services.retrieval_policy import accessible_candidates
 
 
-def _company_data_summary(profile):
+def _company_data_summary(profile, *, user=None, project=None):
     from plotly_visual_intelligence.services.dashboard_data import latest_intelligence_snapshot
 
     snapshot = latest_intelligence_snapshot(profile)
-    evidence_count = EvidenceMemory.objects.filter(company=profile).count()
+    evidence_count = accessible_candidates(project, user, include_demo=False).filter(company=profile, embedding_status='embedded').count()
     name = profile.company.name if profile.company_id else f'Profile #{profile.pk}'
     gaps = []
     if snapshot is None:
         gaps.append(f'{name}: no EcoIQ Intelligence Score has been computed yet.')
     if evidence_count == 0:
-        gaps.append(f'{name}: no evidence memory records exist yet.')
+        gaps.append(f'{name}: no evidence memory is available in this project context.')
     return {
         'name': name, 'profile_id': profile.pk, 'has_score': snapshot is not None,
         'has_evidence': evidence_count > 0, 'evidence_count': evidence_count, 'gaps': gaps,
     }
 
 
-def check_data_availability(profiles):
+def check_data_availability(profiles, *, user=None, project=None):
     """
     Returns {'status': 'AVAILABLE'|'PARTIAL'|'INSUFFICIENT'|'UNKNOWN',
     'entity_summaries': [...], 'missing_data': [str, ...]}.
@@ -41,7 +41,7 @@ def check_data_availability(profiles):
         # company scope at all — company-level availability doesn't apply.
         return {'status': 'UNKNOWN', 'entity_summaries': [], 'missing_data': []}
 
-    summaries = [_company_data_summary(profile) for profile in profiles]
+    summaries = [_company_data_summary(profile, user=user, project=project) for profile in profiles]
     ready_count = sum(1 for s in summaries if s['has_score'] and s['has_evidence'])
     total = len(summaries)
 

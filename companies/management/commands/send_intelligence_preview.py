@@ -21,6 +21,11 @@ from django.core.management.base import BaseCommand
 # ── Tier labels ───────────────────────────────────────────────────────────────
 
 def tier_label(score):
+    # An unscored company has no tier. 'Extractive / Harmful' was the
+    # fall-through, so an absent score produced the harshest label in the
+    # vocabulary -- in an email sent to people outside EcoIQ.
+    if score is None:
+        return 'Not yet assessed'
     s = float(score)
     if s >= 85: return 'Regenerative Leader'
     if s >= 70: return 'Responsible Builder'
@@ -31,7 +36,11 @@ def tier_label(score):
 
 
 def harm_level(penalty):
-    p = float(penalty or 0)
+    # `or 0` reported an unassessed company as harm-free in an outward-facing
+    # email -- a favourable finding invented from an absence.
+    if penalty is None:
+        return 'Not assessed'
+    p = float(penalty)
     if p >= 12: return 'Severe'
     if p >= 6:  return 'High'
     if p >= 2:  return 'Medium'
@@ -201,7 +210,9 @@ class Command(BaseCommand):
 
             for rank, profile in enumerate(profiles, 1):
                 co    = profile.company
-                score = profile.ecoiq_total_score or 0
+                # `or 0` put the worst possible score in an email for a
+                # company that simply has none.
+                score = profile.ecoiq_total_score
                 tier  = tier_label(score)
                 harm  = harm_level(profile.harm_penalty)
                 weak_name, weak_score = weakest_pillar(profile)

@@ -14,6 +14,7 @@ from qdf.scoring import (
     compute_from_scores, get_or_compute, RED_LINE_KEYS, RED_LINE_CAP,
 )
 from qdf import engine
+from core.testing_access import SignedIn
 
 
 # ── Seed / schema integrity ─────────────────────────────────────────────────────
@@ -111,6 +112,14 @@ class RedLineTests(TestCase):
 
 class EngineTests(TestCase):
     def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
         self.profile = _make_profile()
         self.assessment = get_or_compute(self.profile)
 
@@ -140,7 +149,8 @@ class EngineTests(TestCase):
 
 # ── Web + API ────────────────────────────────────────────────────────────────────
 
-class WebAndApiTests(TestCase):
+class WebAndApiTests(SignedIn, TestCase):
+
     def setUp(self):
         self.profile = _make_profile(name='Web Co', slug='web-co')
         get_or_compute(self.profile)

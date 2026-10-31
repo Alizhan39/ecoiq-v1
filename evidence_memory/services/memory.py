@@ -9,6 +9,7 @@ Search branches on `connection.vendor`:
   slower, but never fabricated, and exercised by every test in this app.
 """
 import numpy as np
+from heapq import nlargest
 from django.db import connection
 
 from evidence_memory.models import EvidenceMemory
@@ -41,12 +42,14 @@ def create_memory_from_evidence(evidence):
     return memory
 
 
-def create_memory_from_agent_run(agent_run, company=None, country=None):
+def create_memory_from_agent_run(agent_run, company=None, country=None, *, project=None):
     """
     agent_run: an agent_runtime_model_router.models.AgentRun instance.
     company/country: optional explicit scope — AgentRun itself has no direct
     company/country FK, so the caller (e.g. the run_ai_analysis Celery task,
     which knows which demo case/company it was analysing) supplies it.
+    project: optional authorised project context supplied by the caller;
+    newly created output keeps the default project_private visibility.
     Idempotent on (source_type='agent_output', source_reference).
     """
     output = agent_run.parsed_output or {}
@@ -60,6 +63,9 @@ def create_memory_from_agent_run(agent_run, company=None, country=None):
     memory.text_chunk = text_chunk
     memory.company = company
     memory.country = country
+    if project is not None:
+        memory.project = project
+        memory.organisation = project.organisation or ''
     memory.agent_name = agent_run.agent.agent_name
     memory.confidence = agent_run.calibrated_confidence if agent_run.calibrated_confidence is not None else agent_run.raw_confidence
     memory.date_collected = agent_run.created_at.date()
@@ -456,6 +462,8 @@ def _rank_candidates(query_text, candidates, top_k):
     search_similar() and the retrieval-policy service (retrieval_policy.py)
     so outcome retrieval is a different candidate queryset over the SAME
     ranking logic, never a second vector-search engine."""
+    if top_k <= 0:
+        return []
     query_vector = compute_embedding(query_text)
     if query_vector is None:
         return EvidenceMemory.objects.none()
@@ -466,9 +474,20 @@ def _rank_candidates(query_text, candidates, top_k):
         from pgvector.django import CosineDistance
         return list(candidates.annotate(distance=CosineDistance('embedding', query_vector)).order_by('distance')[:top_k])
 
-    scored = [(_cosine_similarity(m.embedding, query_vector), m) for m in candidates if m.embedding]
-    scored.sort(key=lambda pair: pair[0], reverse=True)
-    return [memory for _, memory in scored[:top_k]]
+    # Stream ORM rows without populating the QuerySet cache and retain only
+    # top_k winners. The key-only comparison preserves input order on ties.
+    query_array = np.asarray(query_vector)
+    query_norm = np.linalg.norm(query_array)
+
+    def scored_rows():
+        for memory in candidates.iterator(chunk_size=256):
+            if not memory.embedding:
+                continue
+            vector = np.asarray(memory.embedding)
+            denom = (np.linalg.norm(vector) * query_norm) or 1e-9
+            yield float(np.dot(vector, query_array) / denom), memory
+
+    return [memory for _, memory in nlargest(top_k, scored_rows(), key=lambda pair: pair[0])]
 
 
 def _similarities_for(query_text, memories):
@@ -477,40 +496,62 @@ def _similarities_for(query_text, memories):
     _rank_candidates() attached (similarity = 1 - distance); on SQLite it
     recomputes the same cosine the ranking itself used. Rows with no
     embedding are simply absent — similarity is never fabricated."""
-    query_vector = compute_embedding(query_text)
-    if query_vector is None:
+    if not query_text or not query_text.strip():
         return {}
+    query_vector = None
     similarities = {}
     for m in memories:
         distance = getattr(m, 'distance', None)
         if distance is not None:
             similarities[m.pk] = 1.0 - float(distance)
         elif m.embedding is not None and len(m.embedding):
+            if query_vector is None:
+                query_vector = compute_embedding(query_text)
+                if query_vector is None:
+                    return {}
             similarities[m.pk] = _cosine_similarity(m.embedding, query_vector)
     return similarities
 
 
-def search_similar(query_text, top_k=DEFAULT_TOP_K, company=None, country=None):
+def search_similar(query_text, top_k=DEFAULT_TOP_K, company=None, country=None, *,
+                   project=None, user=None, include_demo=False):
     """
     Returns up to top_k EvidenceMemory rows most similar to query_text,
-    optionally scoped to a company and/or country. Rows without a real
+    authorised for the explicit project/user, optionally filtered by company
+    and/or country. Missing access context fails closed. Demo evidence must
+    be explicitly requested and labelled by the caller. Rows without a real
     embedding yet (embedding_status != 'embedded') are never returned — an
     un-embedded row has nothing meaningful to compare against.
     """
-    candidates = EvidenceMemory.objects.all()
+    from evidence_memory.services.retrieval_policy import accessible_candidates, is_record_accessible
+
+    candidates = accessible_candidates(project, user, include_demo=include_demo)
     if company is not None:
         candidates = candidates.filter(company=company)
     if country is not None:
         candidates = candidates.filter(country=country)
-    return _rank_candidates(query_text, candidates, top_k)
+    if top_k <= 0 or not candidates.exists():
+        return []
+    return [
+        record for record in _rank_candidates(query_text, candidates, top_k)
+        if is_record_accessible(record, project, user=user)
+    ]
 
 
-def search_company_memory(company, query_text, top_k=DEFAULT_TOP_K):
-    return search_similar(query_text, top_k=top_k, company=company)
+def search_company_memory(company, query_text, top_k=DEFAULT_TOP_K, *,
+                          project=None, user=None, include_demo=False):
+    if company is None:
+        return []
+    return search_similar(query_text, top_k=top_k, company=company,
+                          project=project, user=user, include_demo=include_demo)
 
 
-def search_country_memory(country, query_text, top_k=DEFAULT_TOP_K):
-    return search_similar(query_text, top_k=top_k, country=country)
+def search_country_memory(country, query_text, top_k=DEFAULT_TOP_K, *,
+                          project=None, user=None, include_demo=False):
+    if country is None:
+        return []
+    return search_similar(query_text, top_k=top_k, country=country,
+                          project=project, user=user, include_demo=include_demo)
 
 
 # Vertical-slice PR 7 — RETRIEVAL FOR FUTURE DECISIONS. "Learning" here means

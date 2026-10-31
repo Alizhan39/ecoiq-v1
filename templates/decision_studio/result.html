@@ -80,6 +80,7 @@ have executed by then (same convention as plotly_visual_intelligence/dashboard.h
 
   <section class="ds-section">
     <h2 class="ds-h2">Supporting Evidence</h2>
+    {% if query.project %}<p>Project: {{ query.project.name }}</p>{% endif %}
     {% if result.supporting_evidence %}
       {% for item in result.supporting_evidence|slice:":10" %}
       <div class="ds-evidence-card">

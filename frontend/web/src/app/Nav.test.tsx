@@ -1,0 +1,171 @@
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { Nav } from './Nav';
+
+function renderNav() {
+  return render(
+    <MemoryRouter>
+      <Nav />
+    </MemoryRouter>,
+  );
+}
+
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    ok: true, status: 200,
+    json: async () => ({ authenticated: false, username: null, is_staff: false }),
+  }));
+});
+
+describe('primary navigation', () => {
+  it('shows the canonical destinations', async () => {
+    renderNav();
+    const nav = screen.getByRole('navigation', { name: /primary/i });
+
+    for (const label of ['Intelligence', 'Public Sector', 'Projects',
+                         'Eco Tours', 'About', 'Contact']) {
+      expect(within(nav).getByRole('link', { name: label })).toBeInTheDocument();
+    }
+  });
+
+  it('promotes Public Sector as a primary destination, not a minor one', async () => {
+    // It is a complete buyer-facing proposition on one URL — outcomes, a
+    // working demonstration, delivery, technology, governance, commercials
+    // and the supplier. That is a destination, not a footnote.
+    renderNav();
+    const nav = screen.getByRole('navigation', { name: /primary/i });
+    const link = within(nav).getByRole('link', { name: 'Public Sector' });
+
+    expect(link).toHaveAttribute('href', '/public-sector');
+    expect(link.className).not.toContain('nav__link--minor');
+  });
+
+  it('adds no second public-sector destination', async () => {
+    // One tab, one route. A "Procurement" or "Borough demo" item would
+    // reintroduce the microsite this navigation deliberately does not have.
+    renderNav();
+
+    for (const label of [/procurement/i, /borough/i, /demo/i]) {
+      expect(screen.queryByRole('link', { name: label })).toBeNull();
+    }
+  });
+
+  it('does not promote superseded destinations', async () => {
+    renderNav();
+    const nav = screen.getByRole('navigation', { name: /primary/i });
+
+    // These are either experiments (Labs), internal, or a data directory —
+    // none of them describes what the product is.
+    for (const label of ['Rankings', 'Countries', 'AI Agents', 'Compendium',
+                         'Framework', 'Methodology', 'Geo Intelligence']) {
+      expect(within(nav).queryByRole('link', { name: label })).toBeNull();
+    }
+  });
+
+  it('does not link Companies from the navigation at all', async () => {
+    // /companies/ is served by Django, not by this app. A NavLink would render
+    // a React page on click and a Django page on refresh. It is linked from
+    // the footer with a plain anchor instead — see app/App.test.tsx.
+    renderNav();
+
+    expect(screen.queryByRole('link', { name: 'Companies' })).toBeNull();
+  });
+
+  it('keeps Pricing reachable but not primary', async () => {
+    renderNav();
+
+    expect(screen.getByRole('link', { name: 'Pricing' }).className)
+      .toContain('nav__link--minor');
+  });
+
+  it('does not promote League anywhere in the navigation', async () => {
+    // The leaderboard truthfully contains zero ranked organisations.
+    // Promoting it would say the product is a ranking.
+    renderNav();
+
+    expect(screen.queryByRole('link', { name: 'League' })).toBeNull();
+  });
+
+  it('keeps Labs reachable as a secondary destination', async () => {
+    renderNav();
+
+    expect(screen.getByRole('link', { name: 'EcoIQ Labs' }).className)
+      .toContain('nav__link--minor');
+  });
+});
+
+describe('accessibility', () => {
+  it('exposes the toggle state', async () => {
+    renderNav();
+    const toggle = screen.getByRole('button');
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('labels the toggle for screen readers', async () => {
+    renderNav();
+
+    expect(screen.getByText(/open menu/i)).toBeInTheDocument();
+  });
+
+  it('closes on Escape', async () => {
+    renderNav();
+    const toggle = screen.getByRole('button');
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+    await userEvent.keyboard('{Escape}');
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('closes when a destination is chosen', async () => {
+    renderNav();
+    const toggle = screen.getByRole('button');
+    await userEvent.click(toggle);
+
+    await userEvent.click(screen.getByRole('link', { name: 'Projects' }));
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('names the navigation landmark', async () => {
+    renderNav();
+
+    expect(screen.getByRole('navigation', { name: /primary/i })).toBeInTheDocument();
+  });
+});
+
+describe('session affordance', () => {
+  it('offers sign-in to an anonymous visitor', async () => {
+    renderNav();
+
+    expect(await screen.findByRole('link', { name: /sign in/i })).toBeInTheDocument();
+  });
+
+  it('shows the username instead once signed in', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: async () => ({ authenticated: true, username: 'alice', is_staff: false }),
+    }));
+    renderNav();
+
+    expect(await screen.findByText('alice')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /sign in/i })).toBeNull();
+  });
+
+  it('marks a staff session', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: async () => ({ authenticated: true, username: 'staffer', is_staff: true }),
+    }));
+    renderNav();
+
+    // `staffer` also matches /staff/, so assert on the marker specifically.
+    expect(await screen.findByText('· staff')).toBeInTheDocument();
+  });
+});

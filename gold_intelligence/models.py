@@ -23,6 +23,7 @@ is reported instead of a fake IRR/NPV/CAPEX number. `is_demo` follows the
 exact convention already established by geo_intelligence's own models: a
 demo/illustrative row must never be presented as a verified real-world claim.
 """
+from django.conf import settings
 from django.db import models
 
 
@@ -131,6 +132,32 @@ class GoldProject(models.Model):
         if self.country_id is None:
             return GeoRiskZone.objects.none()
         return GeoRiskZone.objects.filter(country_id=self.country_id)
+
+
+class ProjectMembership(models.Model):
+    """Explicit project grants, administered through Django Admin.
+
+    Revocation is immediate: consumers query this table rather than caching
+    roles in sessions or queued job payloads. Organisation names grant no roles.
+    """
+    class Role(models.TextChoices):
+        VIEWER = 'viewer', 'Reader'
+        ANALYST = 'analyst', 'Analyst'
+        REVIEWER = 'reviewer', 'Approver'
+        MANAGER = 'manager', 'Project manager'
+
+    project = models.ForeignKey(GoldProject, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='project_memberships')
+    role = models.CharField(max_length=16, choices=Role.choices, default=Role.VIEWER)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['project', 'user'], name='unique_project_member')]
+
+    def __str__(self):
+        return f'{self.user} — {self.project}: {self.get_role_display()}'
 
 
 class CapitalBudgetLine(models.Model):
@@ -357,3 +384,16 @@ class ScenarioAssumption(models.Model):
 
     def __str__(self):
         return f'{self.project.name}: {self.name}'
+
+
+# Separate file keeps project finance models stable while registering auditable
+# geological source, borehole, assay and operating KPI records with Django.
+from gold_intelligence.geology_models import (  # noqa: F401
+    GeologicalEvidenceSource, GoldDrillhole, GoldAssayInterval, MineKPIObservation,
+)
+
+# Provenance-tagged GeoJSON exploration areas and reference occurrences.
+from gold_intelligence.targeting_models import GoldTarget  # noqa: F401
+
+# Versioned and source-checked cadastral boundaries; kept separate from targets.
+from gold_intelligence.cadastre_models import GoldCadastreSnapshot  # noqa: F401

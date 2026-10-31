@@ -1,4 +1,5 @@
 from django.test import TestCase
+from core.staff_page_testcase import StaffPageTestCase
 
 RAW_TEMPLATE_TOKENS = [
     '{% load', '{% for', '{% include', '{% intelligence_block', '{% extends', '{% block',
@@ -6,7 +7,7 @@ RAW_TEMPLATE_TOKENS = [
 ]
 
 
-class AiAgentOperationsConsolePageTests(TestCase):
+class AiAgentOperationsConsolePageTests(StaffPageTestCase):
     def test_page_returns_200(self):
         response = self.client.get('/ai-agent-operations-console/')
         self.assertEqual(response.status_code, 200)
@@ -59,15 +60,3 @@ class AiAgentOperationsConsolePageTests(TestCase):
         for token in RAW_TEMPLATE_TOKENS:
             self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')
 
-
-class PlatformPageAiAgentOperationsConsoleTeaserTests(TestCase):
-    def test_platform_page_mentions_ai_agent_operations_console(self):
-        response = self.client.get('/platform/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'EcoIQ AI Agent Operations Console')
-
-    def test_platform_page_has_no_raw_template_tags(self):
-        response = self.client.get('/platform/')
-        content = response.content.decode()
-        for token in RAW_TEMPLATE_TOKENS:
-            self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')

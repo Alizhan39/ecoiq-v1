@@ -8,11 +8,13 @@ Includes colour-coded badges, inline editing, admin actions for:
   - Generate guidance video script
 """
 import logging
+from django import forms
 from django.contrib import admin, messages
 from django.urls import reverse
 from django.utils.html import format_html, mark_safe
 
-from .models import (CompanyProfile, CompanyGuidanceVideo, CompanySource,
+from companies import analyst
+from .models import (CompanyMetricProvenance, CompanyProfile, CompanyGuidanceVideo, CompanySource,
                      CompanyScoreSnapshot, DataIngestionLog, InvestmentRelevanceReport)
 
 logger = logging.getLogger(__name__)
@@ -274,8 +276,9 @@ class CompanyProfileAdmin(admin.ModelAdmin):
                 f'</div>'
             )
         # Harm penalty row
-        penalty = obj.harm_penalty or 0
-        if penalty > 0:
+        # `or 0` drew a zero-length "no harm" bar for an unassessed company.
+        penalty = obj.harm_penalty
+        if penalty is not None and penalty > 0:
             html += (
                 f'<div style="margin:.4rem 0 .3rem;display:flex;gap:.6rem;align-items:center;">'
                 f'<span style="min-width:170px;color:#e63946;font-size:.72rem;">⚠ Harm Penalty</span>'
@@ -284,11 +287,19 @@ class CompanyProfileAdmin(admin.ModelAdmin):
                 f'<span style="color:#e63946;min-width:32px;text-align:right;font-weight:700;">−{penalty:.0f}</span>'
                 f'</div>'
             )
-        total_color = '#00e89a' if obj.ecoiq_total_score >= 70 else '#f4a261' if obj.ecoiq_total_score >= 50 else '#e63946'
+        # D4A. Grey, not red: an unscored profile must not be coloured like a
+        # failing one in the analyst's own list.
+        total = obj.ecoiq_total_score
+        if total is None:
+            total_color, total_text = '#64748b', 'EcoIQ Total: not yet scored'
+        else:
+            total_color = ('#00e89a' if total >= 70
+                           else '#f4a261' if total >= 50 else '#e63946')
+            total_text = f'EcoIQ Total: {total:.1f} / 100'
         html += (
             f'<div style="margin-top:.6rem;padding-top:.6rem;border-top:1px solid rgba(255,255,255,.08);'
             f'font-weight:800;font-size:.9rem;color:{total_color};">'
-            f'EcoIQ Total: {obj.ecoiq_total_score:.1f} / 100 &nbsp;·&nbsp; '
+            f'{total_text} &nbsp;·&nbsp; '
             f'<span style="font-weight:500;font-size:.75rem;color:#64748b;">'
             f'{obj.moral_label_display} · {obj.get_pollution_level_display()} Pollution</span>'
             f'</div>'
@@ -680,3 +691,151 @@ class InvestmentRelevanceReportAdmin(admin.ModelAdmin):
         'generated_at', 'generated_by',
     ]
     fields = readonly_fields + ['status', 'classification', 'reviewed_by', 'reviewed_at', 'published_at']
+
+
+class AnalystDeclarationForm(forms.ModelForm):
+    """
+    D3C-5 — the form a human analyst declares a metric through.
+
+    It does NOT save a CompanyMetricProvenance directly. Doing so would write
+    an origin for a value nobody stored, so `save()` delegates to
+    companies.analyst.declare_metric(), which writes the value and the
+    provenance in one transaction.
+
+    The metric dropdown comes from the registry rather than being free text: a
+    typo in a metric key would create provenance for a metric that does not
+    exist, and nothing downstream would ever look at it.
+    """
+    metric_key = forms.ChoiceField(
+        choices=[], label='Metric',
+        help_text='Derived metrics are calculated from other metrics — see the '
+                  'origin help below.',
+    )
+    value = forms.FloatField(
+        label='Declared value',
+        help_text='Leave a metric undeclared to mean unknown. There is no way '
+                  'to declare "unknown" here, because an absent metric already is.',
+    )
+    origin = forms.ChoiceField(
+        choices=[(o, o) for o in analyst.ANALYST_ORIGINS],
+        help_text='MEASURED = taken directly from a source, and requires the '
+                  'evidence attached. ESTIMATED = your assumption-based figure. '
+                  'INFERRED = your assessment derived from a source fact. '
+                  'MODELLED and SEEDED are recorded by code, not by hand.',
+    )
+
+    class Meta:
+        model = CompanyMetricProvenance
+        fields = ['company', 'metric_key', 'origin', 'evidence', 'methodology',
+                  'confidence', 'source_quality', 'review_status', 'notes']
+        help_texts = {
+            'confidence': 'Leave blank if you do not know. A default here would '
+                          'be a fabricated claim about your own certainty.',
+        }
+
+    def __init__(self, *args, request=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.request = request
+        self.fields['metric_key'].choices = analyst.available_metrics()
+        self.fields['evidence'].required = False
+        self.fields['confidence'].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.errors:
+            return cleaned
+        try:
+            analyst.validate_declaration(
+                cleaned.get('metric_key'), cleaned.get('value'),
+                cleaned.get('origin'), evidence=cleaned.get('evidence'),
+                review_status=cleaned.get('review_status') or 'proposed',
+                user=getattr(self.request, 'user', None),
+            )
+        except analyst.AnalystDeclarationError as exc:
+            raise forms.ValidationError(exc.messages)
+        return cleaned
+
+    def save(self, commit=True):
+        data = self.cleaned_data
+        return analyst.declare_metric(
+            data['company'], data['metric_key'], data['value'], data['origin'],
+            user=getattr(self.request, 'user', None),
+            evidence=data.get('evidence'),
+            methodology=data.get('methodology') or '',
+            confidence=data.get('confidence'),
+            review_status=data.get('review_status') or 'proposed',
+            notes=data.get('notes') or '',
+            source_quality=data.get('source_quality') or '',
+        )
+
+
+@admin.register(CompanyMetricProvenance)
+class CompanyMetricProvenanceAdmin(admin.ModelAdmin):
+    """
+    D3A — visibility into where each metric came from.
+    D3C-5 — and the one place a human may declare one.
+
+    Existing rows stay read-mostly: provenance is append-only, and editing
+    is_current or origin by hand would break the supersede discipline that
+    makes history answerable. Adding a row goes through
+    AnalystDeclarationForm, which writes the value alongside it.
+    """
+    list_display  = ['company', 'metric_key', 'origin', 'resolved_value',
+                     'review_status', 'is_current', 'created_at']
+    list_filter   = ['origin', 'review_status', 'is_current']
+    search_fields = ['company__company__name', 'metric_key', 'written_by']
+    ordering      = ['-created_at']
+    list_select_related = ['company', 'company__company']
+    readonly_fields = ['company', 'metric_key', 'origin', 'resolved_value', 'evidence',
+                       'confidence', 'methodology', 'calculation_version', 'observed_at',
+                       'is_current', 'created_at', 'created_by', 'written_by']
+    fields = readonly_fields + ['source_quality', 'review_status', 'reviewed_by',
+                                'reviewed_at', 'notes']
+
+    add_form = AnalystDeclarationForm
+    add_fieldsets = (
+        (None, {
+            'fields': ('company', 'metric_key', 'value', 'origin'),
+            'description': 'Declaring a metric writes the value AND its '
+                           'provenance in one transaction. The previous '
+                           'provenance becomes history; it is never edited.',
+        }),
+        ('Basis', {'fields': ('evidence', 'methodology', 'source_quality')}),
+        ('Review', {'fields': ('confidence', 'review_status', 'notes')}),
+    )
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        if obj is None:
+            kwargs['form'] = self.add_form
+            form_class = super().get_form(request, obj, change=change, **kwargs)
+
+            class RequestBound(form_class):
+                def __init__(self, *args, **inner):
+                    inner.setdefault('request', request)
+                    super().__init__(*args, **inner)
+
+            return RequestBound
+        return super().get_form(request, obj, change=change, **kwargs)
+
+    def get_fieldsets(self, request, obj=None):
+        return self.add_fieldsets if obj is None else super().get_fieldsets(request, obj)
+
+    def get_readonly_fields(self, request, obj=None):
+        return [] if obj is None else self.readonly_fields
+
+    def save_model(self, request, obj, form, change):
+        """
+        The form already wrote everything, atomically, through the service.
+
+        Calling super() here would save a SECOND row — the unsaved instance
+        ModelForm built alongside the one declare_metric() created.
+        """
+        if not change:
+            return
+        super().save_model(request, obj, form, change)
+
+    @admin.display(description='Value')
+    def resolved_value(self, obj):
+        """Read through to the live field — never a stored second copy."""
+        value = obj.value
+        return '—' if value is None else value

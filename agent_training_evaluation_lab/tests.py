@@ -1,4 +1,5 @@
 from django.test import TestCase
+from core.staff_page_testcase import StaffPageTestCase
 from django.utils import timezone
 
 from agent_runtime_model_router.models import AgentRegistryEntry, AgentRun
@@ -14,7 +15,7 @@ RAW_TEMPLATE_TOKENS = [
 ]
 
 
-class AgentTrainingEvaluationLabPageTests(TestCase):
+class AgentTrainingEvaluationLabPageTests(StaffPageTestCase):
     def test_page_returns_200(self):
         response = self.client.get('/agent-training-evaluation-lab/')
         self.assertEqual(response.status_code, 200)
@@ -83,19 +84,6 @@ class AgentTrainingEvaluationLabPageTests(TestCase):
 
     def test_page_has_no_raw_template_tags(self):
         response = self.client.get('/agent-training-evaluation-lab/')
-        content = response.content.decode()
-        for token in RAW_TEMPLATE_TOKENS:
-            self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')
-
-
-class PlatformPageAgentTrainingEvaluationLabTeaserTests(TestCase):
-    def test_platform_page_mentions_agent_training_evaluation_lab(self):
-        response = self.client.get('/platform/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'EcoIQ Agent Training & Evaluation Lab')
-
-    def test_platform_page_has_no_raw_template_tags(self):
-        response = self.client.get('/platform/')
         content = response.content.decode()
         for token in RAW_TEMPLATE_TOKENS:
             self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')

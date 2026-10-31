@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Gold Targeting Map — EcoIQ{% endblock %}
+{% block content %}
+<main style="max-width:1300px;margin:auto;padding:2rem 1rem;">
+  <p style="font-size:.8rem;letter-spacing:.15em;color:#b8923d;">ECOIQ GOLD INTELLIGENCE · EXPERIMENTAL</p>
+  <h1>AI Gold Targeting — Geological Evidence Map</h1>
+  <nav style="margin:.7rem 0;display:flex;gap:1rem;flex-wrap:wrap;">
+    <a href="{% url 'gold_intelligence:targets_map' %}?pilot=chu_ili_qonaev">Open Chu–Ili / Qonaev research pilot</a>
+    <a href="{% url 'gold_intelligence:pilot_research_queue' %}">Research priority API</a>
+    <a href="{% url 'gold_intelligence:named_gold_references' %}">Eight named gold deposits (no coordinates)</a>
+    {% if pilot_active %}<a href="{% url 'gold_intelligence:targets_map' %}">Hide pilot overlay</a>{% endif %}
+  </nav>
+  {% if pilot_active %}
+    <aside style="padding:1.1rem;border:1px solid #64748b;border-radius:10px;margin:1rem 0">
+      <h2>Chu–Ili / Qonaev: first research priorities, NOT Au probability</h2>
+      <p>Blue dashed envelope is an operator-defined study window, NOT geology, free tenure, a new gold occurrence or a drilling instruction. Rank indicates source-document research readiness only.</p>
+      <ol>
+      {% for item in pilot_queue %}
+        <li style="margin:.7rem 0"><strong>{{ item.name }}</strong> — {{ item.evidence_stage }}.
+          {{ item.next_action }}
+          {% for label, url in item.sources.items %}<a href="{{ url }}" rel="noopener noreferrer" target="_blank">Source document</a>{% endfor %}
+        </li>
+      {% endfor %}
+      </ol>
+      <p>Separate documented existing deposits from new unverified targets:</p>
+      <ul>
+      {% for item in pilot_deposit_names %}
+        <li>{{ item.name }} — {{ item.issuer }} (<a href="{{ item.source_url }}" rel="noopener noreferrer" target="_blank">source</a>)</li>
+      {% endfor %}
+      </ul>
+      <p>Verified new gold occurrence coordinates: none. Licence status: unknown. No prospectivity score.</p>
+    </aside>
+  {% endif %}
+  <p>This is a desktop exploration evidence map, <strong>not</strong> a mineral discovery, licence cadastre, resource estimate or drilling permit. A highlighted area does not demonstrate gold or available mining rights.</p>
+  <p><strong>{{ feature_count }}</strong> geological reference(s) and <strong>{{ cadastre_count }}</strong> reviewed dated cadastral polygon(s) in view. Unverified or historical occurrence records are not drill targets.
+     {% if truncated %}<strong>Showing first 500; narrow the filters.</strong>{% endif %}
+  </p>
+  <nav aria-label="Research reference links" style="margin:1rem 0;display:flex;gap:1rem;flex-wrap:wrap;">
+    <a href="/gold-intelligence/map/">Existing mine map</a>
+    <a href="{% url 'gold_intelligence:targets_geojson' %}">Geological GeoJSON</a>
+    <a href="{% url 'gold_intelligence:cadastre_geojson' %}">Dated cadastre GeoJSON</a>
+    <a href="https://minerals-u.e-qazyna.kz/en/contracts-map" rel="noopener noreferrer" target="_blank">Check cadastral licences (E-Qazyna)</a>
+    <a href="https://dataspace.copernicus.eu/" rel="noopener noreferrer" target="_blank">Copernicus data source</a>
+  </nav>
+  <form method="get" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;">
+    <label for="region">Region filter</label>
+    <input id="region" type="text" name="region" value="{{ region_filter }}" placeholder="e.g. Kalba" maxlength="150">
+    <button type="submit">Filter map</button>
+    <a href="{% url 'gold_intelligence:targets_map' %}">Reset</a>
+  </form>
+  <div style="min-height:550px;border:1px solid #64748b;overflow:hidden;border-radius:12px;">{{ map_html|safe }}</div>
+  {% if feature_count == 0 %}
+    <p>No geologically sourced targets or reference records are loaded for your access scope. This is deliberate: no speculative map pins are generated.</p>
+  {% endif %}
+  {% if cadastre_truncated %}<p><strong>Cadastre limited to first 250 reviewed polygons; no inference of coverage.</strong></p>{% endif %}
+  <p style="font-size:.85rem;margin-top:1rem;">Cadastre overlay: red = right recorded at snapshot date, orange = application recorded, grey = expired/withdrawn/unknown, <strong>never</strong> necessarily available now. Confirm with E-Qazyna. Map legend: <span style="color:#e6b54a;">■ Candidate exploration target</span> · <span style="color:#3b82f6;">■ Research area</span> · <span style="color:#64748b;">■ Historical reference occurrence</span>. Categories indicate record type, <strong>not</strong> predicted gold abundance.</p>
+  <p style="font-size:.8rem;">GeoJSON coordinates use WGS84 EPSG:4326. Map tiles © OpenStreetMap contributors. The backend stores geometry in portable JSON / PostgreSQL JSONB, not yet PostGIS indexed geometry.</p>
+</main>
+{% endblock %}

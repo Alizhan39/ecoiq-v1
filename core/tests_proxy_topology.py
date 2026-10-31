@@ -272,6 +272,13 @@ class ResolverOwnershipTests(SimpleTestCase):
         offenders = []
         for path in root.rglob('*.py'):
             rel = path.relative_to(root).as_posix()
+            # Only EcoIQ source is in scope. An in-tree virtualenv is the
+            # documented dev setup (.claude/launch.json activates .venv), and
+            # site-packages is full of legitimate WSGI/ASGI adapters that read
+            # these headers — so without this the guard fails for every
+            # developer and gets ignored, which is how a guard stops working.
+            if rel.startswith('.') or 'site-packages/' in rel or 'node_modules/' in rel:
+                continue
             if rel in allowed or '/tests' in rel or rel.startswith('tests'):
                 continue
             if 'test' in path.name or 'migrations/' in rel:

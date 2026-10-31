@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_exception.dart';
 import '../../data/models/company.dart';
+import '../../data/models/evidence.dart';
 import '../../design/tokens.dart';
 import '../../navigation/router.dart';
 import '../../shared/widgets/state_views.dart';
@@ -132,16 +133,28 @@ class _CompanyResultTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          EcoIqStatusChip(
-            label: company.ecoiqScore.toStringAsFixed(0),
-            tone: company.ecoiqScore >= 70
-                ? EcoIqStatusTone.positive
-                : company.ecoiqScore >= 40
-                    ? EcoIqStatusTone.caution
-                    : EcoIqStatusTone.negative,
-            semanticsLabel:
-                'EcoIQ score ${company.ecoiqScore.toStringAsFixed(0)} out of 100',
-          ),
+          // Unknown is not poor performance. When there is no publishable
+          // score the chip is NEUTRAL and says so — never a red "negative"
+          // tone, which would read as a bad result rather than an absent one.
+          if (company.score.canDisplay)
+            EcoIqStatusChip(
+              label: company.score.value!.toStringAsFixed(0),
+              tone: company.score.value! >= 70
+                  ? EcoIqStatusTone.positive
+                  : company.score.value! >= 40
+                      ? EcoIqStatusTone.caution
+                      : EcoIqStatusTone.negative,
+              semanticsLabel:
+                  'EcoIQ score ${company.score.value!.toStringAsFixed(0)} out of 100',
+            )
+          else
+            const EcoIqStatusChip(
+              label: EvidenceScore.pendingLabelShort,
+              tone: EcoIqStatusTone.neutral,
+              semanticsLabel:
+                  'EcoIQ has not published a score for this organisation. '
+                  'Evidence assessment pending.',
+            ),
           IconButton(
             tooltip: 'Add to watchlist',
             icon: const Icon(Icons.bookmark_add_outlined),

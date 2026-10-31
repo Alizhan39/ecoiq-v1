@@ -8,6 +8,7 @@ from agent_runtime_model_router.models import AgentRegistryEntry
 from ai_agent_council.agents import OPERATIONAL_AGENTS
 from ai_agent_council.models import CouncilRun
 from ai_agent_workbench.services import agent_data, demo_cases, recommender
+from core.testing_access import SignedIn
 
 TEMPLATE_LEAK_RE = re.compile(r'\{%|\{\{')
 
@@ -20,7 +21,7 @@ def _seed_all():
     call_command('seed_financial_intelligence_cloud_demo')
 
 
-class AgentDirectoryTests(TestCase):
+class AgentDirectoryTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_all()
@@ -83,7 +84,7 @@ class AgentDirectoryTests(TestCase):
         self.assertIn('<svg', body)
 
 
-class WorkbenchTests(TestCase):
+class WorkbenchTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_all()
@@ -210,7 +211,7 @@ class WorkbenchTests(TestCase):
             self.assertIn(escape(name), body)
 
 
-class CouncilDemoAndPresentationTests(TestCase):
+class CouncilDemoAndPresentationTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_all()
@@ -264,35 +265,80 @@ class SafetyAndPrivacyTests(TestCase):
                 self.assertTrue(council_run.is_simulated)
 
 
-class HomepageIntegrationTests(TestCase):
+class HomepageIntegrationTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_all()
 
-    def test_homepage_has_agent_ctas_and_no_template_leak(self):
-        resp = self.client.get(reverse('home'))
-        self.assertEqual(resp.status_code, 200)
-        body = resp.content.decode()
-        self.assertIn('TRY THE AI AGENTS', body)
-        self.assertIn('WATCH THE AGENT COUNCIL', body)
-        self.assertIn('SEE HOW A DECISION HAPPENED', body)
-        self.assertIn('/ai-agents/workbench/', body)
+    def test_the_homepage_no_longer_promotes_the_agent_workbench(self):
+        """
+        The three agent CTAs are gone with the server-rendered homepage.
+
+        That is the Phase 8 decision, not an oversight: no AI module in this
+        repository has a measured evaluation, so none is claimed as a
+        production capability, and an agent showcase on the homepage says the
+        product is the agents. The workbench is reachable at its own URL and is
+        listed under EcoIQ Labs with its real status.
+        """
+        body = self.client.get(reverse('home')).content.decode()
+
+        self.assertNotIn('TRY THE AI AGENTS', body)
+        self.assertNotIn('/ai-agents/workbench/', body)
+
+    def test_the_homepage_leaks_no_template_syntax(self):
+        """
+        Worth keeping after the migration, and cheap. A multi-line `{# #}`
+        comment renders literally in Django, and because base.html is included
+        everywhere, one of those leaked template syntax onto every page of the
+        site during this programme.
+        """
+        body = self.client.get(reverse('home')).content.decode()
         self.assertFalse(TEMPLATE_LEAK_RE.search(body))
 
-    def test_homepage_reports_real_agent_count_not_hardcoded(self):
-        from ai_agent_council.agents import OPERATIONAL_AGENTS
-        resp = self.client.get(reverse('home'))
-        self.assertContains(resp, f'{len(OPERATIONAL_AGENTS)} operational agents')
+    def test_the_homepage_states_no_agent_count(self):
+        """
+        It used to render `N operational agents` from the registry. The React
+        homepage shows only `is_proof` counters from /api/v2/platform/, and
+        omits any that are zero — so no agent count appears at all rather than
+        one that nobody can act on.
+        """
+        import re as _re
 
-    def test_global_nav_has_ask_ecoiq_ai_entry_point(self):
-        # The AI agents must be reachable from anywhere on the platform, not just the homepage.
+        body = self.client.get(reverse('home')).content.decode()
+        self.assertIsNone(_re.search(r'\d+\s+operational agents', body))
+
+    def test_ai_agents_are_not_in_the_public_global_nav(self):
+        """
+        "Ask EcoIQ AI" used to sit in the header of every page. The public
+        navigation was reduced to Intelligence / Eco Tours / Projects / About /
+        Contact, because an AI-agent showcase is an internal capability rather
+        than the public product. The workbench itself is untouched: this asserts
+        placement, not existence.
+        """
+        import re as _re
+
+        # base.html still renders the pages that were not migrated, and its
+        # navigation is still the thing this protects. /about/ and /pricing/
+        # are React now and carry no server-rendered nav at all.
+        for url in ('/heating/', '/khalifa-tours/'):
+            body = self.client.get(url).content.decode()
+            nav = _re.search(r'<nav[^>]*>(.*?)</nav>', body, _re.S)
+            self.assertIsNotNone(nav, url)
+            self.assertNotIn('/ai-agents/', nav.group(1), url)
+            self.assertNotIn('Ask EcoIQ AI', nav.group(1), url)
+
+        # And the React shell promotes nothing either. The React navigation
+        # itself is asserted in frontend/web/src/app/Nav.test.tsx.
         for url in (reverse('home'), '/about/', '/pricing/'):
-            resp = self.client.get(url)
-            self.assertContains(resp, 'Ask EcoIQ AI')
-            self.assertContains(resp, '/ai-agents/')
+            body = self.client.get(url).content.decode()
+            self.assertNotIn('/ai-agents/', body, url)
+            self.assertNotIn('Ask EcoIQ AI', body, url)
+
+    def test_workbench_is_still_reachable_at_its_own_url(self):
+        self.assertEqual(self.client.get('/ai-agents/').status_code, 200)
 
 
-class ProductPageIntegrationTests(TestCase):
+class ProductPageIntegrationTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_all()
@@ -319,7 +365,7 @@ class ProductPageIntegrationTests(TestCase):
         self.assertContains(resp, 'Agents working on this case')
 
 
-class AllRoutesReturn200Tests(TestCase):
+class AllRoutesReturn200Tests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_all()
@@ -340,7 +386,7 @@ class AllRoutesReturn200Tests(TestCase):
                 self.assertFalse(TEMPLATE_LEAK_RE.search(resp.content.decode()))
 
 
-class EvaluationWorkbenchIntegrationTests(TestCase):
+class EvaluationWorkbenchIntegrationTests(SignedIn, TestCase):
     """
     Phase 9 — the minimum necessary UI: latest quality score, benchmark
     trend, regression status, evaluation history, human review status.

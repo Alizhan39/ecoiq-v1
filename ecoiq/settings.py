@@ -127,6 +127,7 @@ INSTALLED_APPS = [
     'intelligence',
     'transition',
     'companies',
+    'platform_registry',
 
     # Investor portfolios and watchlists — user-owned holdings valued from the
     # market data already on league.Company. No new market-data source.
@@ -142,6 +143,7 @@ INSTALLED_APPS = [
     'hikma',
     'harvester',
     'qdf',
+    'islamic_knowledge',
 
     # Hackathon module (started 2026-07-01) — Conduct AI / BasedAI bounty
     'legacy_safe',
@@ -408,12 +410,18 @@ MIDDLEWARE = [
     # logged by security middleware.
     'core.logging_middleware.RequestContextMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',   # static files — must be 2nd
+    # WhiteNoise, subclassed so the Vite-hashed SPA bundle under
+    # /static/spa/assets/ is cached as immutable. See core/whitenoise.py.
+    'core.whitenoise.SpaAwareWhiteNoiseMiddleware',   # static files — must be 2nd
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',   # language detection from cookie/Accept-Language
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Immediately after authentication, because it reads request.user.
+    # De-publishes the experimental and legacy surfaces — see core/access.py
+    # for the list and the reasoning.
+    'core.access.ExperimentalSurfaceMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # wagtail.contrib.redirects.middleware removed — site-specific redirects
@@ -456,10 +464,17 @@ if IS_PRODUCTION and not os.environ.get('DATABASE_URL', '').strip():
         'SQLite fallback in production.'
     )
 
+try:
+    DATABASE_CONN_MAX_AGE = int(os.environ.get('DATABASE_CONN_MAX_AGE', '600'))
+except ValueError as exc:
+    raise ImproperlyConfigured('DATABASE_CONN_MAX_AGE must be an integer from 0 to 3600.') from exc
+if not 0 <= DATABASE_CONN_MAX_AGE <= 3600:
+    raise ImproperlyConfigured('DATABASE_CONN_MAX_AGE must be an integer from 0 to 3600.')
+
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=600,
+        conn_max_age=DATABASE_CONN_MAX_AGE,
         conn_health_checks=True,
     )
 }
@@ -512,12 +527,96 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Only include custom static dir if it actually exists (safe for fresh clones)
 _static_src = BASE_DIR / 'static'
 STATICFILES_DIRS = [_static_src] if _static_src.exists() else []
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# STORAGES, not STATICFILES_STORAGE.
+#
+# `STATICFILES_STORAGE` was removed in Django 5.1. This project pins Django
+# 5.2, so the line that used to live here — naming
+# CompressedManifestStaticFilesStorage — was silently ignored, and production
+# has been serving static files through the plain StaticFilesStorage: no gzip,
+# no brotli, no content hashing. Verified by reading
+# `settings.STORAGES['staticfiles']` on a booted instance.
+#
+# Compression is restored here. Content HASHING deliberately is not: the
+# manifest backend rewrites every url() and sourceMappingURL it finds and fails
+# the build when a referenced file is missing, and this repository has 338
+# templates and a large legacy asset tree that has never been through that
+# check. Turning it on is its own piece of work with its own failure mode, not
+# a side effect of a frontend deployment.
+#
+# The SPA does not need it. Vite content-hashes its own filenames, and
+# core.whitenoise.SpaAwareWhiteNoiseMiddleware marks that directory immutable —
+# so the bundle gets far-future caching without the manifest machinery.
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
 
 # ── Media files ───────────────────────────────────────────────────────────────
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# ── Durable media storage (Cloudflare R2) ─────────────────────────────────────
+#
+# MEDIA_ROOT above is the web service's own filesystem, which Render replaces on
+# every deploy. An uploaded evidence document therefore survived until the next
+# release while its database row survived forever — a reference to a file that
+# no longer exists, which the application reads as "the document is on file".
+#
+# Measured on production before this was written: MEDIA_ROOT did not exist,
+# 0 files, 0 bytes, 0 database references across all six upload fields. Nothing
+# had been lost because nothing had been uploaded. That is the good moment.
+#
+# OPT-IN. The filesystem stays the default so local development and the test
+# suite need no credentials and no network. R2 is selected only by setting
+# MEDIA_STORAGE_BACKEND=r2.
+MEDIA_STORAGE_BACKEND = os.environ.get('MEDIA_STORAGE_BACKEND', 'filesystem').strip().lower()
+
+#: Presigned read URLs expire in five minutes by default. A URL that leaks —
+#: pasted into a ticket, captured by an intermediary — stops working quickly.
+#: The signature is derived from the credentials and never contains them.
+R2_SIGNED_URL_EXPIRY_SECONDS = int(os.environ.get('R2_SIGNED_URL_EXPIRY_SECONDS', '300'))
+
+MEDIA_USES_R2 = MEDIA_STORAGE_BACKEND == 'r2'
+
+if MEDIA_USES_R2:
+    _r2 = {name: os.environ.get(name, '').strip() for name in (
+        'R2_ACCOUNT_ID', 'R2_BUCKET_NAME', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY')}
+    _missing = sorted(k for k, v in _r2.items() if not v)
+    if _missing:
+        # FAIL CLOSED. Falling back to the local filesystem here would write
+        # uploads to a disk that is destroyed on the next deploy, and would do
+        # it silently — the exact failure this configuration exists to end.
+        raise ImproperlyConfigured(
+            'MEDIA_STORAGE_BACKEND=r2 but these variables are missing: '
+            f'{", ".join(_missing)}. Refusing to start on ephemeral local '
+            'storage. Unset MEDIA_STORAGE_BACKEND to use the filesystem.'
+        )
+
+    # Account-scoped S3 endpoint. Derived rather than configured so the endpoint
+    # can never disagree with the account the credentials belong to.
+    R2_ENDPOINT_URL = os.environ.get(
+        'R2_ENDPOINT_URL', f'https://{_r2["R2_ACCOUNT_ID"]}.r2.cloudflarestorage.com').strip()
+
+    STORAGES['default'] = {
+        'BACKEND': 'core.storage_r2.R2MediaStorage',
+        'OPTIONS': {
+            'bucket_name': _r2['R2_BUCKET_NAME'],
+            'access_key': _r2['R2_ACCESS_KEY_ID'],
+            'secret_key': _r2['R2_SECRET_ACCESS_KEY'],
+            'endpoint_url': R2_ENDPOINT_URL,
+            # R2 implements neither ACLs nor regions; 'auto' is what it expects,
+            # and signature v4 is required.
+            'region_name': 'auto',
+            'signature_version': 's3v4',
+            'querystring_expire': R2_SIGNED_URL_EXPIRY_SECONDS,
+        },
+    }
+
 
 # ── Misc ──────────────────────────────────────────────────────────────────────
 
@@ -549,6 +648,16 @@ ANTISPAM_ALERT_REJECTIONS_PER_10MIN = int(os.environ.get('ANTISPAM_ALERT_REJECTI
 ANTISPAM_ALERT_FINGERPRINT_PER_DAY = int(os.environ.get('ANTISPAM_ALERT_FINGERPRINT', '100'))
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+
+# Islamic knowledge: provider-approved JSON feeds only. No guessed private API.
+ISLAMIC_KNOWLEDGE_FEEDS = {
+    'sajda': os.environ.get('SAJDA_KNOWLEDGE_FEED_URL', '').strip(),
+    'azan_kz': os.environ.get('AZAN_KZ_KNOWLEDGE_FEED_URL', '').strip(),
+}
+# A separately installed CPU encoder, cached before serving requests.
+ISLAMIC_NEURAL_SEARCH_ENABLED = os.environ.get(
+    'ISLAMIC_NEURAL_SEARCH_ENABLED', 'false').lower() in ('true', '1', 'yes')
+ISLAMIC_NEURAL_CACHE_DIR = os.environ.get('ISLAMIC_NEURAL_CACHE_DIR', '').strip() or None
 
 # /api/v1/semantic-search/ vector path. OFF by default and must stay off until
 # BOTH are true: sentence-transformers + torch are installed (they are
@@ -789,6 +898,38 @@ if IS_PRODUCTION:
     SECURE_HSTS_PRELOAD      = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
 
+# The one path SECURE_SSL_REDIRECT must not redirect: the Render health check.
+#
+# Render probes the service on its internal port, so the request does not pass
+# through the edge that sets X-Forwarded-Proto: https. SECURE_PROXY_SSL_HEADER
+# therefore does not mark it secure, SecurityMiddleware answers 301, and Render
+# — which wants a 2xx — reads a healthy process as unhealthy and replaces it.
+# Pointing healthCheckPath at an endpoint that always 301s is worse than having
+# no health check at all, so this exemption is a correctness requirement of the
+# health check, not a convenience.
+#
+# What it does NOT do, so this is not a security relaxation in disguise:
+#   - The pattern is anchored `^healthz/$`. SecurityMiddleware matches it
+#     against request.path.lstrip('/'), so it matches `/healthz/` and nothing
+#     else — not a prefix, not a subpath, not a query variant.
+#   - SECURE_REDIRECT_EXEMPT is read only in SecurityMiddleware.process_request,
+#     and only to skip the HTTP->HTTPS redirect. process_response is untouched,
+#     so HSTS, X-Content-Type-Options and Referrer-Policy still apply to every
+#     response including this one.
+#   - Nothing here touches TRUSTED_PROXY_COUNT, TRUSTED_CLIENT_IP_HEADER, or
+#     any forwarding-header trust. Client-origin resolution is unchanged.
+#   - The endpoint's entire response is the constant `ok`. There is no session,
+#     no cookie, no user data and no secret that plaintext could expose.
+#
+# Set unconditionally rather than inside the IS_PRODUCTION block: it is inert
+# whenever SECURE_SSL_REDIRECT is off, and being able to assert on it without
+# re-importing settings under a production environment keeps the test honest.
+# `readyz/` is exempt for the same reason and on the same terms: it is probed
+# over the internal network where X-Forwarded-Proto is absent, and its body is
+# a fixed set of check names with boolean outcomes — no session, no cookie, no
+# credential. See core/health.py for what it deliberately does not report.
+SECURE_REDIRECT_EXEMPT = [r'^healthz/$', r'^readyz/$']
+
 # ── Logging ───────────────────────────────────────────────────────────────────
 # Explicit configuration so application code can rely on `logging.getLogger()`
 # reaching the Render log stream instead of falling back to Django's implicit
@@ -888,11 +1029,34 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     ],
     'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
+        # core.throttling's subclass, not the stock class: DRF's default
+        # get_ident() returns the concatenated X-Forwarded-For chain when
+        # NUM_PROXIES is unset, which is partly client-supplied behind
+        # Cloudflare. Same scope, same rate — a real identity.
+        'core.throttling.TrustedAnonRateThrottle',
         'api.throttles.APIKeyRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon':    '20/day',
+        # WHY THIS IS PER-HOUR AND NOT 20/day
+        #
+        # 20/day was a DATA-API quota, set when /api/ was something a third
+        # party called deliberately. The frontend migration made API v2 the way
+        # the WEBSITE renders: /platform/, /companies/, /leaderboard/,
+        # /projects/ and one call per investigation are all fetched by the SPA
+        # on ordinary page views.
+        #
+        # So every visitor was spending a developer quota to read the site. At
+        # 2-4 calls per page view, roughly five to seven pages exhausted it —
+        # after which /companies/ rendered "Could not load this section" for the
+        # rest of the DAY, and a shared NAT could exhaust it for a whole office
+        # in minutes. Observed in production: Retry-After 22248, six hours.
+        #
+        # Third-party data consumers are unaffected by this number: an API key
+        # carries its own tier below, and those are the real quotas. This one
+        # only has to permit a person reading the site while still bounding a
+        # scraper — 600/hour is ~150-300 page views an hour per address, and
+        # recovers in an hour rather than at midnight.
+        'anon':    '600/hour',
         'explorer':   '100/day',
         'professional': '2000/day',
         'enterprise':   '50000/day',
@@ -923,6 +1087,168 @@ REST_FRAMEWORK = {
 # `redis-server` on localhost:6379 (the standard homebrew/apt default) just
 # works in development with zero configuration.
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+
+#: Whether Redis is a dependency this deployment actually expects.
+#:
+#: Derived from the ENVIRONMENT, not from REDIS_URL, and that distinction is the
+#: whole point: REDIS_URL above always has a value because of its localhost
+#: default, so a truthiness check on it would report Redis as required on any
+#: deployment that had never heard of Redis, and the readiness probe would fail
+#: permanently against a perfectly healthy web service.
+#:
+#: This comment used to justify itself with "production, where no Redis service
+#: is deployed (render.yaml keeps the Key Value and worker blocks commented
+#: out)". That stopped being true on 2026-08-24, when ecoiq-keyvalue and
+#: ecoiq-celery-worker were created by hand — render.yaml still carries them
+#: commented out and never learned. /readyz/ now reports redis: ok, which only
+#: happens when REDIS_URL is set explicitly, so production genuinely runs on a
+#: shared Redis cache. See docs/operations/PRODUCTION_RUNBOOK.md.
+#:
+#: The MECHANISM below is unchanged and was never the problem: keying off
+#: explicit configuration rather than a defaulted URL is right either way, and
+#: it is why this deployment reports its Redis dependency correctly today
+#: without anyone having to edit this line.
+#:
+#: Setting REDIS_URL explicitly is therefore the act that makes Redis a
+#: dependency worth failing readiness over.
+REDIS_CONFIGURED = 'REDIS_URL' in os.environ
+
+# ── Cache ─────────────────────────────────────────────────────────────────────
+#
+# Until now `CACHES` was never configured at all, so Django fell back to a
+# per-process LocMemCache — and every DRF throttle counts in it. On the current
+# service (`--workers 1 --threads 4`) the four threads share one process, so
+# rate limiting was not broken. It was fragile in a way that fails SILENTLY:
+# counters reset on every deploy and on each `--max-requests 300` worker
+# recycle, and raising WEB_CONCURRENCY above 1 would multiply every configured
+# limit by the worker count with no error and no log line.
+#
+# This block makes the choice explicit in both directions. It does NOT change
+# any throttle policy — that is the next package, and it depends on this one.
+#
+# SAME SIGNAL AS READINESS
+# ------------------------
+# Redis is used when REDIS_CONFIGURED — i.e. when REDIS_URL was set in the
+# environment — never on REDIS_URL's own truthiness, which is always true
+# because of its localhost default above. core/health.py's readiness probe
+# keys off exactly the same flag, so "readiness enforces Redis" and "the cache
+# is Redis" can never disagree.
+#
+# NO SILENT FALLBACK
+# ------------------
+# When Redis IS configured there is no LocMem fallback: Django's RedisCache
+# raises on a connection failure, which is the intended behaviour. A cache that
+# quietly degrades to per-process memory when the shared backend is unreachable
+# would reintroduce exactly the multiplied-rate-limit bug this exists to remove,
+# and would do it during an outage, when nobody is looking for it.
+#
+# When Redis is NOT configured the backend is LocMem and that is a deliberate,
+# documented state — not a failure. The low-cost production topology uses this
+# after REDIS_URL and the manually-created Key Value instance are removed. A
+# warning is logged rather than raising, because refusing to start would take
+# down a service that is otherwise healthy.
+# ── Authentication rate limits ────────────────────────────────────────────────
+#
+# Per-IP ceilings on the two unauthenticated write surfaces the estate exposes:
+# the sign-in form and registration. Both were previously unlimited — DRF's
+# throttles cover /api/, not Django's own auth views.
+#
+# Chosen as brute-force ceilings, not cost controls, and deliberately generous
+# enough not to interfere with ordinary pilot use: a real person mistyping a
+# password a few times, or a shared office NAT with several people signing in
+# at once, stays well inside them. They are per-minute so a tripped limit
+# clears in under a minute rather than locking someone out of their account —
+# this throttles an ADDRESS, never an account, so no attacker can lock a named
+# user out by attacking them.
+LOGIN_RATE_PER_MIN = int(os.environ.get('LOGIN_RATE_PER_MIN', '10'))
+REGISTER_RATE_PER_MIN = int(os.environ.get('REGISTER_RATE_PER_MIN', '5'))
+
+CACHE_ENVIRONMENT = os.environ.get(
+    'ECOIQ_CACHE_ENVIRONMENT', 'production' if IS_PRODUCTION else 'development')
+
+#: Namespaces every key by environment, so a staging service pointed at the
+#: same Redis instance can never read or overwrite production's entries.
+#:
+#: The RELEASE is deliberately NOT part of this prefix. Including it would
+#: invalidate the entire cache on every deploy, which sounds safe and is
+#: actively wrong here: it would also reset every throttle counter on every
+#: deploy — the precise fragility this package exists to remove, reintroduced
+#: as a side effect. A value whose correctness depends on a version must carry
+#: that version IN ITS OWN KEY (see the cache-key rules in
+#: docs/architecture/reliability.md); it must not lean on a global prefix.
+CACHE_KEY_PREFIX = f'ecoiq:{CACHE_ENVIRONMENT}'
+
+#: Django's own default. Set explicitly so a `cache.set()` without a timeout has
+#: a stated lifetime rather than an inherited one.
+CACHE_DEFAULT_TIMEOUT = 300
+
+#: Never use Redis for the test suite, even on a developer machine that has
+#: REDIS_URL exported. A test run must not depend on an external service being
+#: up, and must never read or write another process's cache.
+CACHE_USES_REDIS = REDIS_CONFIGURED and not RUNNING_TESTS
+
+if CACHE_USES_REDIS:
+    _redis_cache_options = {
+        # Bounded so a stalled Redis cannot hold a web thread open. A cache is
+        # an optimisation; waiting indefinitely for one inverts that.
+        'socket_connect_timeout': 2,
+        'socket_timeout': 2,
+        # Retry once on a timeout — covers a dropped idle connection without
+        # turning a real outage into a long stall.
+        'retry_on_timeout': True,
+        # Detects a silently-dead connection from the pool before it is used.
+        'health_check_interval': 30,
+        # Comfortably above `--workers 1 --threads 4` plus a worker's
+        # concurrency, and far below any managed instance's connection ceiling.
+        'max_connections': 24,
+    }
+    if REDIS_URL.startswith('rediss://'):
+        # Only meaningful for a TLS URL. Set under the scheme test rather than
+        # unconditionally so the intent is visible at the point it applies.
+        _redis_cache_options['ssl_cert_reqs'] = 'required'
+
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            # Django 5.2's built-in Redis backend over redis-py, which this
+            # repository already depends on for Celery. No new package: adding
+            # django-redis would mean a second Redis client and a second set of
+            # connection semantics for no capability this needs.
+            'LOCATION': REDIS_URL,
+            'KEY_PREFIX': CACHE_KEY_PREFIX,
+            'TIMEOUT': CACHE_DEFAULT_TIMEOUT,
+            'OPTIONS': _redis_cache_options,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            # Named, not left to Django's implicit default. Two LocMem caches
+            # with the same LOCATION share one dict; an explicit unique name
+            # means a future second cache alias cannot silently collide.
+            'LOCATION': 'ecoiq-locmem-default',
+            'KEY_PREFIX': CACHE_KEY_PREFIX,
+            'TIMEOUT': CACHE_DEFAULT_TIMEOUT,
+        }
+    }
+
+    if IS_PRODUCTION:
+        # Visible, not fatal. Production genuinely runs this way today and
+        # refusing to start would be a self-inflicted outage — but it must not
+        # be silent, because the consequence (throttle counters that are
+        # per-process and reset on deploy) is invisible from the outside.
+        # stderr directly, matching the ALLOWED_HOSTS banner above: LOGGING is
+        # not applied until Django finishes loading this module. No URL, no
+        # credential — the message states a configuration fact, not a value.
+        print(
+            '[ecoiq] WARNING: REDIS_URL is not set — cache is a process-local '
+            'LocMemCache. Throttle counters are NOT shared between processes and '
+            'reset on every deploy and worker recycle. '
+            'See docs/architecture/reliability.md.',
+            file=sys.stderr, flush=True,
+        )
+
 
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL

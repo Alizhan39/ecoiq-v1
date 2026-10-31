@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from companies.models import CompanyProfile, CompanyScoreSnapshot
 from plotly_visual_intelligence.services import charts, dashboard_data
+from core.testing_access import SignedIn
 
 TEMPLATE_LEAK_RE = re.compile(r'\{%|\{\{|\{#')
 
@@ -17,7 +18,7 @@ def _seed_full():
     call_command('recalculate_ecoiq_scores', limit=10)
 
 
-class DashboardRouteTests(TestCase):
+class DashboardRouteTests(SignedIn, TestCase):
     """Route + permissions (public — no login required, matching ai_agent_workbench/geo_intelligence precedent)."""
 
     @classmethod
@@ -56,7 +57,7 @@ class DashboardRouteTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
-class EmptyDataStateTests(TestCase):
+class EmptyDataStateTests(SignedIn, TestCase):
     """No companies, no snapshots, no evidence, no orchestration runs at all."""
 
     def test_dashboard_renders_with_zero_data(self):
@@ -97,7 +98,7 @@ class EmptyDataStateTests(TestCase):
         self.assertIsNone(charts.orchestration_trace_chart(None))
 
 
-class PartialDataStateTests(TestCase):
+class PartialDataStateTests(SignedIn, TestCase):
     """Some data exists (companies scored) but no geo/evidence/orchestration data."""
 
     @classmethod
@@ -127,7 +128,7 @@ class PartialDataStateTests(TestCase):
         self.assertFalse(TEMPLATE_LEAK_RE.search(response.content.decode()))
 
 
-class FullDataStateTests(TestCase):
+class FullDataStateTests(SignedIn, TestCase):
     """Companies scored, Kazakhstan geo data seeded, evidence memory populated, orchestration run completed."""
 
     @classmethod
@@ -265,7 +266,7 @@ class NoFakeDataFallbackTests(TestCase):
                 self.assertTrue(row['climate_risk_score'] is None or row['investment_opportunity_score'] is None)
 
 
-class MobileTemplateStructureTests(TestCase):
+class MobileTemplateStructureTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_full()

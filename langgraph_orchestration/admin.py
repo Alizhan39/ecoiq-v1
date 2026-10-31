@@ -12,6 +12,7 @@ class OrchestrationRunAdmin(admin.ModelAdmin):
     list_filter = ('status', 'target_type', 'human_review_required')
     search_fields = ('target_repr', 'target_reference', 'user_request', 'celery_task_id')
     readonly_fields = (
+        'project',
         'user_request', 'target_type', 'target_repr', 'target_reference', 'status', 'confidence',
         'human_review_required', 'nodes_executed', 'failed_node', 'error_summary', 'result',
         'celery_task_id', 'created_at', 'completed_at',

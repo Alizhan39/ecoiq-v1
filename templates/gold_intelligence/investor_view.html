@@ -69,6 +69,78 @@
   </section>
 
   <section class="gold-section">
+    <h2 class="gold-h2">EcoIQ Mizan · Evidence Readiness</h2>
+    <p class="gold-honest-stub">
+      Mizan assessment: <strong>Insufficient data — not yet assessed</strong>.
+      {{ mizan_readiness.explanation }}
+    </p>
+    <div class="gold-grid">
+      <div class="gold-card">
+        <div class="gold-card-label">Declared project inputs</div>
+        <div class="gold-card-value">{{ mizan_readiness.declared_count }} / {{ mizan_readiness.total_count }}</div>
+        <div class="gold-card-sub">Not independently verified</div>
+      </div>
+      <div class="gold-card">
+        <div class="gold-card-label">Independently verified Mizan dimensions</div>
+        <div class="gold-card-value">0</div>
+        <div class="gold-card-sub">11 dimensions require reviewed criteria and evidence</div>
+      </div>
+    </div>
+    {% if mizan_readiness.is_demo %}
+    <p class="gold-honest-stub">This is a demonstration project; its declared figures are not independently verified.</p>
+    {% endif %}
+    {% if mizan_readiness.declared_count %}
+    <div class="gold-list">
+      {% for metric in mizan_readiness.observations %}
+      {% if metric.value is not None %}
+      <div class="gold-list-row">
+        <span class="gold-list-label">{{ metric.label }}</span>
+        <span>{{ metric.value|floatformat:2 }} {{ metric.unit }} — {{ metric.source_status }}</span>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Mine operations · Evidence-backed KPIs</h2>
+    <p class="gold-honest-stub">
+      {{ mizan_readiness.operational_kpis.reviewed_count }} of
+      {{ mizan_readiness.operational_kpis.observed_count }}
+      observations internally reviewed. Internal review is not external certification.
+      No gold resources, safety compliance or Mizan balance are inferred.
+    </p>
+    {% if mizan_readiness.operational_kpis.observations %}
+    <div class="gold-list">
+      {% for metric in mizan_readiness.operational_kpis.observations %}
+      <div class="gold-list-row">
+        <span class="gold-list-label">{{ metric.label }} ({{ metric.period_start }}–{{ metric.period_end }})</span>
+        <span>
+          {% if metric.value is not None %}{{ metric.value }} {{ metric.unit }}{% else %}Not assessed{% endif %}
+          · {{ metric.status }}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="gold-honest-stub">No site-level operational KPI inputs have been recorded for this project.</p>
+    {% endif %}
+  </section>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">EcoIQ · 20 Stewardship Principles</h2>
+    <p class="gold-honest-stub">Mizan is one of twenty draft ethical lenses drawn from
+      distinct Qur'anic, Sunnah and fiqh traditions. No ethical verdict or religious
+      approval is inferred from the mining KPI measurements.</p>
+    <div class="gold-btn-row">
+      <a class="gold-btn" href="{% url 'gold_intelligence:stewardship' project.slug %}">
+        Review all 20 principles and evidence gaps →
+      </a>
+    </div>
+  </section>
+
+  <section class="gold-section">
     <h2 class="gold-h2">Ask EcoIQ</h2>
     <div class="gold-btn-row">
       {% for link in decision_studio_links %}

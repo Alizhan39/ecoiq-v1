@@ -1,0 +1,823 @@
+{
+  "schema_version": "1.0",
+  "snapshot_date": "2026-10-20",
+  "coverage": "NON_EXHAUSTIVE_PUBLIC_SEED",
+  "claim_all_active_mines": false,
+  "scope_note": "Curated public operation mentions, predominantly 2025, NOT a complete live 2026 census of all Kazakhstan mine permits. Some are processing hubs or feed sources, not standalone mines.",
+  "data_use": "Fact-level observations and source links for research; respect original publishing rights. No copies of source PDFs or proprietary GIS/drill data.",
+  "sources": {
+    "solidcore_2025": {
+      "title": "Solidcore Integrated Annual Report 2025",
+      "published": "2026-03-31",
+      "url": "https://www.solidcore-resources.com/upload/files/Solidcore_integrated_report_2025_eng.pdf",
+      "origin": "operator_primary"
+    },
+    "solidcore_h1_2026": {
+      "title": "Solidcore H1 2026 results",
+      "published": "2026-09-08",
+      "url": "https://www.solidcore-resources.com/en/investors-and-media/reports-and-results/latest-results/",
+      "origin": "operator_primary"
+    },
+    "solidcore_q2_2026": {
+      "title": "Solidcore Q2 2026 production results",
+      "published": "2026-07-31",
+      "url": "https://www.solidcore-resources.com/ru/investors-and-media/news/press-releases/31-07-2026/",
+      "origin": "operator_primary"
+    },
+    "altynalmas_2025": {
+      "title": "AK Altynalmas JSC Integrated Annual Report 2025; original filing mirrored",
+      "published": "2026-09-28",
+      "url": "https://financialfilings.com/filings/ak-altynalmas-jsc/annual-report/2026/63719309/",
+      "origin": "operator_filing_mirror",
+      "caveat": "Verify figures against original exchange-filed PDF before commercial reliance."
+    },
+    "zijin_rg": {
+      "title": "Zijin Mining Raygorodok project disclosure",
+      "published": null,
+      "url": "https://www.zijinmining.com/global/program-detail-72040.htm",
+      "origin": "operator_primary",
+      "caveat": "Page reports project status and 2025 production; exact page update date not stated. Date is contextual report-year anchor, not assumed publication date.",
+      "date_note": "Exact publication date not verified here; use document reporting period and publication metadata on original website."
+    },
+    "glencore_rr2025": {
+      "title": "Glencore Resources and Reserves Report 2025, Vasilkovsky operations",
+      "published": null,
+      "url": "https://www.glencore.com/.rest/api/v1/documents/static/a17cc44b-7947-4169-9b6b-b882403fb42b/GLENCORE-Resources-and-Reserves-report-2025.pdf",
+      "origin": "operator_primary",
+      "caveat": "Month-level publication estimate; report states 2025 data.",
+      "date_note": "Exact publication date not verified here; use document reporting period and publication metadata on original website."
+    },
+    "glencore_annual2025": {
+      "title": "Glencore Annual Report 2025, Kazzinc",
+      "published": null,
+      "url": "https://www.glencore.com/.rest/api/v1/documents/static/9b103e11-72e7-40bf-ae7c-eabe57361522/GLEN-2025-Annual-Report.pdf",
+      "origin": "operator_primary",
+      "caveat": "Month-level estimated publication date; annual reporting year 2025.",
+      "date_note": "Exact publication date not verified here; use document reporting period and publication metadata on original website."
+    },
+    "altyngold_ops": {
+      "title": "AltynGold current operations and 2025 results",
+      "published": null,
+      "url": "https://altyngold.uk/operations/current-operations/",
+      "origin": "operator_primary"
+    },
+    "altyngold_q4": {
+      "title": "AltynGold Q4 2025 operations and development (January 2026)",
+      "published": null,
+      "url": "https://altyngold.uk/wp-content/uploads/2026/01/RNS_AltynGold_Q4-2025_FINAL.pdf",
+      "origin": "operator_primary",
+      "date_note": "Exact publication date not verified here; use document reporting period and publication metadata on original website."
+    },
+    "zijin_new_plant": {
+      "title": "Kazakh Invest: Raygorodok new processing plant construction",
+      "published": "2026-09-07",
+      "url": "https://invest.gov.kz/media-center/press-releases/v-akmolinskoy-oblasti-nachalas-realizatsiya-proekta-stroitelstva-novoy-zolotoizvlekatelnoy-fabriki-z/",
+      "origin": "kazakhstan_government"
+    },
+    "rg_tender": {
+      "title": "RG Processing tender specification: modernising leaching tanks, Raygorodok",
+      "published": "2025-12-10",
+      "url": "https://tender.rggold.kz/Files/Download?entityTypeCode=Tender&entityUid=655783d4-4118-4e27-b6b9-784a94cd5fcb&fileUid=a6b3b42b-078f-4356-9a23-bbaa19a9a5db",
+      "origin": "operator_tender"
+    },
+    "solidcore_ai": {
+      "title": "Solidcore and Minerals Development Oman to establish AI exploration centre",
+      "published": "2026-10-06",
+      "url": "https://www.solidcore-resources.com/en/investors-and-media/news/press-releases/06-10-2026-1/",
+      "origin": "operator_primary"
+    },
+    "minerals_registry": {
+      "title": "Kazakhstan Minerals e-Qazyna: subsoil use map",
+      "published": null,
+      "url": "https://minerals.e-qazyna.kz/ru/contracts-map",
+      "origin": "kazakhstan_government"
+    }
+  },
+  "assets": [
+    {
+      "id": "solidcore-kyzyl-bakyrchik",
+      "name": "Kyzyl / Bakyrchik",
+      "operator": "Solidcore",
+      "region": "Abai",
+      "kind": "mine_and_flotation_plant",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "solidcore_2025"
+      ],
+      "notes": "Gold in concentrate and downstream payable production are separate stages. Ertis POX is not yet a producing mine."
+    },
+    {
+      "id": "solidcore-varvara",
+      "name": "Varvara",
+      "operator": "Solidcore",
+      "region": "Kostanay",
+      "kind": "mine_and_processing_hub",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "solidcore_2025"
+      ],
+      "notes": "Hub receives ore from multiple mines and circuits; hub payable production must not be assigned entirely to Varvara pit."
+    },
+    {
+      "id": "solidcore-komar",
+      "name": "Komar mine",
+      "operator": "Solidcore",
+      "region": "Kostanay",
+      "kind": "mine_feeding_varvara_hub",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "solidcore_2025"
+      ],
+      "notes": "A mining feed source within Varvara Hub; do not double-count hub production."
+    },
+    {
+      "id": "altynalmas-pustynnoye",
+      "name": "Pustynnoye",
+      "operator": "AK Altynalmas",
+      "region": "Karagandy",
+      "kind": "mine_and_processing_complex",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "altynalmas_2025"
+      ],
+      "notes": "Processing tonnage includes blended feed; 2025 mine ore tonnage is separate from plant ore treated."
+    },
+    {
+      "id": "altynalmas-dolinnoye",
+      "name": "Dolinnoye",
+      "operator": "AK Altynalmas",
+      "region": "Karagandy",
+      "kind": "mine_feeding_pustynnoye_complex",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "altynalmas_2025"
+      ],
+      "notes": "Dolinnoye and Pustynnoye form a combined processing complex."
+    },
+    {
+      "id": "altynalmas-baktai",
+      "name": "Baktai",
+      "operator": "AK Altynalmas",
+      "region": "Karagandy",
+      "kind": "mine_early_production",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "altynalmas_2025"
+      ],
+      "notes": "Ore mined in 2025, but plant output from Baktai not reported separately; do not infer zero metal production."
+    },
+    {
+      "id": "altynalmas-akbakai",
+      "name": "Akbakai",
+      "operator": "AK Altynalmas",
+      "region": "Zhambyl",
+      "kind": "underground_mine_and_processing_complex",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "altynalmas_2025"
+      ],
+      "notes": "Akbakai GPP is supplied by additional deposits. Processing and recovery cited for Akbakai GPP should not be assigned to every feeder."
+    },
+    {
+      "id": "kazakhaltyn-aksu2",
+      "name": "Aksu 2 / Oktyabrskyi 2",
+      "operator": "Kazakhaltyn / AK Altynalmas group",
+      "region": "Akmola",
+      "kind": "mine_and_gold_processing",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "altynalmas_2025"
+      ],
+      "notes": "2025 group report identifies operating open pit and Aksu MPC."
+    },
+    {
+      "id": "kazakhaltyn-quartz-hills",
+      "name": "Quartz Hills (Aksu underground)",
+      "operator": "Kazakhaltyn / AK Altynalmas group",
+      "region": "Akmola",
+      "kind": "underground_mine",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "altynalmas_2025"
+      ],
+      "notes": "Concentrate production; not directly comparable with refined gold."
+    },
+    {
+      "id": "kazakhaltyn-zholymbet",
+      "name": "Zholymbet",
+      "operator": "Kazakhaltyn / AK Altynalmas group",
+      "region": "Akmola",
+      "kind": "mine_and_heap_leach_complex",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "altynalmas_2025"
+      ],
+      "notes": "2025 ore mined and gold from heap-leach feed; no recovery rate assigned to non-processed mined ore."
+    },
+    {
+      "id": "kazakhaltyn-bestobe",
+      "name": "Bestobe",
+      "operator": "Kazakhaltyn / AK Altynalmas group",
+      "region": "Akmola",
+      "kind": "mine_and_processing_complex",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "altynalmas_2025"
+      ],
+      "notes": "2025 mine ore quantity reported; processing at Bestobe complex reported from external Aksu ore, not proof of Bestobe ore processing."
+    },
+    {
+      "id": "altynalmas-maikain",
+      "name": "Maikain",
+      "operator": "Maikainzoloto / AK Altynalmas group",
+      "region": "Pavlodar",
+      "kind": "mine_and_processing_complex",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "altynalmas_2025"
+      ],
+      "notes": "2025 reported ore mined, processed and recovery."
+    },
+    {
+      "id": "zijin-raygorodok",
+      "name": "Raygorodok (North and South pits)",
+      "operator": "Zijin RG Gold",
+      "region": "Akmola",
+      "kind": "two_open_pits_and_processing",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "zijin_rg",
+        "zijin_new_plant"
+      ],
+      "notes": "2025 production and development figures are project-level across two pits; plant expansion not yet operating."
+    },
+    {
+      "id": "kazzinc-vasilkovskoye",
+      "name": "Vasilkovskoye / Altyntau Kokshetau",
+      "operator": "Kazzinc / Glencore",
+      "region": "Akmola",
+      "kind": "open_pit_gold_mine",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "glencore_rr2025",
+        "glencore_annual2025"
+      ],
+      "notes": "Kazzinc's 543koz annual company gold output is NOT site-level production."
+    },
+    {
+      "id": "altyngold-sekisovskoye",
+      "name": "Sekisovskoye",
+      "operator": "AltynGold",
+      "region": "East Kazakhstan",
+      "kind": "underground_mine_and_plant",
+      "status": "reported_operating_in_2025",
+      "last_operation_evidence_year": 2025,
+      "source_refs": [
+        "altyngold_ops",
+        "altyngold_q4"
+      ],
+      "notes": "Teren-Sai is a distinct development/exploration project; do not count it as producing."
+    }
+  ],
+  "observations": [
+    {
+      "id": "kyz-2025-ore-processed",
+      "asset_id": "solidcore-kyzyl-bakyrchik",
+      "metric": "ore_processed",
+      "value": 2470,
+      "unit": "thousand_tonnes",
+      "period": "2025",
+      "source_ref": "solidcore_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    },
+    {
+      "id": "kyz-2025-head-grade",
+      "asset_id": "solidcore-kyzyl-bakyrchik",
+      "metric": "processed_grade",
+      "value": 4.9,
+      "unit": "g_Au_per_t",
+      "period": "2025",
+      "source_ref": "solidcore_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    },
+    {
+      "id": "kyz-2025-recovery",
+      "asset_id": "solidcore-kyzyl-bakyrchik",
+      "metric": "flotation_gold_recovery",
+      "value": 88.9,
+      "unit": "percent",
+      "period": "2025",
+      "source_ref": "solidcore_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": "Recovery to gold-bearing concentrate, not end-to-end refinery recovery."
+    },
+    {
+      "id": "kyz-2025-concentrate-gold",
+      "asset_id": "solidcore-kyzyl-bakyrchik",
+      "metric": "gold_in_concentrate",
+      "value": 347,
+      "unit": "thousand_ounces",
+      "period": "2025",
+      "source_ref": "solidcore_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    },
+    {
+      "id": "kyz-2025-payable",
+      "asset_id": "solidcore-kyzyl-bakyrchik",
+      "metric": "payable_GE_production",
+      "value": 234,
+      "unit": "thousand_GE_ounces",
+      "period": "2025",
+      "source_ref": "solidcore_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": "Cannot compute inventory as simple difference: product stages and timing differ."
+    },
+    {
+      "id": "varvara-2025-leach-processed",
+      "asset_id": "solidcore-varvara",
+      "metric": "leach_ore_processed",
+      "value": 3396,
+      "unit": "thousand_tonnes",
+      "period": "2025",
+      "source_ref": "solidcore_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": "Leaching circuit at Varvara hub (multiple ore sources)."
+    },
+    {
+      "id": "varvara-2025-leach-recovery",
+      "asset_id": "solidcore-varvara",
+      "metric": "leach_gold_recovery",
+      "value": 90,
+      "unit": "percent",
+      "period": "2025",
+      "source_ref": "solidcore_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": "Leaching circuit not a site-wide KPI."
+    },
+    {
+      "id": "varvara-2025-flot-processed",
+      "asset_id": "solidcore-varvara",
+      "metric": "flotation_ore_processed",
+      "value": 657,
+      "unit": "thousand_tonnes",
+      "period": "2025",
+      "source_ref": "solidcore_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": "Flotation circuit at hub."
+    },
+    {
+      "id": "varvara-2025-flot-recovery",
+      "asset_id": "solidcore-varvara",
+      "metric": "flotation_gold_recovery",
+      "value": 88.8,
+      "unit": "percent",
+      "period": "2025",
+      "source_ref": "solidcore_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": "Circuit scope."
+    },
+    {
+      "id": "pust-2025-feed-grade",
+      "asset_id": "altynalmas-pustynnoye",
+      "metric": "processed_grade",
+      "value": 0.78,
+      "unit": "g_Au_per_t",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    },
+    {
+      "id": "pust-2025-recovery",
+      "asset_id": "altynalmas-pustynnoye",
+      "metric": "gold_recovery",
+      "value": 83,
+      "unit": "percent",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    },
+    {
+      "id": "dol-2025-feed-grade",
+      "asset_id": "altynalmas-dolinnoye",
+      "metric": "processed_grade",
+      "value": 0.75,
+      "unit": "g_Au_per_t",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    },
+    {
+      "id": "dol-2025-recovery",
+      "asset_id": "altynalmas-dolinnoye",
+      "metric": "gold_recovery",
+      "value": 86,
+      "unit": "percent",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    },
+    {
+      "id": "baktai-2025-ore-mined",
+      "asset_id": "altynalmas-baktai",
+      "metric": "ore_mined",
+      "value": 411.3,
+      "unit": "thousand_tonnes",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": "No Baktai-only 2025 plant production published in cited row."
+    },
+    {
+      "id": "akbakai-2025-grade",
+      "asset_id": "altynalmas-akbakai",
+      "metric": "processed_grade",
+      "value": 1.91,
+      "unit": "g_Au_per_t",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": "Akbakai processing complex, potentially blended feed."
+    },
+    {
+      "id": "akbakai-2025-recovery",
+      "asset_id": "altynalmas-akbakai",
+      "metric": "gold_recovery",
+      "value": 80,
+      "unit": "percent",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": "Plant-level recovery, not unprocessed mine-only grade."
+    },
+    {
+      "id": "aksu2-2025-recovery",
+      "asset_id": "kazakhaltyn-aksu2",
+      "metric": "gold_recovery",
+      "value": 90,
+      "unit": "percent",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    },
+    {
+      "id": "quartz-2025-recovery",
+      "asset_id": "kazakhaltyn-quartz-hills",
+      "metric": "gold_recovery",
+      "value": 88,
+      "unit": "percent",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    },
+    {
+      "id": "zhol-2025-heap-recovery",
+      "asset_id": "kazakhaltyn-zholymbet",
+      "metric": "heap_leach_gold_recovery",
+      "value": 81,
+      "unit": "percent",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": "On Zholymbet HT feed; not site-wide."
+    },
+    {
+      "id": "best-2025-ore-mined",
+      "asset_id": "kazakhaltyn-bestobe",
+      "metric": "ore_mined",
+      "value": 128.5,
+      "unit": "thousand_tonnes",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    },
+    {
+      "id": "maikain-2025-recovery",
+      "asset_id": "altynalmas-maikain",
+      "metric": "gold_recovery",
+      "value": 77,
+      "unit": "percent",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    },
+    {
+      "id": "maikain-2025-grade",
+      "asset_id": "altynalmas-maikain",
+      "metric": "processed_grade",
+      "value": 1.76,
+      "unit": "g_Au_per_t",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    },
+    {
+      "id": "rg-2025-production",
+      "asset_id": "zijin-raygorodok",
+      "metric": "mined_gold_production",
+      "value": 1.2,
+      "unit": "tonnes_Au",
+      "period": "2025",
+      "source_ref": "zijin_rg",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": "100%-project basis per Zijin; not Zijin-attributable 85%."
+    },
+    {
+      "id": "sek-2025-output",
+      "asset_id": "altyngold-sekisovskoye",
+      "metric": "gold_production",
+      "value": 53.8,
+      "unit": "thousand_ounces",
+      "period": "2025",
+      "source_ref": "altyngold_ops",
+      "verification": "PUBLIC_OPERATOR_REPORTED_UNAUDITED_AS_SITE_EVIDENCE",
+      "caveat": ""
+    }
+  ],
+  "operator_observations": [
+    {
+      "id": "solidcore-2025-ge",
+      "operator": "Solidcore",
+      "scope": "company",
+      "metric": "payable_GE_production",
+      "value": 395,
+      "unit": "thousand_GE_ounces",
+      "period": "2025",
+      "source_ref": "solidcore_2025",
+      "caveat": "Company-level, not summed onto asset-specific records."
+    },
+    {
+      "id": "solidcore-2025-aisc",
+      "operator": "Solidcore",
+      "scope": "company",
+      "metric": "AISC",
+      "value": 1532,
+      "unit": "USD_per_GE_ounce",
+      "period": "2025",
+      "source_ref": "solidcore_2025",
+      "caveat": "Not site AISC."
+    },
+    {
+      "id": "solidcore-h1-2026-aisc",
+      "operator": "Solidcore",
+      "scope": "company",
+      "metric": "AISC",
+      "value": 1912,
+      "unit": "USD_per_GE_ounce",
+      "period": "2026-H1",
+      "source_ref": "solidcore_h1_2026",
+      "caveat": "Not directly attributable to equipment efficiency; royalties/inflation/FX factors."
+    },
+    {
+      "id": "solidcore-h1-2026-mine-metal",
+      "operator": "Solidcore",
+      "scope": "company",
+      "metric": "mine_metal_output",
+      "value": 267,
+      "unit": "thousand_GE_ounces",
+      "period": "2026-H1",
+      "source_ref": "solidcore_q2_2026",
+      "caveat": "Mine-site metal before third-party processing losses."
+    },
+    {
+      "id": "solidcore-h1-2026-payable",
+      "operator": "Solidcore",
+      "scope": "company",
+      "metric": "payable_GE_production",
+      "value": 210,
+      "unit": "thousand_GE_ounces",
+      "period": "2026-H1",
+      "source_ref": "solidcore_q2_2026",
+      "caveat": "Different stage than mine metal output; do not assert loss from difference."
+    },
+    {
+      "id": "altynalmas-2025-gold",
+      "operator": "AK Altynalmas",
+      "scope": "group",
+      "metric": "gold_production",
+      "value": 453486,
+      "unit": "ounces_Au",
+      "period": "2025",
+      "source_ref": "altynalmas_2025",
+      "caveat": "Group-level gold production; do not sum with deposit ounces."
+    },
+    {
+      "id": "kazzinc-2025-gold",
+      "operator": "Kazzinc",
+      "scope": "group",
+      "metric": "own_sourced_gold_production",
+      "value": 543000,
+      "unit": "ounces_Au",
+      "period": "2025",
+      "source_ref": "glencore_annual2025",
+      "caveat": "Includes gold from Kazzinc diversified operations, not necessarily solely Vasilkovskoye."
+    }
+  ],
+  "optimisation_hypotheses": [
+    {
+      "id": "h-kyz-third-party-pox",
+      "asset_id": "solidcore-kyzyl-bakyrchik",
+      "priority": "high",
+      "type": "reported_historical_bottleneck",
+      "process": "concentrate_processing_and_inventory",
+      "problem": "External concentrate oxidation/refining constrained conversion of mine output into payable sales in 2025; 2026 shipping interruptions were also disclosed.",
+      "source_refs": [
+        "solidcore_2025",
+        "solidcore_q2_2026"
+      ],
+      "hypothesis": "Digital concentrate inventory and processing-slot forecasting may improve operational resilience while Ertis POX ramps up.",
+      "test": "Join weekly concentrate tonnage, contained Au, shipment ETAs, POX availability, toll contracts and reconciliation; simulate disruptions and route options.",
+      "kpis": [
+        "inventory_days",
+        "payable_conversion_lag_days",
+        "supplier_concentration",
+        "cash_conversion_cycle"
+      ],
+      "status": "PROPOSAL_NOT_AUDITED",
+      "caution": "Solidcore is already building Ertis POX; do not present bottleneck or forecast as unsolved."
+    },
+    {
+      "id": "h-kyz-grade-transition",
+      "asset_id": "solidcore-kyzyl-bakyrchik",
+      "priority": "medium",
+      "type": "published_transition",
+      "process": "geology_to_plant",
+      "problem": "Gradual open-pit to underground transition and reported head-grade shift change feed characteristics.",
+      "source_refs": [
+        "solidcore_2025"
+      ],
+      "hypothesis": "Geometallurgical ore-domain classification could reduce recovery variability if domain-aware plant feed controls are shown beneficial.",
+      "test": "Get block model, ore-domain sampling, grind/recovery curves and size distributions; prospectively compare existing blending against controlled alternatives.",
+      "kpis": [
+        "feed_grade_variance",
+        "recovery_by_ore_domain",
+        "specific_energy_kwh_t"
+      ],
+      "status": "PROPOSAL_NOT_AUDITED"
+    },
+    {
+      "id": "h-varvara-plant-availability",
+      "asset_id": "solidcore-varvara",
+      "priority": "medium",
+      "type": "plant_benchmark",
+      "process": "flotation_and_leach_circuits",
+      "problem": "Distinct circuits with different 2025 throughput, grades and recoveries; no evidence of actual fault.",
+      "source_refs": [
+        "solidcore_2025"
+      ],
+      "hypothesis": "Separate OEE and reagent/power diagnostics by circuit may locate improvable constraints.",
+      "test": "Collect hourly SCADA, downtime causes, assays and chemical dosing; model each circuit separately and compare validated intervention windows.",
+      "kpis": [
+        "availability_pct",
+        "recovery_pct",
+        "reagent_kg_t",
+        "electricity_kwh_per_t"
+      ],
+      "status": "PROPOSAL_NOT_AUDITED"
+    },
+    {
+      "id": "h-akbakai-recovery",
+      "asset_id": "altynalmas-akbakai",
+      "priority": "medium",
+      "type": "benchmark_review_not_failure",
+      "process": "metallurgical_recovery",
+      "problem": "Published 2025 reported recovery of 80%; ore mix and metallurgy needed before claiming underperformance.",
+      "source_refs": [
+        "altynalmas_2025"
+      ],
+      "hypothesis": "Ore-domain-specific grinding, flotation/CIP residence time or reagent control can be tested for higher recovery.",
+      "test": "Obtain lab variability, 2025 head/tail assay data, mineralogy and equipment constraints; validate with pilot tests, not cross-mine raw percentage ranking.",
+      "kpis": [
+        "gold_recovery_pct",
+        "reagent_kg_t",
+        "energy_kwh_t"
+      ],
+      "status": "PROPOSAL_NOT_AUDITED"
+    },
+    {
+      "id": "h-maikain-recovery",
+      "asset_id": "altynalmas-maikain",
+      "priority": "medium",
+      "type": "benchmark_review_not_failure",
+      "process": "metallurgical_recovery",
+      "problem": "Published 2025 recovery 77%; no demonstrated improvement opportunity without ore and cost data.",
+      "source_refs": [
+        "altynalmas_2025"
+      ],
+      "hypothesis": "Test comminution and feed variability jointly with metallurgical controls for economically viable changes.",
+      "test": "Compare stable ore-domain samples, concentrate/slag losses, controls, grind, reagent use and incremental cost of improved recovery.",
+      "kpis": [
+        "gold_recovery_pct",
+        "AISC",
+        "electricity_kwh_per_t"
+      ],
+      "status": "PROPOSAL_NOT_AUDITED"
+    },
+    {
+      "id": "h-raygorodok-leach-tanks",
+      "asset_id": "zijin-raygorodok",
+      "priority": "high",
+      "type": "published_tender_opportunity",
+      "process": "leaching_tank_modernisation",
+      "problem": "Operator published a technical specification for redesigning leaching tanks in December 2025 and government confirmed new plant project in Sep 2026.",
+      "source_refs": [
+        "rg_tender",
+        "zijin_new_plant"
+      ],
+      "hypothesis": "Evidence management, process mass balance and commissioning KPI instrumentation could support the operator's own plant modernisation.",
+      "test": "Seek operator-approved process diagrams, residence-time distribution and pilot/commissioning baselines before proposing changes.",
+      "kpis": [
+        "gold_recovery_pct",
+        "kwh_t",
+        "water_m3_t",
+        "plant_availability"
+      ],
+      "status": "PROPOSAL_NOT_AUDITED"
+    },
+    {
+      "id": "h-vasilkovskoye-depth",
+      "asset_id": "kazzinc-vasilkovskoye",
+      "priority": "medium",
+      "type": "published_grade_pressure",
+      "process": "open_pit_depth_and_feed_grade",
+      "problem": "Glencore attributes lower Kazzinc own-sourced gold production partly to expected grade decrease as Vasilkovskoye pit deepens.",
+      "source_refs": [
+        "glencore_annual2025",
+        "glencore_rr2025"
+      ],
+      "hypothesis": "Evaluate depth-linked haulage, pit-to-plant grade control and ore blending against real mine plan.",
+      "test": "Obtain pit benches, dispatch logs, GPS route data, cost by bench and reconciled grade control before optimising.",
+      "kpis": [
+        "diesel_l_per_tkm",
+        "mining_cost_per_t",
+        "grade_reconciliation_error"
+      ],
+      "status": "PROPOSAL_NOT_AUDITED"
+    },
+    {
+      "id": "h-sekisovskoye-underground",
+      "asset_id": "altyngold-sekisovskoye",
+      "priority": "medium",
+      "type": "published_expansion",
+      "process": "underground_equip_capacity",
+      "problem": "Operator is evaluating capacity expansion from 1 to 2 Mtpa; no evidence that current throughput is inefficient.",
+      "source_refs": [
+        "altyngold_ops"
+      ],
+      "hypothesis": "Scenario-based equipment scheduling and predictive reliability may de-risk expansion.",
+      "test": "Use underground cycle-time records, ventilation, fleet utilisation, bottleneck map and incremental CAPEX/OPEX.",
+      "kpis": [
+        "tonnes_per_hour",
+        "OEE",
+        "kwh_t",
+        "lost_time_injury_frequency"
+      ],
+      "status": "PROPOSAL_NOT_AUDITED"
+    }
+  ],
+  "non_producing_exclusions": [
+    {
+      "name": "Teren-Sai",
+      "operator": "AltynGold",
+      "reason": "Advanced exploration/evaluation and production licence not established",
+      "source_ref": "altyngold_q4"
+    },
+    {
+      "name": "Ertis POX",
+      "operator": "Solidcore",
+      "reason": "Downstream processing project under development, not a producing gold mine",
+      "source_ref": "solidcore_2025"
+    },
+    {
+      "name": "Syrymbet",
+      "operator": "Solidcore",
+      "reason": "Tin project / feasibility, not an operating gold mine",
+      "source_ref": "solidcore_2025"
+    }
+  ]
+}

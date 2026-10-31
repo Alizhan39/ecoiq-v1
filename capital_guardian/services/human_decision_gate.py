@@ -139,6 +139,16 @@ def submit_review(decision, action, actor, notes='', project=None):
     status for 'approve' only) rather than silently no-opping — a caller
     that ignores the return value still can't cause an illegal transition.
     """
+    from django.core.exceptions import PermissionDenied
+    from gold_intelligence.access import require, APPROVE, is_active_user
+    from gold_intelligence.models import GoldProject
+    if project is None:
+        if not (is_active_user(actor) and actor.is_staff):
+            raise PermissionDenied('A project approval role is required.')
+    else:
+        require(actor, project, APPROVE)
+        if decision.project != project.name or GoldProject.objects.filter(name=project.name).count() != 1:
+            raise PermissionDenied('Decision ownership could not be resolved unambiguously.')
     if action not in ACTIONS:
         raise InvalidReviewActionError(action)
 

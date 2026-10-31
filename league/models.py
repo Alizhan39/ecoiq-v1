@@ -11,6 +11,9 @@ from decimal import Decimal
 from django.db import models
 from django.utils.text import slugify
 
+from core.upload_validation import validate_evidence_upload
+from core.storage import upload_to_evidence
+
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -123,28 +126,39 @@ class Company(models.Model):
 
     # ── Pillar scores 0-100 ──
     score_pollution_footprint = models.IntegerField(
-        default=0,
-        help_text='Lower emissions/waste = higher score (0-100)'
+        null=True, blank=True,
+        help_text='Lower emissions/waste = higher score (0-100). NULL when unassessed — a 0 default '
+                  'made an unassessed company the worst possible one.'
     )
     score_reduction_progress  = models.IntegerField(
-        default=0,
-        help_text='Year-on-year pollution reduction trend (0-100)'
+        null=True, blank=True,
+        help_text='Year-on-year pollution reduction trend (0-100). NULL when unassessed — a 0 default '
+                  'made an unassessed company the worst possible one.'
     )
     score_investment          = models.IntegerField(
-        default=0,
-        help_text='Environmental investment relative to revenue (0-100)'
+        null=True, blank=True,
+        help_text='Environmental investment relative to revenue (0-100). NULL when unassessed — a 0 default '
+                  'made an unassessed company the worst possible one.'
     )
     score_transparency        = models.IntegerField(
-        default=0,
-        help_text='Reporting quality, public disclosures (0-100)'
+        null=True, blank=True,
+        help_text='Reporting quality, public disclosures (0-100). NULL when unassessed — a 0 default '
+                  'made an unassessed company the worst possible one.'
     )
     score_community_impact    = models.IntegerField(
-        default=0,
-        help_text='Measurable benefit to people & ecosystem (0-100)'
+        null=True, blank=True,
+        help_text='Measurable benefit to people & ecosystem (0-100). NULL when unassessed — a 0 default '
+                  'made an unassessed company the worst possible one.'
     )
 
     # Computed — updated by save() / recompute_scores management command
-    ecoiq_score = models.DecimalField(max_digits=5, decimal_places=1, default=Decimal('0.0'))
+    # NULL when there is no score. The `default=Decimal('0.0')` this replaces
+    # was the last surviving fabrication in the score chain: a company with
+    # perfect evidence but no computed league score published 0.0 -- the
+    # harshest possible statement, invented from a default. D4B/D4C covered
+    # CompanyProfile and CompanyScoreSnapshot; league.Company was missed.
+    ecoiq_score = models.DecimalField(max_digits=5, decimal_places=1,
+                                      null=True, blank=True)
     rank        = models.PositiveIntegerField(null=True, blank=True)
 
     # ── ML fields ────────────────────────────────────────────────────────────
@@ -198,14 +212,19 @@ class Company(models.Model):
         EcoIQ Score = Pollution × 35% + Reduction × 25% + Investment × 20%
                       + Transparency × 10% + Community × 10%
         """
-        raw = (
-            self.score_pollution_footprint * 0.35 +
-            self.score_reduction_progress  * 0.25 +
-            self.score_investment          * 0.20 +
-            self.score_transparency        * 0.10 +
-            self.score_community_impact    * 0.10
+        from core.unknown import weighted_mean_of_known
+
+        # Re-normalised across the pillars that are known, and None when none
+        # of them is. The old expression multiplied a 0 default by its weight
+        # and called the result a score.
+        raw = weighted_mean_of_known(
+            (self.score_pollution_footprint, 0.35),
+            (self.score_reduction_progress,  0.25),
+            (self.score_investment,          0.20),
+            (self.score_transparency,        0.10),
+            (self.score_community_impact,    0.10),
         )
-        return Decimal(str(round(raw, 1)))
+        return None if raw is None else Decimal(str(round(raw, 1)))
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -217,6 +236,8 @@ class Company(models.Model):
 
     @property
     def status_label(self) -> str:
+        if self.ecoiq_score is None:
+            return 'Not yet scored'
         s = float(self.ecoiq_score)
         if s >= 85: return 'Restorative Leader'
         if s >= 70: return 'Transition Leader'
@@ -227,6 +248,8 @@ class Company(models.Model):
     @property
     def status_css(self) -> str:
         """CSS class suffix for colour-coding (used in templates)."""
+        if self.ecoiq_score is None:
+            return 'unscored'
         s = float(self.ecoiq_score)
         if s >= 85: return 'restorative'
         if s >= 70: return 'transition'
@@ -234,11 +257,22 @@ class Company(models.Model):
         if s >= 40: return 'high-impact'
         return 'polluter'
 
+    # These three filter in PYTHON, not in the ORM, on purpose.
+    #
+    # `self.projects.filter(...)` issues a fresh query and therefore bypasses
+    # any prefetch_related('projects') the caller set up -- three queries per
+    # company on a page that lists hundreds. Iterating the prefetched list and
+    # filtering here is free when the caller prefetched, and no worse when it
+    # did not.
+    #
+    # `or 0` is arithmetic over a set, not a substituted measurement: a project
+    # with no recorded tonnage contributes nothing to a total.
+
     @property
     def total_co2_reduced(self) -> int:
         return sum(
             p.co2_reduction_tonnes or 0
-            for p in self.projects.filter(status='completed')
+            for p in self.projects.all() if p.status == 'completed'
         )
 
     @property
@@ -252,7 +286,7 @@ class Company(models.Model):
     def total_households_helped(self) -> int:
         return sum(
             p.households_helped or 0
-            for p in self.projects.filter(status='completed')
+            for p in self.projects.all() if p.status == 'completed'
         )
 
     # ── Public markets ─────────────────────────────────────────────────────────
@@ -417,7 +451,10 @@ class Evidence(models.Model):
 
     doc_type    = models.CharField(max_length=30, choices=EVIDENCE_TYPE_CHOICES)
     title       = models.CharField(max_length=255)
-    file        = models.FileField(upload_to='league/evidence/', null=True, blank=True)
+    file        = models.FileField(
+        upload_to=upload_to_evidence, null=True, blank=True,
+        validators=[validate_evidence_upload],
+    )
     url         = models.URLField(blank=True)
     date_issued = models.DateField(null=True, blank=True)
     issuer      = models.CharField(max_length=255, blank=True)

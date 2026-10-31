@@ -2,14 +2,34 @@
 # EcoIQ — Render Blueprint
 # Docs: https://render.com/docs/blueprint-spec
 #
-# Services:
-#   ecoiq       — Django/Gunicorn web service (starter plan, Oregon)
-#   ecoiq-db    — PostgreSQL database (starter plan, Oregon)
+# COST-REDUCTION TARGET: one Free web service plus the existing durable database.
+#
+# Services declared here:
+#   ecoiq       — Django/Gunicorn web service (free plan, Oregon)
+#   ecoiq-db    — existing PostgreSQL database; its current plan is retained
+#
+# Services ALSO RUNNING in production, created by hand in the Render dashboard
+# on 2026-08-24 and therefore absent from this file:
+#   ecoiq-keyvalue        — Redis. Django cache AND Celery broker/result
+#                           backend. /readyz/ reports redis: ok.
+#   ecoiq-celery-worker   — running, connected, idle (nothing schedules work)
+#   four cron jobs        — ecoiq-daily-yfinance, ecoiq-ml-retrain,
+#                           ecoiq-rss-signals, ecoiq-weekly-full-ingest,
+#                           ALL SUSPENDED
+#
+# The manually-created Key Value, Celery worker and suspended cron jobs are not
+# managed by this Blueprint. After this change deploys and the smoke checks in
+# docs/operations/FREE_RENDER_MIGRATION.md pass, remove those manual resources
+# in the Render dashboard. A Blueprint sync cannot delete unmanaged services.
+#
+# The database plan is deliberately omitted. Render retains the current plan
+# for an existing database. A Free Render Postgres database expires after 30
+# days, so it is not an acceptable store for accounting records.
 #
 # build.sh is DB-FREE — the build environment cannot reach the private database
-# network (the internal hostname dpg-…-a only resolves at runtime). Migrations +
-# seeding run at runtime via the Pre-Deploy Command (predeploy.sh) and start.sh,
-# both best-effort, so a temporarily-unavailable database never blocks a deploy.
+# network (the internal hostname dpg-…-a only resolves at runtime). start.sh
+# applies migrations strictly before Gunicorn starts; migration failure stops
+# the new release from serving against an old schema.
 # Secrets (ANTHROPIC_API_KEY, COMPANIES_HOUSE_API_KEY) must be set
 # manually in the Render dashboard — they are never committed to git.
 # ══════════════════════════════════════════════════════════════════════════════
@@ -19,24 +39,42 @@ services:
     name: ecoiq                          # Blueprint matches by this name — do NOT rename
     env: python
     region: oregon
-    plan: starter                        # $7/month — persistent disk, no cold starts
+    plan: free                           # 512 MB; sleeps after 15 minutes idle
     buildCommand: pip install -r requirements.txt && ./build.sh
-    # Pre-Deploy runs once per deploy in the runtime network (internal DB hostname
-    # resolves here) — migrations + seeding live here, not in the build.
-    preDeployCommand: ./predeploy.sh
-    # start.sh runs a fast best-effort migrate (safety net) then launches Gunicorn.
-    # 1 worker, 4 threads (gthread) — Render Starter plan is 512 MB RAM.
+    # Free web services have no Pre-Deploy step. start.sh applies migrations
+    # strictly in the runtime network before it launches Gunicorn.
+    # 1 worker, 4 threads (gthread) — Render Free plan is 512 MB RAM.
     # gthread lets 4 requests run concurrently (I/O overlap) without forking
     # a second full Python process. max-requests recycles the worker after
     # 300 requests to prevent WeasyPrint PDF memory from accumulating.
     startCommand: ./start.sh
 
+    # Liveness only. /healthz/ returns a constant `ok` and touches no database,
+    # cache or broker, so a database blip cannot make Render replace a web
+    # process that is actually healthy. Do NOT repoint this at "/" (renders the
+    # homepage: 12 queries and ~149 KB, measured) or at a future /readyz/
+    # (which would check the database) —
+    # readiness and liveness are different signals and only one of them belongs
+    # in a restart decision. See core/health.py.
+    healthCheckPath: /healthz/
+
     envVars:
       - key: PYTHON_VERSION
-        value: "3.11.0"
+        value: "3.11.16"
 
       - key: WEB_CONCURRENCY
         value: "1"                       # belt-and-suspenders: matches --workers above
+
+      # Bound glibc allocator arenas for the four-thread worker. This reduces
+      # fragmentation after NumPy/Pandas/PDF requests on a 512 MB instance.
+      - key: MALLOC_ARENA_MAX
+        value: "2"
+
+      # No always-on Celery worker on the low-cost topology. The two remaining
+      # staff-triggered `.delay()` call sites execute synchronously instead of
+      # trying to connect to a broker that is intentionally absent.
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "True"
 
       - key: DEBUG
         value: "False"                   # always False in production
@@ -220,7 +258,6 @@ databases:
   - name: ecoiq-db
     databaseName: ecoiq
     user: ecoiq
-    plan: starter                        # $7/month PostgreSQL — 1 GB storage
     region: oregon                       # same region as web service for low latency
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -253,7 +290,7 @@ databases:
 #     startCommand: celery -A ecoiq worker --loglevel=info --concurrency=2 --max-tasks-per-child=100
 #     envVars:
 #       - key: PYTHON_VERSION
-#         value: "3.11.0"
+#         value: "3.11.16"
 #       - key: DJANGO_SETTINGS_MODULE
 #         value: ecoiq.settings
 #       - key: DJANGO_SECRET_KEY
@@ -299,7 +336,7 @@ databases:
 #     startCommand: python manage.py refresh_stewardship_universe --due-only --scheduled --limit 50
 #     envVars:
 #       - key: PYTHON_VERSION
-#         value: "3.11.0"
+#         value: "3.11.16"
 #       - key: DJANGO_SETTINGS_MODULE
 #         value: ecoiq.settings
 #       - key: DJANGO_SECRET_KEY
@@ -336,7 +373,7 @@ databases:
 #     startCommand: python manage.py run_good_while_you_sleep
 #     envVars:
 #       - key: PYTHON_VERSION
-#         value: "3.11.0"
+#         value: "3.11.16"
 #       - key: DJANGO_SETTINGS_MODULE
 #         value: ecoiq.settings
 #       - key: DJANGO_SECRET_KEY

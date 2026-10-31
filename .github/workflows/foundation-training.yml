@@ -1,0 +1,61 @@
+name: EcoIQ Foundation 20-33 KPI Synthetic Training
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "ecoiq_os/foundation_catalog.py"
+      - "ecoiq_os/foundation_training.py"
+      - "ecoiq_os/test_foundation_training.py"
+      - "docs/architecture/FOUNDATION_TRAINING_20_33_114.md"
+      - ".github/workflows/foundation-training.yml"
+  push:
+    branches: [main]
+    paths:
+      - "ecoiq_os/foundation_*.py"
+      - "ecoiq_os/test_foundation_training.py"
+      - ".github/workflows/foundation-training.yml"
+
+jobs:
+  synthetic-foundation-training:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      DJANGO_SECRET_KEY: test-secret-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: sqlite:///db.sqlite3
+      ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED: "False"
+      AI_ENABLED: "false"
+      ECOIQ_BILLING_PROVIDER: none
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Syntax and style
+        run: |
+          python -m compileall -q ecoiq_os/foundation_catalog.py ecoiq_os/foundation_training.py ecoiq_os/test_foundation_training.py
+          ruff check ecoiq_os/foundation_catalog.py ecoiq_os/foundation_training.py ecoiq_os/test_foundation_training.py
+      - name: Unit tests on exact 114/99 catalogues and synthetic train/test splits
+        run: python -m unittest ecoiq_os.test_foundation_training -v
+      - name: Reproducible offline synthetic training
+        run: python -m ecoiq_os.foundation_training
+      - name: Existing EcoIQ OS and knowledge safety regressions
+        run: |
+          python manage.py check
+          python manage.py test ecoiq_os.test_kernel ecoiq_os.test_knowledge --noinput
+      - name: Never produce model artifacts
+        run: |
+          test ! -f ecoiq_os/foundation_model.joblib
+          test ! -f ecoiq_os/foundation_model.pkl

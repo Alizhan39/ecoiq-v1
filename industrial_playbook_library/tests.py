@@ -1,4 +1,5 @@
 from django.test import TestCase
+from core.staff_page_testcase import StaffPageTestCase
 
 RAW_TEMPLATE_TOKENS = [
     '{% load', '{% for', '{% include', '{% intelligence_block', '{% extends', '{% block',
@@ -6,7 +7,7 @@ RAW_TEMPLATE_TOKENS = [
 ]
 
 
-class IndustrialPlaybookLibraryPageTests(TestCase):
+class IndustrialPlaybookLibraryPageTests(StaffPageTestCase):
     def test_page_returns_200(self):
         response = self.client.get('/industrial-playbook-library/')
         self.assertEqual(response.status_code, 200)
@@ -53,15 +54,3 @@ class IndustrialPlaybookLibraryPageTests(TestCase):
         for token in RAW_TEMPLATE_TOKENS:
             self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')
 
-
-class PlatformPageIndustrialPlaybookLibraryTeaserTests(TestCase):
-    def test_platform_page_mentions_industrial_playbook_library(self):
-        response = self.client.get('/platform/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'EcoIQ Industrial Playbook Library')
-
-    def test_platform_page_has_no_raw_template_tags(self):
-        response = self.client.get('/platform/')
-        content = response.content.decode()
-        for token in RAW_TEMPLATE_TOKENS:
-            self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')

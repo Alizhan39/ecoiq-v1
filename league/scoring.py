@@ -74,10 +74,20 @@ def rerank_all():
     for co in companies:
         co.ecoiq_score = co.compute_score()
 
-    # Sort descending by score, then alphabetically
-    companies.sort(key=lambda c: (-float(c.ecoiq_score), c.name))
-    for i, co in enumerate(companies, start=1):
+    # Sort descending by score, then alphabetically.
+    #
+    # Unscored companies are partitioned out first rather than being sorted as
+    # zeros, and they receive NO rank. A rank is a comparative claim: assigning
+    # one to a company with no score would place it below every scored company
+    # as though that had been measured.
+    scored = [c for c in companies if c.ecoiq_score is not None]
+    unscored = [c for c in companies if c.ecoiq_score is None]
+
+    scored.sort(key=lambda c: (-float(c.ecoiq_score), c.name))
+    for i, co in enumerate(scored, start=1):
         co.rank = i
+    for co in unscored:
+        co.rank = None
 
     Company.objects.bulk_update(companies, ['ecoiq_score', 'rank'])
     return companies

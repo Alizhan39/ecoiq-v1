@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ · Formula Studio{% endblock %}
+{% block meta_description_content %}Private versioned EcoIQ KPI candidate formula catalogue.{% endblock %}
+{% block extra_head %}
+<meta name="robots" content="noindex, nofollow">
+<style>
+.fs-root{max-width:1080px;margin:2rem auto;padding:1rem 1.4rem}
+.fs-root h1{font-size:clamp(1.6rem,3vw,2.5rem)}
+.fs-alert{padding:1rem;border:1px solid #9b876f;border-radius:.7rem;margin:1rem 0}
+.fs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:1rem}
+.fs-card{padding:1.15rem;border:1px solid #8e9ca85c;border-radius:.75rem;overflow-wrap:anywhere}
+.fs-card h3{margin:.4rem 0}
+.fs-code{display:block;background:#77777715;border-radius:.4rem;padding:.65rem;margin:.7rem 0;white-space:normal;overflow-wrap:anywhere}
+.fs-muted{font-size:.9rem;opacity:.8}
+.fs-root a{text-decoration:underline;text-underline-offset:3px}
+</style>
+{% endblock %}
+{% block content %}
+<main class="fs-root" aria-labelledby="fs-heading">
+  <p><a href="{% url 'process_workspace' %}">Back to EcoIQ Business OS</a></p>
+  <h1 id="fs-heading">Formula Studio · {{ project.name }}</h1>
+  <p>20 initial KPI formula definitions and six additional case-specific research templates. Each formula declares its inputs, units and known limits. These are proposed definitions awaiting domain validation.</p>
+  <aside class="fs-alert" role="note">
+    <strong>Important:</strong> A mathematically valid formula is not proof of measurement quality, causation, financial savings, social justice or religious compliance. Unknown values are not replaced with zero. AI-generated additional formulas remain unapproved and are only available through a separately authorised internal gateway.
+  </aside>
+  <section aria-labelledby="fs-20-heading">
+    <h2 id="fs-20-heading">Initial Business Plan 2.0 KPI formulas (20)</h2>
+    <div class="fs-grid">
+      {% for formula in initial_formulas %}
+        <article class="fs-card">
+          <p class="fs-muted">{{ forloop.counter }} · {{ formula.key }} · Draft</p>
+          <h3>{{ formula.title }}</h3>
+          <code class="fs-code">{{ formula.expression }}</code>
+          <p><strong>Result unit:</strong> {{ formula.output_unit }}</p>
+          <p><strong>Inputs:</strong>
+          {% for item in formula.required_inputs %}
+            {{ item.key }} ({{ item.unit }}){% if not forloop.last %}; {% endif %}
+          {% endfor %}
+          </p>
+          <p class="fs-muted">{{ formula.interpretation_limit }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+  <section aria-labelledby="fs-extra-heading">
+    <h2 id="fs-extra-heading">Additional situation templates (6)</h2>
+    <p>Domain experts must approve measurement boundaries. The AI proposal service can suggest further formulas when permitted and after validating sources.</p>
+    <div class="fs-grid">
+      {% for formula in situation_formulas %}
+        <article class="fs-card">
+          <p class="fs-muted">{{ formula.key }} · Scenario candidate</p>
+          <h3>{{ formula.title }}</h3>
+          <code class="fs-code">{{ formula.expression }}</code>
+          <p><strong>Result unit:</strong> {{ formula.output_unit }}</p>
+          <p><strong>Inputs:</strong>
+          {% for item in formula.required_inputs %}
+            {{ item.key }} ({{ item.unit }}){% if not forloop.last %}; {% endif %}
+          {% endfor %}
+          </p>
+          <p class="fs-muted">{{ formula.limitation }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+  <section class="fs-alert">
+    <h2>AI Formula Designer — controlled mode</h2>
+    <p>A future authorised project flow can submit a non-sensitive scenario label and approved variable schema. AI may propose one formula, its assumptions and exact evidence citations. The server rejects unrecognised variables, Python expressions, incompatible units and invented quotations. No automatic implementation or publication is possible.</p>
+    <p><strong>Current state:</strong> No browser button to send private data to an external model. Feature flags remain disabled by default.</p>
+  </section>
+</main>
+{% endblock %}

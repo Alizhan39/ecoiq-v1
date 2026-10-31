@@ -17,6 +17,7 @@ class DecisionQueryAdmin(admin.ModelAdmin):
     list_filter = ('intent', 'data_availability_status', 'confidence_label')
     search_fields = ('question_text',)
     readonly_fields = (
+        'project',
         'question_text', 'session_key', 'user', 'intent', 'resolved_entities', 'scope',
         'capability_plan', 'data_availability_status', 'confidence_label', 'confidence_score',
         'result', 'orchestration_run', 'parent_query', 'created_at',

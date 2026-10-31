@@ -1,36 +1,13 @@
 """
-EcoIQ Projects — Phase 1 views.
+EcoIQ Projects — no views.
 
-Lightweight, static-data-backed list + detail. No database access. When the
-section is promoted to a model (Phase 2), only the data source changes — the
-URLs, view names and templates stay the same.
+The public /projects/ and /projects/<slug>/ pages are React
+(frontend/web/src/pages/Projects.tsx and ProjectConcept.tsx), served through
+core.spa. The five programme concepts they render come from projects/data.py,
+which is still the single source of truth for them and is read by
+api/v2_projects.py.
+
+The module is kept rather than deleted so projects/ stays an installed app with
+its data module intact; `projects.data` is imported by the API and by
+core.spa.project_concept_spa_view.
 """
-from django.http import Http404
-from django.shortcuts import render
-
-from .data import PROJECTS, PROJECTS_BY_SLUG, status_label
-
-
-def project_index(request):
-    """
-    GET /projects/ — Portfolio overview of all EcoIQ real-world projects.
-    Public, no auth.
-    """
-    projects = [
-        {**p, 'status': status_label(p['status_key'])}
-        for p in PROJECTS
-    ]
-    return render(request, 'projects/index.html', {'projects': projects})
-
-
-def project_detail(request, slug):
-    """
-    GET /projects/<slug>/ — Individual project page.
-    404 if the slug is unknown. Public, no auth.
-    """
-    project = PROJECTS_BY_SLUG.get(slug)
-    if project is None:
-        raise Http404('Project not found')
-
-    project = {**project, 'status': status_label(project['status_key'])}
-    return render(request, 'projects/detail.html', {'project': project})

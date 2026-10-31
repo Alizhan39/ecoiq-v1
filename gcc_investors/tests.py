@@ -15,6 +15,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from . import seo
+from core.testing_access import SignedIn
 
 ALL_PAGES = ['hub', 'qatar', 'saudi', 'kuwait']
 ALL_LANGS = ['en', 'ar']
@@ -307,7 +308,7 @@ class ContentDisciplineTests(TestCase):
                 )
 
 
-class InternalLinkingTests(TestCase):
+class InternalLinkingTests(SignedIn, TestCase):
 
     def test_hub_links_to_all_three_country_pages_en(self):
         content = self.client.get('/gcc-investors/').content.decode()
@@ -326,10 +327,23 @@ class InternalLinkingTests(TestCase):
             content = self.client.get(URL_BY_PAGE_LANG[(page, 'en')]).content.decode()
             self.assertIn('/gcc-investors/', content, page)
 
-    def test_pricing_page_and_amanah_page_link_to_gcc_hub(self):
-        for url in ('/pricing/', '/amanah-autopilot/'):
-            content = self.client.get(url).content.decode()
-            self.assertIn('/gcc-investors/', content, url)
+    def test_the_hub_keeps_an_internal_entry_point(self):
+        """
+        /gcc-investors/ fronts eight sitemap-registered pages, and an inbound
+        internal link is what keeps them from being orphaned.
+
+        It used to come from /pricing/ and from the server-rendered homepage.
+        Both are React now, so the link moved to the React footer — which puts
+        it on EVERY page of the app rather than one, and is asserted in
+        frontend/web/src/app/App.test.tsx. This asserts the half Django still
+        owns: the server-rendered pages carry it too.
+        """
+        content = self.client.get('/heating/').content.decode()
+        self.assertIn('/gcc-investors/', content)
+
+    def test_the_hub_is_still_in_the_sitemap(self):
+        content = self.client.get('/sitemap.xml').content.decode()
+        self.assertIn('/gcc-investors/', content)
 
     def test_every_page_links_to_enquiry_form(self):
         for (page, lang), url in URL_BY_PAGE_LANG.items():

@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ · Rights-aware Gold Production Time Series{% endblock %}
+{% block meta_description_content %}Source-attributed quarterly gold production research and licensed monthly commodity market price context with clear permission restrictions.{% endblock %}
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">GOLD INTELLIGENCE · OBSERVATIONS AND RIGHTS</span>
+  <h1 class="gold-h1">Production time series · Source rights</h1>
+  <p class="gold-sub"><a href="{% url 'gold_intelligence:public_benchmarks' %}">← Public Mine Benchmarks</a></p>
+  <p class="gold-honest-stub"><strong>NOT LIVE MINE TELEMETRY.</strong>
+    These are reported quarterly figures and a monthly world market series,
+    not hour-by-hour equipment, water or plant measurements. Values do not
+    certify on-site operations, geological reserves, efficiency gains or Mizan.
+    Solidcore operator permission for commercial bulk redistribution and
+    automated ingestion has not been confirmed. No auto-sync, trained model,
+    optimisation service or forecast is enabled.</p>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Available named series</h2>
+    <div class="gold-list">
+      {% for series in series_list %}
+      <div class="gold-list-row">
+        <span>
+          <a href="?series={{ series.id|urlencode }}">{{ series.id }}</a>
+          <span class="gold-card-sub"> · {{ series.frequency }} · {{ series.observations }} observations</span>
+        </span>
+        <span class="gold-card-sub">{{ series.source_rights_status }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if selected and not card %}
+  <section class="gold-section">
+    <p class="gold-honest-stub">No matching public research series; no private data were accessed.</p>
+  </section>
+  {% endif %}
+
+  {% if card %}
+  <section class="gold-section">
+    <h2 class="gold-h2">{{ card.series.id }}</h2>
+    <p class="gold-sub">{{ card.series.notice }}</p>
+    <p class="gold-honest-stub">
+      <strong>Rights:</strong> {{ card.rights.rights_status }}.
+      <strong>Commercial bulk redistribution:</strong> Not enabled.
+      {{ card.rights.rights_basis }}
+    </p>
+    <p class="gold-honest-stub">
+      <strong>Data classification:</strong> {{ card.data_classification }}.
+      <strong>Unit:</strong> {{ card.series.unit }}.
+      <strong>Production stage:</strong> {{ card.series.production_stage }}.
+    </p>
+    <div class="gold-list">
+      <div class="gold-list-row">
+        <strong>Period</strong><strong>Observation</strong>
+      </div>
+      {% for obs in card.series.observations %}
+      <div class="gold-list-row">
+        <span>{{ obs.period }}</span>
+        <span>
+          {{ obs.value }} {{ card.series.unit }}
+          <a href="{{ obs.source_url }}" target="_blank" rel="noopener noreferrer">Original source ↗</a>
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="gold-honest-stub">{{ card.note }}</p>
+  </section>
+  {% endif %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Source use permissions and controls</h2>
+    {% for key, source in rights_summary.sources.items %}
+      <div class="gold-card">
+        <strong>{{ source.name }}</strong>
+        <p class="gold-card-sub">{{ source.rights_status }} · {{ source.allowed_in_ecoiq }}</p>
+        <p class="gold-card-sub">{{ source.rights_basis }}</p>
+        <p class="gold-honest-stub"><strong>Next gate:</strong> {{ source.review_due }}</p>
+        {% for url in source.source_urls %}
+          <p class="gold-card-sub"><a href="{{ url }}" rel="noopener noreferrer" target="_blank">Original terms or source ↗</a></p>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </section>
+</div>
+{% include 'gold_intelligence/_styles.html' %}
+{% endblock %}

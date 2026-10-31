@@ -10,6 +10,7 @@ left to fail: the old assertions would all fail today, which is the
 intended, documented behavior change for this PR, not a regression to hide.
 """
 from django.test import TestCase
+from core.testing_access import SignedIn
 
 RAW_TEMPLATE_TOKENS = [
     '{% load', '{% for', '{% include', '{% intelligence_block', '{% extends', '{% block',
@@ -17,7 +18,7 @@ RAW_TEMPLATE_TOKENS = [
 ]
 
 
-class CommandCentreLegacyRedirectTests(TestCase):
+class CommandCentreLegacyRedirectTests(SignedIn, TestCase):
     """The deprecated static /command-centre/ route now redirects to the
     real project directory rather than rendering its old mockup content."""
 
@@ -46,15 +47,3 @@ class CommandCentreLegacyRedirectTests(TestCase):
         from django.urls import reverse
         self.assertEqual(reverse('command_centre:overview'), '/command-centre/')
 
-
-class PlatformPageCommandCentreTeaserTests(TestCase):
-    def test_platform_page_mentions_command_centre(self):
-        response = self.client.get('/platform/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'EcoIQ Command Centre')
-
-    def test_platform_page_has_no_raw_template_tags(self):
-        response = self.client.get('/platform/')
-        content = response.content.decode()
-        for token in RAW_TEMPLATE_TOKENS:
-            self.assertNotIn(token, content, f'raw template token "{token}" leaked into rendered page')

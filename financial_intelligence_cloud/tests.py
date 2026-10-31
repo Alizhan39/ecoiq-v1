@@ -27,6 +27,7 @@ from financial_intelligence_cloud.services.human_approval_gate import (
 )
 from agent_runtime_model_router.services.registry import sync_registry
 from django.core.management import call_command
+from core.testing_access import SignedIn
 
 RAW_TEMPLATE_TOKENS = [
     '{% load', '{% for', '{% include', '{% extends', '{% block',
@@ -394,7 +395,7 @@ class FICHumanApprovalGateTests(TestCase):
             fic_require_human_approval('funder_outreach', self.opportunity)
 
 
-class RouteTests(TestCase):
+class RouteTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         sync_registry()
@@ -476,19 +477,6 @@ class RouteTests(TestCase):
             self.assertNotIn('credit approved', content)
             self.assertNotIn('funding is secured', content)
             self.assertNotIn('fully autonomous', content)
-
-    def test_platform_page_mentions_financial_intelligence_cloud(self):
-        response = self.client.get('/platform/')
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'EcoIQ Financial Intelligence Cloud')
-        self.assertContains(response, 'Open Financial Intelligence Cloud')
-
-    def test_platform_page_has_no_raw_template_tags(self):
-        response = self.client.get('/platform/')
-        content = response.content.decode()
-        for token in RAW_TEMPLATE_TOKENS:
-            self.assertNotIn(token, content, f'raw template token "{token}" leaked into /platform/')
-
 
 class SeedCommandTests(TestCase):
     def test_seed_command_is_idempotent(self):

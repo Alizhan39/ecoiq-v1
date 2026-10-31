@@ -6,4 +6,5 @@
   <a class="gold-tab {% if active_tab == 'capital' %}active{% endif %}" href="{% url 'gold_intelligence:capital_tracker' project.slug %}">Capital Tracker</a>
   <a class="gold-tab {% if active_tab == 'equipment' %}active{% endif %}" href="{% url 'gold_intelligence:equipment_intelligence' project.slug %}">Equipment</a>
   <a class="gold-tab" href="{% url 'gold_intelligence:mine_map' %}">Mine Map</a>
+  <a class="gold-tab" href="{% url 'gold_intelligence:targets_map' %}">Gold Targeting Map</a>
 </nav>

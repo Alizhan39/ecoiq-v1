@@ -1,5 +1,17 @@
 # Project-specific
-.claude/
+# `.claude/` stays ignored by default (CLAUDE.md rule 14: it holds
+# settings.local.json, worktrees, and machine-local vendored third-party
+# skills — none of which belong in git). The EcoIQ Engineering OS is the one
+# deliberate exception: its skills are project source, reviewed in pull
+# requests and validated in CI by `manage.py validate_skills`, so the
+# `ecoiq-*` skill directories are re-included below. Git cannot re-include a
+# path whose parent directory is excluded, which is why this is written as
+# `dir/*` plus a negation at each level rather than one `!` line. Same
+# precedent as the `!static/dist/` re-inclusion at the bottom of this file.
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/ecoiq-*/
 media/
 staticfiles/
 *.pdf
@@ -267,3 +279,35 @@ __marimo__/
 !static/dist/
 !static/dist/**
 .DS_Store
+
+# ── AI tooling (docs/ai-tooling/) ──
+# Isolated virtualenv for MCP servers. Deliberately separate from the Django
+# .venv so an MCP dependency can never shadow a runtime one.
+.venv-mcp/
+
+# Excel MCP workspace. This is the ONLY directory the Excel MCP server can
+# read or write (see scripts/ai-tooling/start-excel-mcp.sh). Its contents are
+# user-supplied spreadsheets that may hold customer, financial, ESG or
+# regulatory data — exactly the data class that must never enter git. The
+# directory itself is tracked via .gitkeep so the boundary exists on a fresh
+# clone; everything inside it is ignored.
+data/mcp/excel/*
+!data/mcp/excel/.gitkeep
+
+# Local knowledge vault content. Templates and the workspace README are
+# tracked (they are project source); authored notes are not, because they
+# accumulate customer discovery, pilot and research material that has not
+# been through the evidence boundary.
+docs/knowledge/vault/*
+!docs/knowledge/vault/.gitkeep
+
+# Playwright MCP session output. Console logs and accessibility-tree dumps
+# written by the project's browser-verification server (.mcp.json). It records
+# whatever page was being verified — including signed-in staff surfaces and the
+# review workbench — so it is working material, not project source, and it must
+# not reach a commit by being sitting in the tree when someone types `git add`.
+.playwright-mcp/
+
+# Browser verification output
+frontend/web/test-results/
+frontend/web/playwright-report/

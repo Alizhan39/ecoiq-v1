@@ -19,7 +19,9 @@
 # stage is a decision about churn rather than a fresh investigation.
 
 [tool.ruff]
-# Matches .github/workflows/django.yml, runtime.txt and render.yaml (3.11.0).
+# Matches .python-version, .github/workflows/django.yml and render.yaml
+# (3.11.16). runtime.txt was removed: Render does not read it, so it was a
+# declaration that could drift without ever taking effect.
 target-version = "py311"
 
 # Recorded, not enforced. The repository has no line-length convention — 20,998

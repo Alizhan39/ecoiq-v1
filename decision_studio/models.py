@@ -42,6 +42,7 @@ class DecisionQuery(models.Model):
     question_text = models.TextField()
     session_key = models.CharField(max_length=64, blank=True, db_index=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    project = models.ForeignKey('gold_intelligence.GoldProject', null=True, blank=True, on_delete=models.PROTECT)
 
     intent = models.CharField(max_length=20, choices=INTENT_CHOICES, default='UNKNOWN')
     # [{'type': 'company'|'country'|'sector', 'id': int|None, 'name': str, 'match_type': 'exact'|'partial'|'multiple'|'none'}, ...]

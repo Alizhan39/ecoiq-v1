@@ -23,6 +23,7 @@ from global_research.services import (
     documents, evidence_scoring, human_approval_gate, orchestrator, permissions, risk,
     scenario_bridge, stewardship_screen,
 )
+from core.testing_access import SignedIn
 
 User = get_user_model()
 
@@ -590,15 +591,37 @@ class PermissionsTests(TestCase):
         self.assertTrue(permissions.can_manage_mission(mission, _reviewer()))
 
 
-class ViewPermissionBoundaryTests(TestCase):
+class ViewPermissionBoundaryTests(SignedIn, TestCase):
+    """
+    global_research is EXPERIMENTAL in the status registry, so the whole
+    prefix now requires sign-in (core/access.py). The boundary these tests
+    describe moved outward: the question is no longer "which of these views is
+    public" but "does the module answer anonymously at all".
+    """
+
     def test_requirement_builder_requires_login(self):
         mission = _approved_mission()
-        response = Client().get(reverse('global_research:requirement_builder', args=[mission.pk]))
+        response = Client().get(
+            reverse('global_research:requirement_builder', args=[mission.pk]))
         self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
 
-    def test_mission_dashboard_is_public(self):
+    def test_the_mission_dashboard_is_no_longer_public(self):
+        """
+        It used to be. An experimental research module answering anonymously
+        presents as a shipped capability, which is what Labs exists to prevent.
+        """
         mission = _approved_mission()
-        response = Client().get(reverse('global_research:mission_dashboard', args=[mission.pk]))
+        response = Client().get(
+            reverse('global_research:mission_dashboard', args=[mission.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login/', response.url)
+
+    def test_a_signed_in_user_can_still_read_the_mission_dashboard(self):
+        """De-publication, not deletion — the view still works."""
+        mission = _approved_mission()
+        response = self.client.get(
+            reverse('global_research:mission_dashboard', args=[mission.pk]))
         self.assertEqual(response.status_code, 200)
 
 

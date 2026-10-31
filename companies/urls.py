@@ -1,4 +1,6 @@
 from django.urls import path
+
+from core import spa
 from . import views
 from company_intelligence import views as ci_views
 from company_intelligence import discovery_views as discovery
@@ -9,7 +11,16 @@ from company_intelligence import monitor_views as monitor
 app_name = 'companies'
 
 urlpatterns = [
-    path('',                                       views.directory,            name='directory'),
+    # React. Path and URL name unchanged — only the view.
+    #
+    # The template this replaces ordered all 467 cards by
+    # -ecoiq_total_score and offered a filter over moral_label, the tier
+    # derived from that score. Neither printed a digit and both published
+    # the withheld number: one by position, one by selection.
+    #
+    # /companies/<slug>/ below is still Django — see the note at the top of
+    # frontend/web/src/app/routes.tsx for what has to be true first.
+    path('',                                       spa.spa_view,               name='directory'),
     # feat/company-halal-intelligence (PR 9) — the one user-scoped route
     # ('watchlist/') must be registered before the '<slug:slug>/' catch-all
     # below, same discipline as capital_guardian/urls.py, since a bare
@@ -35,7 +46,19 @@ urlpatterns = [
     # feat/stewardship-monitor (PR 14) — staff-only, cross-company dashboard,
     # so 'monitor/' must also precede the '<slug:slug>/' catch-all.
     path('monitor/',                                monitor.monitor_dashboard_view, name='monitor'),
-    path('<slug:slug>/',                            views.company_detail,       name='detail'),
+    # React, with request-time metadata: title and description from the
+    # organisation's own fields, and `noindex` while its assessment is not
+    # publishable. Never the score — see core.spa.company_spa_view.
+    #
+    # Position is unchanged: this bare-slug pattern must stay AFTER every
+    # fixed segment above it, or it swallows them.
+    # The full profile, signed-in only. Four panels were audited off the public
+    # page and moved here rather than deleted — "move to authenticated" has to
+    # mean somewhere. See docs/product/COMPANY_PAGE_PANELS.md.
+    path('<slug:slug>/internal/',                   views.company_detail_internal, name='detail_internal'),
+    # More specific than <slug>/ and therefore declared before it.
+    path('<slug:slug>/kpis/<int:kpi_id>/',          spa.company_kpi_spa_view,   name='kpi_investigation'),
+    path('<slug:slug>/',                            spa.company_spa_view,       name='detail'),
     path('<slug:slug>/explain-match/',              discovery.explain_match_view, name='explain_match'),
     path('<slug:slug>/register-document-source/',   discovery.register_document_source_view, name='register_document_source'),
     path('<slug:slug>/explain/',                    ci_views.explain_view,      name='explain'),

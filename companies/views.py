@@ -4,15 +4,21 @@ EcoIQ Company Intelligence — Public Views.
 /companies/           → directory with search + filters
 /companies/<slug>/    → full public company profile
 """
+import json
+
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
+from django.http import Http404, JsonResponse, HttpResponse, HttpResponseForbidden
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+
+from core.unknown import clamp, mean_of_known
 
 from companies.models import CompanyProfile, CompanyGuidanceVideo, MORAL_LABEL_CHOICES
 from companies.scoring import get_path_to_100_actions
 from companies.throttle import rate_limit, cache_response
 from companies.improvement_data import get_improvement_pathway
+from companies.visibility import PUBLICLY_VISIBLE_STATUSES, profile_for
 from league.models import Company, SECTOR_CHOICES
 from company_intelligence.models import ResearchWatchlistEntry
 
@@ -63,8 +69,18 @@ def _get_harm_signals(profile):
         })
 
     # Controversy risk
-    cr = profile.controversy_risk_score or 0
-    if cr >= 70:
+    #
+    # `or 0` made an unknown score read as 0, which fell through to the else
+    # branch and told the reader "within acceptable range" — a clean bill of
+    # health for a company that had never been assessed. Unknown now says so.
+    cr = clamp(profile.controversy_risk_score)
+    if cr is None:
+        signals.append({
+            'id': 'controversy', 'label': 'Controversy Risk',
+            'status': 'insufficient_evidence', 'penalty': 0,
+            'detail': 'Controversy risk has not been assessed for this organisation.',
+        })
+    elif cr >= 70:
         signals.append({
             'id': 'controversy', 'label': 'Controversy Risk',
             'status': 'elevated', 'penalty': 5,
@@ -84,8 +100,18 @@ def _get_harm_signals(profile):
         })
 
     # Transparency quality
-    tr = profile.transparency_score_detail or 0
-    if tr < 30:
+    #
+    # The most consequential of the three: `or 0` put an unknown score below the
+    # 30 threshold, so an unassessed company was published with a "Transparency
+    # Deficit — below minimum threshold" finding and a 5-point penalty.
+    tr = clamp(profile.transparency_score_detail)
+    if tr is None:
+        signals.append({
+            'id': 'transparency', 'label': 'Transparency Quality',
+            'status': 'insufficient_evidence', 'penalty': 0,
+            'detail': 'Disclosure quality has not been assessed for this organisation.',
+        })
+    elif tr < 30:
         signals.append({
             'id': 'transparency', 'label': 'Transparency Deficit',
             'status': 'elevated', 'penalty': 5,
@@ -105,9 +131,20 @@ def _get_harm_signals(profile):
         })
 
     # Profit extraction
-    pe = profile.profit_extraction_score or 0
-    pb = profile.public_benefit_score or 50
-    if pe > 75 and pb < 50:
+    #
+    # `pb = ... or 50` was the falsy-trigger bug in its purest form: it rewrote a
+    # genuine measured 0.0 public benefit to 50, which then failed the `< 50`
+    # test — so the company with the worst possible public-benefit score was the
+    # one guaranteed NOT to be flagged for it.
+    pe = clamp(profile.profit_extraction_score)
+    pb = clamp(profile.public_benefit_score)
+    if pe is None:
+        signals.append({
+            'id': 'profit_extraction', 'label': 'Profit Distribution',
+            'status': 'insufficient_evidence', 'penalty': 0,
+            'detail': 'Profit distribution has not been assessed for this organisation.',
+        })
+    elif pe > 75 and pb is not None and pb < 50:
         signals.append({
             'id': 'profit_extraction', 'label': 'Profit Extraction',
             'status': 'elevated', 'penalty': 5,
@@ -127,8 +164,17 @@ def _get_harm_signals(profile):
         })
 
     # High pollution + low modernization
-    mod = profile.modernization_score or 50
-    if p in ('high', 'severe') and mod < 40:
+    #
+    # `or 50` here suppressed the flag for unknown modernization (50 >= 40) but
+    # also rewrote a real 0.0 to 50, hiding the worst genuine transition gaps.
+    mod = clamp(profile.modernization_score)
+    if mod is None:
+        signals.append({
+            'id': 'transition_gap', 'label': 'Transition Readiness',
+            'status': 'insufficient_evidence', 'penalty': 0,
+            'detail': 'Modernization progress has not been assessed for this organisation.',
+        })
+    elif p in ('high', 'severe') and mod < 40:
         signals.append({
             'id': 'transition_gap', 'label': 'Transition Gap',
             'status': 'elevated', 'penalty': 3,
@@ -172,7 +218,14 @@ def _get_ai_confidence(profile):
         'jobs_created_score', 'regional_development_score', 'waste_management_score',
         'energy_transition_score', 'transparency_score_detail', 'anti_corruption_score',
     ]
-    default_count = sum(1 for f in check_fields if abs(getattr(profile, f, 50) - 50.0) < 0.5)
+    # An UNKNOWN field is not evidence either, and counts the same as one parked
+    # at the seeded default. Also guards against abs(None - 50.0) raising once
+    # these columns become nullable in D4.
+    def _is_not_evidence(field):
+        v = getattr(profile, field, None)
+        return v is None or abs(float(v) - 50.0) < 0.5
+
+    default_count = sum(1 for f in check_fields if _is_not_evidence(f))
     score += max(0, 10 - default_count * 2)
 
     # Verification and public data (30 pts)
@@ -195,7 +248,34 @@ def _get_financing_eligibility(profile):
     Indicative financing eligibility cards based on EcoIQ profile.
     All results are indicative only — not investment advice.
     """
-    s = profile.ecoiq_total_score
+    # Not a fallback site — these comparisons have no `or 50`, so nothing is
+    # fabricated today. But every card here is a POSITIVE eligibility claim, and
+    # once these columns become nullable (D4) a bare `s >= 70` would raise
+    # TypeError on the public company page. Refusing up front is both the safe
+    # answer and the truthful one: we cannot assert a company qualifies for
+    # Green Bond finance on the strength of a score we do not have.
+    # D5. Every card below is a COMPANY-SPECIFIC, POSITIVE financing claim —
+    # "this organisation meets Green Bond use-of-proceeds criteria". That is a
+    # stronger statement than the score itself, and it must obey the same
+    # evidence gate.
+    #
+    # The stored composite exists for companies whose score is NOT publishable
+    # (a legacy value with no evidenced provenance behind it), so gating on
+    # `s is None` alone would let those companies collect eligibility cards
+    # while their score was withheld. The page-level gate happens to contain
+    # this today; relying on that would make the containment a property of the
+    # caller rather than of the claim.
+    from companies.eligibility import decide
+
+    if not decide(profile).is_published:
+        return []
+
+    s = clamp(profile.ecoiq_total_score)
+    transparency = clamp(profile.transparency_score_detail)
+    energy = clamp(profile.energy_transition_score)
+    if s is None:
+        return []
+
     items = []
 
     if s >= 70 and profile.pollution_level in ('low', 'medium'):
@@ -207,7 +287,7 @@ def _get_financing_eligibility(profile):
             'detail': 'Responsible Builder tier meets indicative Green Bond use-of-proceeds criteria.',
         })
 
-    if s >= 60 and profile.transparency_score_detail >= 50:
+    if s >= 60 and transparency is not None and transparency >= 50:
         items.append({
             'type': 'ESG Fund',
             'institution': 'ESG-Screened Portfolios',
@@ -216,7 +296,7 @@ def _get_financing_eligibility(profile):
             'detail': 'Transparency and governance scores meet indicative ESG fund screening thresholds.',
         })
 
-    if profile.transparency_score_detail >= 50 and s >= 50:
+    if transparency is not None and transparency >= 50 and s >= 50:
         items.append({
             'type': 'IFC / EBRD',
             'institution': 'Multilateral Development Banks',
@@ -225,7 +305,7 @@ def _get_financing_eligibility(profile):
             'detail': 'Governance and transparency standards meet MDB indicative assessment criteria.',
         })
 
-    if profile.energy_transition_score >= 60 and profile.pollution_level in ('low', 'medium'):
+    if energy is not None and energy >= 60 and profile.pollution_level in ('low', 'medium'):
         items.append({
             'type': 'Climate Finance',
             'institution': 'Climate Bonds / GCF',
@@ -255,56 +335,61 @@ def _get_institutional_signals(profile):
     Used to render the Institutional Signals strip on company profile pages.
     All outputs are indicative.
     """
-    def _clamp(v): return max(0.0, min(100.0, float(v or 0)))
-
+    # Was a local `float(v or 0)` — the same defect as ethics and core scoring,
+    # in a third copy. core.unknown is now the single authority.
+    #
+    # The shape of the bug here was the trailing `else:` on each signal. With
+    # unknown arriving as 0, every unassessed company fell into the worst tier
+    # and was published as 'High Risk', 'Early Stage', 'Limited' and 'Poor' —
+    # four negative institutional claims generated purely by absence of data.
     signals = []
 
+    def _tiered(label, value, tiers, unknown_value='Not assessed'):
+        """
+        Emit one signal, or an explicit not-assessed one when value is unknown.
+
+        `tiers` is [(threshold, value, level), ...] highest first. The final
+        tier is reached only by a KNOWN value below every threshold, so the
+        worst label is now a finding rather than a default.
+        """
+        if value is None:
+            signals.append({'label': label, 'value': unknown_value,
+                            'level': 'insufficient_evidence'})
+            return
+        for threshold, tier_value, level in tiers:
+            if value >= threshold:
+                signals.append({'label': label, 'value': tier_value, 'level': level})
+                return
+        _, tier_value, level = tiers[-1]
+        signals.append({'label': label, 'value': tier_value, 'level': level})
+
     # 1. Governance Risk — transparency + anti-corruption
-    gov = (_clamp(profile.transparency_score_detail) + _clamp(profile.anti_corruption_score)) / 2
-    if gov >= 68:
-        signals.append({'label': 'Governance Risk',        'value': 'Low Risk',    'level': 'good'})
-    elif gov >= 50:
-        signals.append({'label': 'Governance Risk',        'value': 'Moderate',    'level': 'moderate'})
-    elif gov >= 34:
-        signals.append({'label': 'Governance Risk',        'value': 'Elevated',    'level': 'elevated'})
-    else:
-        signals.append({'label': 'Governance Risk',        'value': 'High Risk',   'level': 'critical'})
+    _tiered('Governance Risk',
+            mean_of_known(profile.transparency_score_detail, profile.anti_corruption_score),
+            [(68, 'Low Risk', 'good'), (50, 'Moderate', 'moderate'),
+             (34, 'Elevated', 'elevated'), (0, 'High Risk', 'critical')])
 
     # 2. Transition Readiness — energy + future + modernization
-    trans = (_clamp(profile.energy_transition_score)
-             + _clamp(profile.future_readiness_score)
-             + _clamp(profile.modernization_score)) / 3
-    if trans >= 68:
-        signals.append({'label': 'Transition Readiness',   'value': 'Leading',     'level': 'good'})
-    elif trans >= 52:
-        signals.append({'label': 'Transition Readiness',   'value': 'Advancing',   'level': 'moderate'})
-    elif trans >= 37:
-        signals.append({'label': 'Transition Readiness',   'value': 'Developing',  'level': 'elevated'})
-    else:
-        signals.append({'label': 'Transition Readiness',   'value': 'Early Stage', 'level': 'critical'})
+    _tiered('Transition Readiness',
+            mean_of_known(profile.energy_transition_score,
+                          profile.future_readiness_score,
+                          profile.modernization_score),
+            [(68, 'Leading', 'good'), (52, 'Advancing', 'moderate'),
+             (37, 'Developing', 'elevated'), (0, 'Early Stage', 'critical')])
 
     # 3. Financing Compatibility — overall score adjusted for pollution
     pol_adj = {'low': 0, 'medium': 4, 'high': 14, 'severe': 24}.get(profile.pollution_level, 0)
-    fin = max(0, _clamp(profile.ecoiq_total_score) - pol_adj)
-    if fin >= 64:
-        signals.append({'label': 'Financing Compatibility', 'value': 'Strong',     'level': 'good'})
-    elif fin >= 44:
-        signals.append({'label': 'Financing Compatibility', 'value': 'Eligible',   'level': 'moderate'})
-    elif fin >= 28:
-        signals.append({'label': 'Financing Compatibility', 'value': 'Partial',    'level': 'elevated'})
-    else:
-        signals.append({'label': 'Financing Compatibility', 'value': 'Limited',    'level': 'critical'})
+    total = clamp(profile.ecoiq_total_score)
+    fin = None if total is None else max(0, total - pol_adj)
+    _tiered('Financing Compatibility', fin,
+            [(64, 'Strong', 'good'), (44, 'Eligible', 'moderate'),
+             (28, 'Partial', 'elevated'), (0, 'Limited', 'critical')])
 
     # 4. Transparency Quality — transparency detail + audit
-    transp = (_clamp(profile.transparency_score_detail) + _clamp(profile.audit_quality_score)) / 2
-    if transp >= 70:
-        signals.append({'label': 'Transparency Quality',   'value': 'Institutional','level': 'good'})
-    elif transp >= 54:
-        signals.append({'label': 'Transparency Quality',   'value': 'Strong',      'level': 'moderate'})
-    elif transp >= 38:
-        signals.append({'label': 'Transparency Quality',   'value': 'Moderate',    'level': 'elevated'})
-    else:
-        signals.append({'label': 'Transparency Quality',   'value': 'Poor',        'level': 'critical'})
+    _tiered('Transparency Quality',
+            mean_of_known(profile.transparency_score_detail, profile.audit_quality_score),
+            [(70, 'Institutional', 'good'), (54, 'Strong', 'moderate'),
+             (38, 'Moderate', 'elevated'), (0, 'Poor', 'critical')])
 
     # 5. Industrial Complexity — driven by pollution level classification
     ic_map = {
@@ -317,15 +402,9 @@ def _get_institutional_signals(profile):
     signals.append({'label': 'Industrial Complexity',      'value': ic_val,         'level': ic_level})
 
     # 6. Public Benefit Alignment — public_benefit_score
-    pb = _clamp(profile.public_benefit_score)
-    if pb >= 70:
-        signals.append({'label': 'Public Benefit Alignment','value': 'Exemplary',  'level': 'good'})
-    elif pb >= 54:
-        signals.append({'label': 'Public Benefit Alignment','value': 'Aligned',    'level': 'moderate'})
-    elif pb >= 38:
-        signals.append({'label': 'Public Benefit Alignment','value': 'Partial',    'level': 'elevated'})
-    else:
-        signals.append({'label': 'Public Benefit Alignment','value': 'Developing', 'level': 'critical'})
+    _tiered('Public Benefit Alignment', clamp(profile.public_benefit_score),
+            [(70, 'Exemplary', 'good'), (54, 'Aligned', 'moderate'),
+             (38, 'Partial', 'elevated'), (0, 'Developing', 'critical')])
 
     return signals
 
@@ -346,345 +425,7 @@ def _get_confidence_label(ai_confidence: int, is_verified: bool) -> str:
 
 # ── Company Directory ──────────────────────────────────────────────────────────
 
-def directory(request):
-    """
-    /companies/ — searchable, filterable company directory.
-    Shows all public CompanyProfile records with EcoIQ cards.
-    """
-    qs = CompanyProfile.objects.filter(
-        status__in=('public', 'verified')
-    ).select_related('company').order_by('-ecoiq_total_score')
-
-    # Search
-    q = request.GET.get('q', '').strip()
-    if q:
-        qs = qs.filter(company__name__icontains=q)
-
-    # Filters
-    sector    = request.GET.get('sector', '')
-    country   = request.GET.get('country', '')
-    label     = request.GET.get('label', '')
-    verified  = request.GET.get('verified', '')
-    funding   = request.GET.get('funding', '')
-    pollution = request.GET.get('pollution', '')
-
-    if sector:
-        qs = qs.filter(company__sector=sector)
-    if country:
-        qs = qs.filter(company__country__icontains=country)
-    if label:
-        qs = qs.filter(moral_label=label)
-    if verified == '1':
-        qs = qs.filter(is_verified=True)
-    if funding:
-        qs = qs.filter(funding_status=funding)
-    if pollution:
-        qs = qs.filter(pollution_level=pollution)
-
-    # Distinct countries for filter dropdown
-    countries = (
-        CompanyProfile.objects
-        .filter(status__in=('public', 'verified'))
-        .values_list('company__country', flat=True)
-        .distinct()
-        .order_by('company__country')
-    )
-
-    return render(request, 'companies/directory.html', {
-        'profiles':       qs,
-        'total_count':    CompanyProfile.objects.filter(status__in=('public','verified')).count(),
-        'result_count':   qs.count(),
-        'q':              q,
-        'sector':         sector,
-        'country':        country,
-        'label':          label,
-        'verified':       verified,
-        'funding':        funding,
-        'pollution':      pollution,
-        'sector_choices': SECTOR_CHOICES,
-        'moral_choices':  MORAL_LABEL_CHOICES,
-        'countries':      countries,
-        'disclaimer_light': DISCLAIMER_LIGHT,
-    })
-
-
 # ── Company Detail ─────────────────────────────────────────────────────────────
-
-def company_detail(request, slug):
-    """
-    /companies/<slug>/ — full public EcoIQ company profile.
-    """
-    company = get_object_or_404(Company, slug=slug)
-    profile = get_object_or_404(CompanyProfile, company=company,
-                                status__in=('public', 'verified', 'draft'))
-
-    # Score breakdown for display
-    score_cards = [
-        {
-            'label':  'Public Benefit',
-            'score':  profile.public_benefit_score,
-            'weight': '25%',
-            'icon':   '🌍',
-            'desc':   'Employment quality, regional development, community investment, national value',
-            'sub': [
-                {'label': 'Employment Quality', 'val': profile.jobs_created_score},
-                {'label': 'Regional Development', 'val': profile.regional_development_score},
-                {'label': 'Infrastructure', 'val': profile.infrastructure_contribution_score},
-                {'label': 'National Value', 'val': profile.national_value_score},
-            ],
-        },
-        {
-            'label':  'Environmental Stewardship',
-            'score':  profile.environmental_responsibility_score,
-            'weight': '25%',
-            'icon':   '♻️',
-            'desc':   'Pollution intensity, waste management, water stewardship, biodiversity',
-            'sub': [
-                {'label': 'Waste Management', 'val': profile.waste_management_score},
-                {'label': 'Water Stewardship', 'val': profile.water_impact_score},
-                {'label': 'Biodiversity', 'val': profile.biodiversity_impact_score},
-            ],
-        },
-        {
-            'label':  'Responsible Modernization',
-            'score':  profile.modernization_score,
-            'weight': '20%',
-            'icon':   '⚡',
-            'desc':   'Energy transition, digitalization, infrastructure upgrades, future readiness',
-            'sub': [
-                {'label': 'Energy Transition', 'val': profile.energy_transition_score},
-                {'label': 'Digitalization', 'val': profile.digitalization_score},
-                {'label': 'Infrastructure', 'val': profile.infrastructure_upgrade_score},
-                {'label': 'Future Readiness', 'val': profile.future_readiness_score},
-            ],
-        },
-        {
-            'label':  'Transparent Governance',
-            'score':  profile.transparency_anti_corruption_score,
-            'weight': '15%',
-            'icon':   '🔍',
-            'desc':   'Reporting quality, audit standards, procurement transparency',
-            'sub': [
-                {'label': 'Reporting Quality', 'val': profile.transparency_score_detail},
-                {'label': 'Audit Standards', 'val': profile.audit_quality_score},
-                {'label': 'Procurement', 'val': profile.procurement_transparency_score},
-            ],
-        },
-        {
-            'label':  'Anti-Corruption',
-            'score':  profile.anti_corruption_score,
-            'weight': '10%',
-            'icon':   '⚖️',
-            'desc':   'Anti-corruption practices, ethical procurement, governance integrity',
-            'sub': [
-                {'label': 'AC Practices', 'val': profile.anti_corruption_score},
-            ],
-        },
-        {
-            'label':  'Ethical Alignment',
-            'score':  profile.ethical_alignment_score,
-            'weight': '5%',
-            'icon':   '✦',
-            'desc':   'Long-term ethical value creation, controversy management, stakeholder trust',
-            'sub': [
-                {'label': 'Controversy Control', 'val': max(0, 100 - profile.controversy_risk_score)},
-                {'label': 'Long-Term Value', 'val': profile.national_value_score},
-            ],
-        },
-    ]
-
-    # Path to 100%
-    path_actions = get_path_to_100_actions(profile)
-
-    # Guidance videos
-    videos = CompanyGuidanceVideo.objects.filter(
-        company=profile, status='published', visibility='public',
-    ).order_by('-created_at')[:4]
-
-    # Transition Engine integration
-    roadmaps = []
-    active_roadmap = None
-    has_roadmap = False
-    try:
-        from transition.models import TransitionRoadmap
-        roadmaps = list(company.roadmaps.order_by('-created_at')[:3])
-        active_roadmap = roadmaps[0] if roadmaps else None
-        has_roadmap = bool(roadmaps)
-    except Exception:
-        pass
-
-    # Financing matches (from Transition Engine)
-    financing_matches = []
-    if active_roadmap:
-        try:
-            financing_matches = list(
-                active_roadmap.financing_matches
-                .select_related('opportunity')
-                .order_by('-match_score')[:4]
-            )
-        except Exception:
-            pass
-
-    # AI briefing
-    briefing = None
-    try:
-        from intelligence.models import ExecutiveBriefing
-        briefing = ExecutiveBriefing.objects.filter(company=company).order_by('-created_at').first()
-    except Exception:
-        pass
-
-    # Sources
-    sources = profile.cited_sources.all()[:8]
-
-    # Score evolution snapshots — chronological for Chart.js
-    score_snapshots = list(profile.score_snapshots.order_by('date')[:8])
-    import json as _json
-    history_labels = _json.dumps([s.date.strftime('%b %Y') for s in score_snapshots])
-    history_scores = _json.dumps([round(s.total_score, 1) for s in score_snapshots])
-
-    # ── Intelligence layer ─────────────────────────────────────────────────────
-    harm_signals       = _get_harm_signals(profile)
-    ai_confidence      = _get_ai_confidence(profile)
-    financing_eligibility = _get_financing_eligibility(profile)
-
-    # Radar chart data (6 pillars, 0-100)
-    radar_scores = [
-        round(profile.public_benefit_score, 1),
-        round(profile.environmental_responsibility_score, 1),
-        round(profile.modernization_score, 1),
-        round(profile.transparency_anti_corruption_score, 1),
-        round(profile.anti_corruption_score, 1),
-        round(profile.ethical_alignment_score, 1),
-    ]
-
-    # ── Ethical Intelligence layer (NEI / TSS / RVI) ───────────────────────────
-    ethics_profile = None
-    try:
-        from ethics.scoring import get_or_compute
-        ethics_profile = get_or_compute(profile)
-    except Exception:
-        pass
-
-    # ── Financing Intelligence layer ────────────────────────────────────────────
-    financing_profile       = None
-    fin_matches             = []
-    financing_eligible_count = 0
-    financing_likely_count   = 0
-    financing_total_count    = 0
-    try:
-        from financing.matching import get_or_compute as fin_compute
-        financing_profile = fin_compute(profile)
-        if financing_profile:
-            qs = profile.financing_matches.select_related('opportunity').order_by('-match_score')
-            financing_total_count    = qs.count()
-            financing_eligible_count = qs.filter(match_tier='eligible').count()
-            financing_likely_count   = qs.filter(match_tier='likely').count()
-            fin_matches              = list(qs[:6])
-    except Exception:
-        pass
-
-    # ── Improvement Pathway ─────────────────────────────────────────────────────
-    improvement_pathway = get_improvement_pathway(profile)
-
-    # ── Quranic Decision Filter (Decision Integrity) ────────────────────────────
-    qdf_assessment = None
-    try:
-        from qdf.scoring import get_or_compute as qdf_compute
-        qdf_assessment = qdf_compute(profile)
-    except Exception:
-        pass
-
-    # ── Institutional Intelligence Signals ──────────────────────────────────────
-    institutional_signals = _get_institutional_signals(profile)
-    confidence_label      = _get_confidence_label(ai_confidence, profile.is_verified)
-
-    # ── feat/company-halal-intelligence (PR 9) — Shariah screening + 114-KPI
-    # stewardship alignment. Two distinct lenses, read-only on this GET view
-    # (no state-changing GET actions) — see company_intelligence.services.
-    from company_intelligence.services.kpi_engine import filter_rows, kpi_alignment_profile
-    from company_intelligence.services.shariah_screening import latest_screen_for
-
-    shariah_screen = latest_screen_for(profile)
-    kpi_profile = kpi_alignment_profile(profile)
-    kpi_filter = request.GET.get('kpi_filter', '')
-    kpi_filtered_rows = filter_rows(kpi_profile['rows'], kpi_filter) if kpi_filter else kpi_profile['rows']
-    controversies = list(profile.controversies.select_related('evidence').all())
-    watchlist_entry = None
-    if request.user.is_authenticated:
-        watchlist_entry = profile.watchlist_entries.filter(user=request.user).first()
-
-    # ── feat/company-evidence-ingestion (PR 10) — real source provenance,
-    # data-origin honesty, freshness/staleness, per-metric financial
-    # provenance. All read-only on this GET view, same discipline as above.
-    from company_intelligence.services.data_origin import company_data_origin
-    from company_intelligence.services.evidence_quality import company_evidence_quality_summary
-    from company_intelligence.services.freshness import screening_freshness
-
-    harvest_sources = list(profile.harvest_sources.select_related().all())
-    data_origin = company_data_origin(profile)
-    screening_freshness_info = screening_freshness(shariah_screen)
-    evidence_quality_summary = company_evidence_quality_summary(profile)
-    financial_fact_sources = (
-        list(shariah_screen.financial_facts.metric_sources.select_related('evidence').all())
-        if shariah_screen and shariah_screen.financial_facts else []
-    )
-
-    return render(request, 'companies/detail.html', {
-        'company':               company,
-        'profile':               profile,
-        'score_cards':           score_cards,
-        'path_actions':          path_actions,
-        'videos':                videos,
-        'roadmaps':              roadmaps,
-        'active_roadmap':        active_roadmap,
-        'has_roadmap':           has_roadmap,
-        'briefing':              briefing,
-        'sources':               sources,
-        'disclaimer_full':       DISCLAIMER_FULL,
-        'disclaimer_light':      DISCLAIMER_LIGHT,
-        'moral_display':         profile.moral_label_display,
-        # Score evolution
-        'score_snapshots':       score_snapshots,
-        'history_labels':        history_labels,
-        'history_scores':        history_scores,
-        # Intelligence layer
-        'harm_signals':          harm_signals,
-        'ai_confidence':         ai_confidence,
-        'financing_eligibility': financing_eligibility,
-        'radar_scores':          radar_scores,
-        # Ethical Intelligence layer
-        'ethics_profile':        ethics_profile,
-        # Financing Intelligence layer
-        'financing_profile':          financing_profile,
-        'financing_matches':          fin_matches,
-        'financing_eligible_count':   financing_eligible_count,
-        'financing_likely_count':     financing_likely_count,
-        'financing_total_count':      financing_total_count,
-        # Improvement Pathway
-        'improvement_pathway':        improvement_pathway,
-        # Quranic Decision Filter
-        'qdf_assessment':             qdf_assessment,
-        # Institutional Intelligence layer
-        'institutional_signals':      institutional_signals,
-        'confidence_label':           confidence_label,
-        # feat/company-halal-intelligence (PR 9) — kept explicitly separate
-        # from qdf_assessment and every ecoiq_total_score/moral_label above:
-        # neither lens here is ever combined with those existing scores.
-        'shariah_screen':             shariah_screen,
-        'kpi_profile':                kpi_profile,
-        'kpi_filter':                 kpi_filter,
-        'kpi_filtered_rows':          kpi_filtered_rows,
-        'controversies':              controversies,
-        'watchlist_entry':            watchlist_entry,
-        'watchlist_statuses':         ResearchWatchlistEntry.STATUS_CHOICES,
-        # feat/company-evidence-ingestion (PR 10)
-        'harvest_sources':            harvest_sources,
-        'data_origin':                data_origin,
-        'screening_freshness':        screening_freshness_info,
-        'evidence_quality_summary':   evidence_quality_summary,
-        'financial_fact_sources':     financial_fact_sources,
-    })
-
 
 # ── PDF Report ─────────────────────────────────────────────────────────────────
 
@@ -719,11 +460,31 @@ def company_pdf_report(request, slug):
     from django.template.loader import render_to_string
     from django.http import HttpResponse
 
-    company = get_object_or_404(Company, slug=slug)
-    profile = get_object_or_404(CompanyProfile, company=company,
-                                status__in=('public', 'verified', 'draft'))
+    # The last hand-written copy of the visibility rule. It predated
+    # `public_demo`, so a demonstration organisation's page served while its
+    # own PDF 404'd. companies/visibility.py is the one list.
+    profile = profile_for(slug, request.user)
+    company = profile.company
 
-    score = float(profile.ecoiq_total_score or 0)
+    # ── Public evidence gate (D1.5) ───────────────────────────────────────────
+    # A downloadable PDF is the most quotable artefact EcoIQ produces: it leaves
+    # the site, gets forwarded, and carries no context about when it was
+    # generated or on what basis. Gating the HTML page while still emitting the
+    # same scores as a document would defeat the containment entirely.
+    #
+    # 404 rather than a stub PDF: there is no report to give, and rendering an
+    # empty one through WeasyPrint would spend the memory this route is already
+    # rate-limited for.
+    from companies.evidence import public_score_state
+
+    if not public_score_state(profile).available and not request.user.is_staff:
+        raise Http404('No published assessment for this organisation.')
+
+    # Behind the D1.5 gate above, so an unpublishable score never reaches here;
+    # the guard is belt-and-braces against a future caller that forgets it.
+    score = clamp(profile.ecoiq_total_score)
+    if score is None:
+        raise Http404('No published assessment for this organisation.')
 
     # Score breakdown cards (reuse the same structure as company_detail)
     score_cards = [
@@ -871,10 +632,12 @@ def company_ml_insights(request, slug):
     for a single company. Runs on-demand using saved model files; returns
     graceful error payload if models aren't trained yet.
     """
-    company = get_object_or_404(
-        __import__('league.models', fromlist=['Company']).Company,
-        slug=slug,
-    )
+    # Through companies.visibility, not league.Company directly. Looking the
+    # organisation up by slug alone served an ARCHIVED profile's cluster label
+    # and anomaly score to anonymous callers, while /companies/<slug>/ — the
+    # page — answered 404 to everybody. A withdrawn assessment is withdrawn in
+    # every format it is published in.
+    company = profile_for(slug, request.user).company
 
     payload: dict = {
         'company': company.name,
@@ -922,10 +685,14 @@ def company_ml_insights(request, slug):
     try:
         from ml.prediction import predict_12m
         pred = predict_12m(company)
+        current = clamp(company.ecoiq_score)
         if pred is not None:
             payload['prediction'] = {
                 'score_12m': round(pred, 1),
-                'delta':     round(pred - float(company.ecoiq_score or 0), 1),
+                # A delta is a comparison. Without a current score there is
+                # nothing to compare against, so it is null rather than a
+                # difference measured from an invented zero.
+                'delta': None if current is None else round(pred - current, 1),
             }
     except Exception as exc:
         if not payload['error']:
@@ -989,9 +756,16 @@ def sector_pdf_report(request, sector):
         is_preview = True
 
     sector_label = _SECTOR_DISPLAY.get(sector, sector.replace('_', ' ').title())
-    names   = [p.company.name[:22] for p in profiles_data]
-    scores  = [float(p.ecoiq_total_score or 0) for p in profiles_data]
-    poll_levels = [p.pollution_level or 'medium' for p in profiles_data]
+    # Companies without a score are EXCLUDED from the chart rather than plotted
+    # as a zero-length bar. A bar at 0 is a visual claim that the company scored
+    # worst in its sector; an absent bar claims nothing.
+    plotted = [p for p in profiles_data if p.ecoiq_total_score is not None]
+    names   = [p.company.name[:22] for p in plotted]
+    scores  = [float(p.ecoiq_total_score) for p in plotted]
+    # `or 'medium'` invented a pollution classification for companies nobody
+    # had classified, and coloured a bar with it. Unknown now gets its own
+    # neutral colour rather than borrowing a real category's.
+    poll_levels = [p.pollution_level or None for p in plotted]
 
     def _bar_color(s):
         if s >= 70: return '#10b981'
@@ -1049,10 +823,13 @@ def sector_pdf_report(request, sector):
                  f'{score:.1f}', va='center', ha='left',
                  fontsize=8, color=WHITE, fontfamily=MONO)
 
-    avg = np.mean(scores) if scores else 50
-    ax1.axvline(x=avg, color=EMERALD, linestyle='--', alpha=0.6, linewidth=1)
-    ax1.text(avg + 0.5, len(names) - 0.5, f'avg {avg:.1f}',
-             fontsize=7, color=EMERALD, fontfamily=MONO)
+    # No scores means no average. Drawing one at 50 put a labelled 'avg 50.0'
+    # line on a chart of nothing — an invented sector benchmark.
+    if scores:
+        avg = float(np.mean(scores))
+        ax1.axvline(x=avg, color=EMERALD, linestyle='--', alpha=0.6, linewidth=1)
+        ax1.text(avg + 0.5, len(names) - 0.5, f'avg {avg:.1f}',
+                 fontsize=7, color=EMERALD, fontfamily=MONO)
 
     # Tier zone lines
     for threshold, col in [(85, EMERALD), (70, '#38bdf8'), (55, AMBER), (40, '#f97316')]:
@@ -1162,7 +939,9 @@ def report_index(request):
             'slug':      s,
             'label':     _SECTOR_DISPLAY.get(s, s.replace('_', ' ').title()),
             'count':     row['count'],
-            'avg_score': round(float(row['avg'] or 0), 1),
+            # Avg() returns None for a group with no scored members. Reporting
+            # that as 0.0 would publish a sector average nobody computed.
+            'avg_score': None if row['avg'] is None else round(float(row['avg']), 1),
             'pdf_url':   f'/companies/reports/sector/{s}/',
         })
 
@@ -1198,7 +977,14 @@ def generate_certificate(request, slug):
 
     cert_id  = f'ECOIQ-{slug[:6].upper()}-{uuid.uuid4().hex[:8].upper()}'
     issued   = datetime.now().strftime('%d %B %Y')
-    score    = float(profile.ecoiq_total_score or 0)
+    score    = clamp(profile.ecoiq_total_score)
+    if score is None:
+        return HttpResponse(
+            '<h2 style="font-family:sans-serif;color:#475569;padding:2rem">'
+            'Certificate not available — no published assessment for this '
+            'organisation.</h2>',
+            status=404,
+        )
     tier     = profile.moral_label_display
     color    = profile.moral_label_color
 
@@ -1271,8 +1057,12 @@ def company_stock_profile(request, slug):
     explanation instead of fabricated market data.
     """
     company = get_object_or_404(Company, slug=slug)
+    # The shared list rather than another copy of it. Not profile_for(): this
+    # page tolerates a missing profile and must keep doing so, and widening it
+    # to show staff archived organisations is a separate decision from fixing
+    # a list that had drifted out of date.
     profile = CompanyProfile.objects.filter(
-        company=company, status__in=('public', 'verified', 'draft'),
+        company=company, status__in=PUBLICLY_VISIBLE_STATUSES,
     ).first()
 
     is_staff = request.user.is_authenticated and request.user.is_staff
@@ -1375,3 +1165,336 @@ def set_investment_report_status(request, slug, report_id):
         messages.error(request, 'Unknown action.')
 
     return redirect('companies:stock', slug=slug)
+
+
+@login_required
+def company_detail_internal(request, slug):
+    """
+    /companies/<slug>/internal/ — the full organisation profile, signed-in only.
+
+    The PUBLIC organisation page is React and reads
+    /api/v2/companies/<slug>/assessment/. Four of this page's eleven panels
+    were audited and moved here rather than ported
+    (docs/product/COMPANY_PAGE_PANELS.md):
+
+        matched financing pathways   naming an instrument for a named company
+                                     is closer to advice than to assessment
+        data status / source library operational freshness, not a decision input
+        watchlist                    user-scoped by definition
+        stock strip                  removed from the public page outright
+
+    "Move to authenticated" has to mean somewhere; this is that somewhere. The
+    page is otherwise unchanged, including its evidence gate — an organisation
+    without a publishable score still falls through to
+    detail_evidence_pending.html, for a signed-in reader as for anyone else.
+    Signing in does not unlock a score; it unlocks the operational panels.
+    """
+    company = get_object_or_404(Company, slug=slug)
+    # The shared list, for the same reason as above.
+    profile = get_object_or_404(CompanyProfile, company=company,
+                                status__in=PUBLICLY_VISIBLE_STATUSES)
+
+    # ── Public evidence gate (D1.5) ───────────────────────────────────────────
+    # Fail closed. This page renders the composite score in seventeen places —
+    # a counter, an arc, gauges, pillar cards, comparison bands, two inline
+    # scripts, the meta description, the OpenGraph tags and schema.org
+    # structured data. Gating each one individually would be seventeen chances
+    # to miss one, and a number left in JSON-LD is still published even when the
+    # visible one is hidden.
+    #
+    # So the decision is made once, here, and an organisation without evidence
+    # gets a page that has no score in it at all rather than a page with the
+    # score suppressed in seventeen places.
+    #
+    # The route, the profile and every stored value are untouched; only what is
+    # rendered changes. Staff keep the full page — see the template.
+    from companies.evidence import coverage_for, public_score_state
+
+    score_state = public_score_state(profile)
+    if not score_state.available and not request.user.is_staff:
+        return render(request, 'companies/detail_evidence_pending.html', {
+            'company': company,
+            'profile': profile,
+            'score_state': score_state,
+            'coverage': coverage_for(profile),
+        })
+
+    # Score breakdown for display
+    score_cards = [
+        {
+            'label':  'Public Benefit',
+            'score':  profile.public_benefit_score,
+            'weight': '25%',
+            'icon':   '🌍',
+            'desc':   'Employment quality, regional development, community investment, national value',
+            'sub': [
+                {'label': 'Employment Quality', 'val': profile.jobs_created_score},
+                {'label': 'Regional Development', 'val': profile.regional_development_score},
+                {'label': 'Infrastructure', 'val': profile.infrastructure_contribution_score},
+                {'label': 'National Value', 'val': profile.national_value_score},
+            ],
+        },
+        {
+            'label':  'Environmental Stewardship',
+            'score':  profile.environmental_responsibility_score,
+            'weight': '25%',
+            'icon':   '♻️',
+            'desc':   'Pollution intensity, waste management, water stewardship, biodiversity',
+            'sub': [
+                {'label': 'Waste Management', 'val': profile.waste_management_score},
+                {'label': 'Water Stewardship', 'val': profile.water_impact_score},
+                {'label': 'Biodiversity', 'val': profile.biodiversity_impact_score},
+            ],
+        },
+        {
+            'label':  'Responsible Modernization',
+            'score':  profile.modernization_score,
+            'weight': '20%',
+            'icon':   '⚡',
+            'desc':   'Energy transition, digitalization, infrastructure upgrades, future readiness',
+            'sub': [
+                {'label': 'Energy Transition', 'val': profile.energy_transition_score},
+                {'label': 'Digitalization', 'val': profile.digitalization_score},
+                {'label': 'Infrastructure', 'val': profile.infrastructure_upgrade_score},
+                {'label': 'Future Readiness', 'val': profile.future_readiness_score},
+            ],
+        },
+        {
+            'label':  'Transparent Governance',
+            'score':  profile.transparency_anti_corruption_score,
+            'weight': '15%',
+            'icon':   '🔍',
+            'desc':   'Reporting quality, audit standards, procurement transparency',
+            'sub': [
+                {'label': 'Reporting Quality', 'val': profile.transparency_score_detail},
+                {'label': 'Audit Standards', 'val': profile.audit_quality_score},
+                {'label': 'Procurement', 'val': profile.procurement_transparency_score},
+            ],
+        },
+        {
+            'label':  'Anti-Corruption',
+            'score':  profile.anti_corruption_score,
+            'weight': '10%',
+            'icon':   '⚖️',
+            'desc':   'Anti-corruption practices, ethical procurement, governance integrity',
+            'sub': [
+                {'label': 'AC Practices', 'val': profile.anti_corruption_score},
+            ],
+        },
+        {
+            'label':  'Ethical Alignment',
+            'score':  profile.ethical_alignment_score,
+            'weight': '5%',
+            'icon':   '✦',
+            'desc':   'Long-term ethical value creation, controversy management, stakeholder trust',
+            'sub': [
+                {'label': 'Controversy Control',
+                 'val': None if profile.controversy_risk_score is None
+                        else max(0, 100 - profile.controversy_risk_score)},
+                {'label': 'Long-Term Value', 'val': profile.national_value_score},
+            ],
+        },
+    ]
+
+    # Path to 100%
+    path_actions = get_path_to_100_actions(profile)
+
+    # Guidance videos
+    videos = CompanyGuidanceVideo.objects.filter(
+        company=profile, status='published', visibility='public',
+    ).order_by('-created_at')[:4]
+
+    # Transition Engine integration
+    roadmaps = []
+    active_roadmap = None
+    has_roadmap = False
+    try:
+        from transition.models import TransitionRoadmap
+        roadmaps = list(company.roadmaps.order_by('-created_at')[:3])
+        active_roadmap = roadmaps[0] if roadmaps else None
+        has_roadmap = bool(roadmaps)
+    except Exception:
+        pass
+
+    # Financing matches (from Transition Engine)
+    financing_matches = []
+    if active_roadmap:
+        try:
+            financing_matches = list(
+                active_roadmap.financing_matches
+                .select_related('opportunity')
+                .order_by('-match_score')[:4]
+            )
+        except Exception:
+            pass
+
+    # AI briefing
+    briefing = None
+    try:
+        from intelligence.models import ExecutiveBriefing
+        briefing = ExecutiveBriefing.objects.filter(company=company).order_by('-created_at').first()
+    except Exception:
+        pass
+
+    # Sources
+    sources = profile.cited_sources.all()[:8]
+
+    # Score evolution snapshots — chronological for Chart.js
+    score_snapshots = list(profile.score_snapshots.order_by('date')[:8])
+    import json as _json
+    history_labels = _json.dumps([s.date.strftime('%b %Y') for s in score_snapshots])
+    history_scores = _json.dumps([round(s.total_score, 1) for s in score_snapshots])
+
+    # ── Intelligence layer ─────────────────────────────────────────────────────
+    harm_signals       = _get_harm_signals(profile)
+    ai_confidence      = _get_ai_confidence(profile)
+    financing_eligibility = _get_financing_eligibility(profile)
+
+    # Radar chart data (6 pillars, 0-100).
+    #
+    # An unassessed pillar is null, NOT zero. Chart.js skips a null point, so
+    # the shape shows a gap where there is no evidence — which is the honest
+    # picture. A zero would draw the polygon all the way to the centre and
+    # read as "this company scored zero on governance".
+    #
+    # json.dumps, not str(): a Python None renders as `None` in a template and
+    # is a syntax error in JavaScript. This list is injected with |safe.
+    radar_scores = json.dumps([
+        None if value is None else round(value, 1)
+        for value in (
+            profile.public_benefit_score,
+            profile.environmental_responsibility_score,
+            profile.modernization_score,
+            profile.transparency_anti_corruption_score,
+            profile.anti_corruption_score,
+            profile.ethical_alignment_score,
+        )
+    ])
+
+    # ── Ethical Intelligence layer (NEI / TSS / RVI) ───────────────────────────
+    ethics_profile = None
+    try:
+        from ethics.scoring import get_or_compute
+        ethics_profile = get_or_compute(profile)
+    except Exception:
+        pass
+
+    # ── Financing Intelligence layer ────────────────────────────────────────────
+    financing_profile       = None
+    fin_matches             = []
+    financing_eligible_count = 0
+    financing_likely_count   = 0
+    financing_total_count    = 0
+    try:
+        from financing.matching import get_or_compute as fin_compute
+        financing_profile = fin_compute(profile)
+        if financing_profile:
+            qs = profile.financing_matches.select_related('opportunity').order_by('-match_score')
+            financing_total_count    = qs.count()
+            financing_eligible_count = qs.filter(match_tier='eligible').count()
+            financing_likely_count   = qs.filter(match_tier='likely').count()
+            fin_matches              = list(qs[:6])
+    except Exception:
+        pass
+
+    # ── Improvement Pathway ─────────────────────────────────────────────────────
+    improvement_pathway = get_improvement_pathway(profile)
+
+    # ── Quranic Decision Filter (Decision Integrity) ────────────────────────────
+    qdf_assessment = None
+    try:
+        from qdf.scoring import get_or_compute as qdf_compute
+        qdf_assessment = qdf_compute(profile)
+    except Exception:
+        pass
+
+    # ── Institutional Intelligence Signals ──────────────────────────────────────
+    institutional_signals = _get_institutional_signals(profile)
+    confidence_label      = _get_confidence_label(ai_confidence, profile.is_verified)
+
+    # ── feat/company-halal-intelligence (PR 9) — Shariah screening + 114-KPI
+    # stewardship alignment. Two distinct lenses, read-only on this GET view
+    # (no state-changing GET actions) — see company_intelligence.services.
+    from company_intelligence.services.kpi_engine import filter_rows, kpi_alignment_profile
+    from company_intelligence.services.shariah_screening import latest_screen_for
+
+    shariah_screen = latest_screen_for(profile)
+    kpi_profile = kpi_alignment_profile(profile)
+    kpi_filter = request.GET.get('kpi_filter', '')
+    kpi_filtered_rows = filter_rows(kpi_profile['rows'], kpi_filter) if kpi_filter else kpi_profile['rows']
+    controversies = list(profile.controversies.select_related('evidence').all())
+    watchlist_entry = None
+    if request.user.is_authenticated:
+        watchlist_entry = profile.watchlist_entries.filter(user=request.user).first()
+
+    # ── feat/company-evidence-ingestion (PR 10) — real source provenance,
+    # data-origin honesty, freshness/staleness, per-metric financial
+    # provenance. All read-only on this GET view, same discipline as above.
+    from company_intelligence.services.data_origin import company_data_origin
+    from company_intelligence.services.evidence_quality import company_evidence_quality_summary
+    from company_intelligence.services.freshness import screening_freshness
+
+    harvest_sources = list(profile.harvest_sources.select_related().all())
+    data_origin = company_data_origin(profile)
+    screening_freshness_info = screening_freshness(shariah_screen)
+    evidence_quality_summary = company_evidence_quality_summary(profile)
+    financial_fact_sources = (
+        list(shariah_screen.financial_facts.metric_sources.select_related('evidence').all())
+        if shariah_screen and shariah_screen.financial_facts else []
+    )
+
+    return render(request, 'companies/detail.html', {
+        'company':               company,
+        'profile':               profile,
+        'score_cards':           score_cards,
+        'path_actions':          path_actions,
+        'videos':                videos,
+        'roadmaps':              roadmaps,
+        'active_roadmap':        active_roadmap,
+        'has_roadmap':           has_roadmap,
+        'briefing':              briefing,
+        'sources':               sources,
+        'disclaimer_full':       DISCLAIMER_FULL,
+        'disclaimer_light':      DISCLAIMER_LIGHT,
+        'moral_display':         profile.moral_label_display,
+        # Score evolution
+        'score_snapshots':       score_snapshots,
+        'history_labels':        history_labels,
+        'history_scores':        history_scores,
+        # Intelligence layer
+        'harm_signals':          harm_signals,
+        'ai_confidence':         ai_confidence,
+        'financing_eligibility': financing_eligibility,
+        'radar_scores':          radar_scores,
+        # Ethical Intelligence layer
+        'ethics_profile':        ethics_profile,
+        # Financing Intelligence layer
+        'financing_profile':          financing_profile,
+        'financing_matches':          fin_matches,
+        'financing_eligible_count':   financing_eligible_count,
+        'financing_likely_count':     financing_likely_count,
+        'financing_total_count':      financing_total_count,
+        # Improvement Pathway
+        'improvement_pathway':        improvement_pathway,
+        # Quranic Decision Filter
+        'qdf_assessment':             qdf_assessment,
+        # Institutional Intelligence layer
+        'institutional_signals':      institutional_signals,
+        'confidence_label':           confidence_label,
+        # feat/company-halal-intelligence (PR 9) — kept explicitly separate
+        # from qdf_assessment and every ecoiq_total_score/moral_label above:
+        # neither lens here is ever combined with those existing scores.
+        'shariah_screen':             shariah_screen,
+        'kpi_profile':                kpi_profile,
+        'kpi_filter':                 kpi_filter,
+        'kpi_filtered_rows':          kpi_filtered_rows,
+        'controversies':              controversies,
+        'watchlist_entry':            watchlist_entry,
+        'watchlist_statuses':         ResearchWatchlistEntry.STATUS_CHOICES,
+        # feat/company-evidence-ingestion (PR 10)
+        'harvest_sources':            harvest_sources,
+        'data_origin':                data_origin,
+        'screening_freshness':        screening_freshness_info,
+        'evidence_quality_summary':   evidence_quality_summary,
+        'financial_fact_sources':     financial_fact_sources,
+    })

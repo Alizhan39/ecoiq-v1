@@ -8,6 +8,7 @@ read, no photos/videos are actually analysed, no external model APIs are called,
 keys are used. It connects conceptually to the Multi-Model Intelligence Layer, Amanah
 Autopilot, LegacySafe, and the industrial modernisation planner elsewhere in EcoIQ.
 """
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
 
 POSITIONING_LINE = 'EcoIQ should not only answer — it should show the evidence moving behind the answer.'
@@ -192,6 +193,10 @@ MORNING_BRIEFING_ITEMS = [
 ]
 
 
+# Internal concept page — staff-only. This app is a hard-coded architecture
+# description with no models, no migrations and no ORM access; it was never a
+# customer-facing product surface. See docs/product/PHASE_1_ARCHITECTURE.md §3.
+@staff_member_required(login_url='/login/')
 def overview(request):
     return render(request, 'omnimodal_evidence_panel/overview.html', {
         'positioning_line': POSITIONING_LINE,

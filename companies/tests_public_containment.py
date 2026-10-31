@@ -1,0 +1,353 @@
+"""
+D1.5 — public truthfulness containment.
+
+Invariants A–E from the brief, asserted against the real public surfaces rather
+than against the helper in isolation. A test that only exercised
+`public_score_state()` would pass while a template still printed the number.
+
+The load-bearing idea: absence of evidence about a company is a fact about
+EcoIQ, not a fact about the company. Nothing here may say or imply that an
+unevidenced organisation is poor, zero, neutral or bottom-ranked.
+"""
+from django.contrib.auth import get_user_model
+from django.test import Client, TestCase
+
+from companies.evidence import (
+    PENDING_HEADLINE, STATUS_INSUFFICIENT_EVIDENCE, public_score_state,
+)
+from companies.models import CompanyProfile
+from league.models import Company
+
+
+def _populated(company, **fields):
+    """
+    A profile whose material inputs are EXPLICIT.
+
+    Before D4C these fixtures set no scores at all and relied on
+    default=50.0 to invent sixteen of them. The tests read as though they
+    set up a company; they set up nothing. Now the data is stated, and a
+    caller that wants an unknown overrides that one field by name.
+    """
+    from companies.testing import MATERIAL_FIELDS, FIXTURE_VALUE
+
+    values = {name: FIXTURE_VALUE for name in MATERIAL_FIELDS}
+    values.update(fields)
+    return CompanyProfile.objects.create(company=company, **values)
+
+
+
+def _profile(name, slug, **kwargs):
+    company = Company.objects.create(
+        name=name, slug=slug, country='United Kingdom', ecoiq_score=71.4)
+    return _populated(company=company, status='public', ecoiq_total_score=71.4, **kwargs)
+
+
+class InvariantA_NoPublicScoreWithoutEvidence(TestCase):
+    """Zero evidence must not produce a public numerical EcoIQ Score."""
+
+    def setUp(self):
+        # The API rate-limits anonymous callers to 20 requests/day through the
+        # Django cache, which is NOT reset between tests. A full-suite run
+        # exhausts it and later API tests receive 429 with a payload that has no
+        # score keys -- a test-isolation problem that reads exactly like a
+        # containment regression.
+        from django.core.cache import cache
+        cache.clear()
+
+        self.profile = _profile('Unevidenced Ltd', 'unevidenced-ltd')
+        self.body = Client().get('/companies/unevidenced-ltd/').content.decode()
+
+    def test_page_still_serves(self):
+        """Containment, not removal — the URL must not start 404ing."""
+        self.assertEqual(Client().get('/companies/unevidenced-ltd/').status_code, 200)
+
+    def test_the_number_is_absent_from_the_page(self):
+        self.assertNotIn('71.4', self.body)
+
+    def test_the_pending_state_is_shown_instead(self):
+        """
+        The page is React; the wording lives in the assessment payload. Every
+        other assertion in this class is about the DOCUMENT and is unchanged —
+        those are the ones that check a number is absent.
+        """
+        payload = Client().get(
+            '/api/v2/companies/unevidenced-ltd/assessment/').json()
+        self.assertIsNone(payload['ecoiq_score'])
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
+
+    def test_no_score_appears_in_structured_data(self):
+        """
+        Hiding the number on screen while leaving it in schema.org markup would
+        still publish it to every machine reader.
+        """
+        self.assertNotIn('EcoIQ Score', self.body)
+        self.assertNotIn('ratingValue', self.body)
+
+    def test_no_score_appears_in_meta_or_opengraph(self):
+        for marker in ('climate intelligence score', 'climate score', '/100'):
+            with self.subTest(marker=marker):
+                self.assertNotIn(marker, self.body)
+
+    def test_page_makes_no_negative_claim_about_the_company(self):
+        """
+        The failure mode worth guarding: 'no evidence' must never be rendered as
+        'bad', 'zero' or 'unrated'.
+        """
+        lowered = self.body.lower()
+        for forbidden in ('poor score', 'unrated', 'score: 0', 'score 0/100', '0/100'):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, lowered)
+
+    def test_helper_agrees_with_the_page(self):
+        state = public_score_state(self.profile)
+        self.assertFalse(state.available)
+        self.assertIsNone(state.score)
+        self.assertEqual(state.status, STATUS_INSUFFICIENT_EVIDENCE)
+
+
+class InvariantB_NoRankWithoutEvidence(TestCase):
+    """Zero evidence must not produce a public company rank."""
+
+    def setUp(self):
+        for i in range(3):
+            _profile(f'Ranked {i} Ltd', f'ranked-{i}-ltd')
+        self.body = Client().get('/league/').content.decode()
+
+    def test_unevidenced_companies_are_absent_from_the_league_table(self):
+        for i in range(3):
+            with self.subTest(i=i):
+                self.assertNotIn(f'/league/ranked-{i}-ltd/', self.body)
+
+    def test_no_score_numbers_leak_into_the_table(self):
+        self.assertNotIn('71.4', self.body)
+
+    def test_empty_state_explains_evidence_rather_than_filtering(self):
+        """
+        'No companies found for the selected sector' would be a different and
+        untrue explanation for why the table is empty.
+
+        Asserted against the API now that the league is React. The wording
+        lives in the backend's constants and the page renders it, so the
+        explanation cannot drift from the one the company pages give.
+        """
+        payload = Client().get('/api/v2/leaderboard/').json()
+
+        self.assertEqual(payload['count'], 0)
+        self.assertEqual(payload['evidence_note']['headline'], PENDING_HEADLINE)
+        self.assertNotIn('No companies found for the selected sector',
+                         self.body)
+
+    def test_companies_are_not_given_a_bottom_rank_instead(self):
+        lowered = self.body.lower()
+        for forbidden in ('unranked', 'not ranked', 'rank 0'):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, lowered)
+
+
+class InvariantC_NoFinancingEstimateWithoutEvidence(TestCase):
+    """Zero evidence must not produce an authoritative financing estimate."""
+
+    def setUp(self):
+        _profile('Finance Ltd', 'finance-ltd')
+
+    def test_company_page_shows_no_capex_or_savings_figures(self):
+        body = Client().get('/companies/finance-ltd/').content.decode().lower()
+        for marker in ('transition capex', 'annual savings', 'payback', 'investment required'):
+            with self.subTest(marker=marker):
+                self.assertNotIn(marker, body)
+
+    def test_downloadable_report_is_not_produced(self):
+        """
+        A PDF leaves the site and carries no context. Gating the page while
+        still emitting the same figures as a document would defeat containment.
+        """
+        self.assertEqual(Client().get('/companies/finance-ltd/report.pdf').status_code, 404)
+
+
+class InvariantD_MeasuredFiftyIsNotMissing(TestCase):
+    """
+    A genuine value of exactly 50 must not be treated as missing.
+
+    Evidence status decides truthfulness, not the numeral. This is the invariant
+    that forbids a blanket `50 -> NULL` migration.
+    """
+
+    def test_evidence_status_not_the_number_decides(self):
+        """
+        Two identical stored 50s, different provenance — the distinction must
+        survive.
+
+        Established against the provenance STORE rather than
+        field_provenance(), whose default-comparison heuristic D4C made inert:
+        with no model defaults left there is nothing to compare a value
+        against. The store is the authority that heuristic was approximating,
+        and wiring coverage onto it is D5's first job.
+        """
+        from companies import provenance as prov
+        from companies.evidence import PROVENANCE_MEASURED, PROVENANCE_SEEDED
+
+        evidenced = _profile(
+            'Fifty Evidenced', 'fifty-evidenced',
+            waste_management_score=50.0,
+            public_sources=[{'url': 'https://example.org/audit',
+                             'title': 'Waste audit'}])
+        bare = _profile('Fifty Bare', 'fifty-bare', waste_management_score=50.0)
+        prov.record(evidenced, 'waste_management_score', PROVENANCE_MEASURED,
+                    written_by='analyst')
+        prov.record(bare, 'waste_management_score', PROVENANCE_SEEDED,
+                    written_by='seed:test')
+
+        self.assertEqual(evidenced.waste_management_score,
+                         bare.waste_management_score)
+        self.assertEqual(prov.current(bare, 'waste_management_score').origin,
+                         PROVENANCE_SEEDED)
+        self.assertNotEqual(
+            prov.current(evidenced, 'waste_management_score').origin,
+            PROVENANCE_SEEDED)
+
+
+class InvariantE_SyntheticDataStaysInternal(TestCase):
+    """
+    Seeded data remains available internally and is never presented publicly as
+    measured evidence.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.staff = get_user_model().objects.create_user(
+            username='containment-staff', is_staff=True)
+
+    def setUp(self):
+        self.profile = _profile('Internal Ltd', 'internal-ltd')
+
+    def test_the_value_is_not_deleted_from_the_database(self):
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.ecoiq_total_score, 71.4)
+
+    def test_staff_still_see_the_full_profile(self):
+        """
+        The full profile moved to /companies/<slug>/internal/ when the public
+        page became React. Signing in still shows what it always showed —
+        including the seeded number, which is the point of this invariant:
+        synthetic data stays available internally and is never presented
+        publicly as measured evidence.
+        """
+        client = Client()
+        client.force_login(self.staff)
+        response = client.get('/companies/internal-ltd/internal/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('71.4', response.content.decode())
+
+    def test_the_internal_profile_is_not_public(self):
+        response = Client().get('/companies/internal-ltd/internal/')
+        self.assertNotEqual(response.status_code, 200)
+        self.assertNotIn(b'71.4', response.content)
+
+    def test_the_public_page_shows_staff_no_score_either(self):
+        """
+        Signing in unlocks the operational panels, not a score. The evidence
+        gate is the same for everybody.
+        """
+        client = Client()
+        client.force_login(self.staff)
+        body = client.get('/companies/internal-ltd/').content.decode()
+        self.assertNotIn('71.4', body)
+
+    def test_staff_still_see_the_full_league_table(self):
+        """
+        The PUBLIC league is fail-closed for everybody, staff included — it
+        reads /api/v2/leaderboard/, which applies the gate with no exemption.
+        The full internal table moved to a staff-only route rather than being
+        deleted: the people who have to see what the estate holds still can.
+        """
+        client = Client()
+        client.force_login(self.staff)
+
+        internal = client.get('/league/internal/').content.decode()
+        self.assertIn('/league/internal-ltd/', internal)
+
+        # And the public page still shows them nothing.
+        self.assertNotIn('71.4', client.get('/league/').content.decode())
+
+    def test_the_internal_league_table_is_staff_only(self):
+        response = Client().get('/league/internal/')
+        self.assertNotEqual(response.status_code, 200)
+        self.assertNotIn(b'71.4', response.content)
+
+    def test_anonymous_visitors_do_not(self):
+        self.assertNotIn('71.4', Client().get('/companies/internal-ltd/').content.decode())
+
+
+class DirectoryCardsTests(TestCase):
+    """
+    The directory used to render a ring and four pillar bars per card — all
+    score in disguise — and to ORDER 467 cards by -ecoiq_total_score, which
+    published the withheld number by position.
+
+    It is React now and reads /api/v2/companies/. The claim is asserted at both
+    ends: the document carries no score, and the data it renders carries none
+    either. The pending wording itself is asserted in
+    frontend/web/src/pages/Companies.test.tsx, against the component that
+    renders it.
+    """
+
+    def setUp(self):
+        _profile('Card Ltd', 'card-ltd')
+
+    def test_the_document_carries_no_score_number(self):
+        body = Client().get('/companies/').content.decode()
+        self.assertNotIn('71.4', body)
+
+    def test_the_document_carries_no_card_data_at_all(self):
+        """
+        Stronger than the assertion it replaces: there is no per-company markup
+        in the response to hide a number in.
+        """
+        body = Client().get('/companies/').content.decode()
+        self.assertNotIn('Card Ltd', body)
+        self.assertIn('id="root"', body)
+
+    def test_the_api_the_page_reads_withholds_the_score(self):
+        payload = Client().get('/api/v2/companies/').json()
+        rows = [r for r in payload['results'] if r['name'] == 'Card Ltd']
+        self.assertEqual(len(rows), 1)
+        self.assertIsNone(rows[0]['ecoiq_score'])
+        self.assertEqual(rows[0]['score_status'], 'INSUFFICIENT_EVIDENCE')
+
+    def test_the_api_does_not_order_by_score(self):
+        """
+        Ordering by a withheld score publishes it: a reader infers standing
+        from position without a digit ever being printed.
+        """
+        _profile('Aardvark Ltd', 'aardvark-ltd')
+        payload = Client().get('/api/v2/companies/').json()
+        names = [r['name'] for r in payload['results']]
+        self.assertEqual(names, sorted(names))
+
+
+class ApiContractUnchangedTests(TestCase):
+
+    """
+    The public API is deliberately NOT changed in this PR, and that decision is
+    pinned here so it is a choice rather than an oversight.
+
+    mobile/lib/data/models/company.dart parses the field as
+
+        double.tryParse('${json['ecoiq_score']}') ?? 0
+
+    so emitting null would make the shipped client display 0 — relocating the
+    'unknown becomes the worst score' falsehood into the app instead of removing
+    it. The API needs a versioned change alongside a client release; see the
+    plan's D5.
+    """
+
+    def setUp(self):
+        _profile('Api Ltd', 'api-ltd')
+
+    def test_leaderboard_endpoint_still_returns_a_numeric_score(self):
+        response = Client().get('/api/v1/leaderboard/')
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn('leaderboard', payload)
+        if payload['leaderboard']:
+            self.assertIsNotNone(payload['leaderboard'][0].get('ecoiq_score'))

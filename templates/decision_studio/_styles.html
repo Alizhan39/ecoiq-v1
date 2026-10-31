@@ -10,11 +10,11 @@
   .ds-subtitle { font-size: 1.02rem; color: var(--ds-muted); margin: 0 0 1.5rem; max-width: 760px; line-height: 1.6; }
 
   .ds-ask-form { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.2rem; }
-  .ds-ask-input { flex: 1; min-width: 260px; background: var(--ds-bg2); color: #fff; border: 1px solid var(--ds-border); border-radius: 10px; padding: 0.9rem 1.1rem; font-size: 1rem; }
+  .ds-ask-input { flex: 1; min-width: min(260px, 100%); box-sizing: border-box; max-width: 100%; background: var(--ds-bg2); color: #fff; border: 1px solid var(--ds-border); border-radius: 10px; padding: 0.9rem 1.1rem; font-size: 1rem; }
   .ds-ask-input:focus { outline: none; border-color: var(--ds-acc); }
   .ds-suggested-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
   .ds-suggested-chip { background: var(--ds-bg2); border: 1px solid var(--ds-border); color: var(--ds-text); font-size: 0.8rem; font-weight: 600; padding: 0.5rem 0.9rem; border-radius: 999px; text-decoration: none; }
-  .ds-suggested-chip:hover { border-color: var(--ds-acc); }
+  .ds-suggested-chip:hover, .ds-suggested-chip:focus-visible { border-color: var(--ds-acc); }
 
   .ds-section { margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid var(--ds-border); }
   .ds-h2 { font-size: 1.15rem; font-weight: 700; color: #fff; margin: 0 0 0.6rem; }

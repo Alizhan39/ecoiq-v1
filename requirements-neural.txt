@@ -1,0 +1,7 @@
+# Optional worker/runtime extra; keep CPU model costs out of the default app.
+# Install the CPU torch wheel for your platform before installing this file.
+sentence-transformers==5.1.2
+torch==2.14.1
+transformers==4.57.6
+huggingface-hub==0.36.2
+safetensors==0.8.0

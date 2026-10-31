@@ -19,6 +19,7 @@ All AI content uses strictly neutral EcoIQ language:
   transparency, anti-corruption, future generations, people and planet.
 No religious language whatsoever.
 """
+from core.unknown import format_known as fmt
 import json
 import logging
 import re
@@ -91,18 +92,36 @@ def _profile_context(profile) -> str:
         f'Sector: {co.get_sector_display()}',
         f'Description: {co.description or "Not provided"}',
         '',
-        f'EcoIQ Total Score: {profile.ecoiq_total_score:.1f}/100 ({profile.moral_label_display})',
-        f'Public Benefit Score:          {profile.public_benefit_score:.1f}',
-        f'Environmental Score:           {profile.environmental_responsibility_score:.1f}',
-        f'Modernization Score:           {profile.modernization_score:.1f}',
-        f'Transparency Score:            {profile.transparency_anti_corruption_score:.1f}',
-        f'Anti-Corruption Score:         {profile.anti_corruption_score:.1f}',
-        f'Ethical Alignment Score:       {profile.ethical_alignment_score:.1f}',
-        f'Profit Extraction Risk:        {profile.profit_extraction_risk_score:.1f}',
+        # D4A. An unknown score reaches the model as the WORDS 'not assessed',
+        # never as a number. Handed '50.0' an LLM reasons about an average
+        # company and writes fluent, confident prose about a measurement
+        # nobody made -- and nothing downstream can tell that apart from a
+        # real finding.
+        # The moral label is a stored field with its own default, so an
+        # unscored company still reports one -- "Transitional Company" for an
+        # organisation nobody assessed. Omitted rather than asserted when there
+        # is no composite behind it.
+        (f'EcoIQ Total Score: {profile.ecoiq_total_score:.1f}/100 '
+         f'({profile.moral_label_display})'
+         if profile.ecoiq_total_score is not None
+         else 'EcoIQ Total Score: not assessed'),
+        f'Public Benefit Score:          {fmt(profile.public_benefit_score)}',
+        f'Environmental Score:           {fmt(profile.environmental_responsibility_score)}',
+        f'Modernization Score:           {fmt(profile.modernization_score)}',
+        f'Transparency Score:            {fmt(profile.transparency_anti_corruption_score)}',
+        f'Anti-Corruption Score:         {fmt(profile.anti_corruption_score)}',
+        f'Ethical Alignment Score:       {fmt(profile.ethical_alignment_score)}',
+        f'Profit Extraction Risk:        {fmt(profile.profit_extraction_risk_score)}',
         '',
         f'Pollution Level: {profile.get_pollution_level_display()}',
-        f'Estimated Emissions: {profile.estimated_emissions:,} tCO2/yr' if profile.estimated_emissions else 'Emissions: Not disclosed',
-        f'Renewable Energy Share: {profile.renewable_energy_share:.0f}%' if profile.renewable_energy_share else 'Renewable: Not disclosed',
+        # `if x else` on a number is a FALSY test, so a genuine zero was
+        # reported as "Not disclosed". A renewable share of exactly 0% is a
+        # real finding about a company with no renewables, and it is the
+        # opposite of not knowing.
+        (f'Estimated Emissions: {profile.estimated_emissions:,} tCO2/yr'
+         if profile.estimated_emissions is not None else 'Emissions: Not disclosed'),
+        (f'Renewable Energy Share: {profile.renewable_energy_share:.0f}%'
+         if profile.renewable_energy_share is not None else 'Renewable: Not disclosed'),
         f'Funding Status: {profile.get_funding_status_display()}',
         f'Ownership: {profile.get_ownership_type_display()}',
     ]

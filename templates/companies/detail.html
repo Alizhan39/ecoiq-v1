@@ -2,11 +2,12 @@
 {% load humanize %}
 {% load harvester_panels %}
 {% load portfolio_extras %}
+{% load company_extras %}
 
 {% block title %}{{ company.name }} — EcoIQ Intelligence Profile{% endblock %}
-{% block meta_description %}<meta name="description" content="{{ company.name }} EcoIQ climate score: {{ profile.ecoiq_total_score|floatformat:1 }}/100. {{ company.sector }} company{% if company.country %} in {{ company.country }}{% endif %}. Transition readiness, ESG analysis and financing eligibility on EcoIQ.">{% endblock %}
-{% block og_title %}{{ company.name }} — EcoIQ Score {{ profile.ecoiq_total_score|default:0|floatformat:0 }}/100{% endblock %}
-{% block og_description %}{{ company.name }} ({{ company.sector }}{% if company.country %}, {{ company.country }}{% endif %}) — EcoIQ climate intelligence score: {{ profile.ecoiq_total_score|default:0|floatformat:1 }}/100. Tier: {{ profile.moral_label_display }}.{% endblock %}
+{% block meta_description %}<meta name="description" content="{{ company.name }} — {{ company.sector }} company{% if company.country %} in {{ company.country }}{% endif %}. {% with pss=profile|public_score %}{% if pss.available %}EcoIQ climate score: {{ pss.score|floatformat:1 }}/100. {% else %}{{ pss.headline }}. {% endif %}{% endwith %}Transition readiness, ESG analysis and financing eligibility on EcoIQ.">{% endblock %}
+{% block og_title %}{{ company.name }}{% with pss=profile|public_score %}{% if pss.available %} — EcoIQ Score {{ pss.score|floatformat:0 }}/100{% endif %}{% endwith %} — EcoIQ{% endblock %}
+{% block og_description %}{{ company.name }} ({{ company.sector }}{% if company.country %}, {{ company.country }}{% endif %}){% with pss=profile|public_score %}{% if pss.available %} — EcoIQ climate intelligence score: {{ pss.score|floatformat:1 }}/100. Tier: {{ profile.moral_label_display }}.{% else %} — {{ pss.headline }}.{% endif %}{% endwith %}{% endblock %}
 
 {% block extra_head %}
 <!-- JSON-LD structured data for Google -->
@@ -15,19 +16,32 @@
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "{{ company.name|escapejs }}",
-  "description": "{{ company.name|escapejs }} EcoIQ climate intelligence score: {{ profile.ecoiq_total_score|default:0|floatformat:1 }}/100. Tier: {{ profile.moral_label_display|escapejs }}.",
+  "description": "{{ company.name|escapejs }}{% with pss=profile|public_score %}{% if pss.available %} EcoIQ climate intelligence score: {{ pss.score|floatformat:1 }}/100. Tier: {{ profile.moral_label_display|escapejs }}.{% else %} {{ pss.headline|escapejs }}.{% endif %}{% endwith %}",
   "url": "https://ecoiq.uk/companies/{{ company.slug }}/",
-  "sameAs": [],
-  "identifier": {
-    "@type": "PropertyValue",
-    "name": "EcoIQ Score",
-    "value": "{{ profile.ecoiq_total_score|default:0|floatformat:1 }}"
-  }{% if company.sector %},
+  {% comment %}
+    Every key below is optional and therefore carries a LEADING comma, so any
+    combination of them still produces valid JSON. "sameAs" is the last
+    unconditional key and must not have a trailing one.
+
+    The EcoIQ Score is emitted as structured data only when it is publishable.
+    Hiding a number on screen while leaving it in schema.org markup would still
+    publish it — to search engines, aggregators and anything else that reads the
+    machine-readable version rather than the page.
+
+    The previous `|default:0` was its own hazard: a missing score would have been
+    published to Google as a score of 0.0.
+  {% endcomment %}
+  "sameAs": []{% if company.sector %},
   "industry": "{{ company.sector|escapejs }}"{% endif %}{% if company.country %},
   "location": {
     "@type": "Place",
     "addressCountry": "{{ company.country|escapejs }}"
-  }{% endif %}
+  }{% endif %}{% with pss=profile|public_score %}{% if pss.available %},
+  "identifier": {
+    "@type": "PropertyValue",
+    "name": "EcoIQ Score",
+    "value": "{{ pss.score|floatformat:1 }}"
+  }{% endif %}{% endwith %}
 }
 </script>
 <style>
@@ -318,11 +332,16 @@ a{color:inherit;text-decoration:none}
 .harm-cell.moderate::before{background:var(--warn)}
 .harm-cell.elevated::before{background:var(--danger)}
 .harm-cell.critical::before{background:#b91c1c}
+/* insufficient_evidence: a signal we could not assess. Deliberately the
+   muted neutral, never the green 'clear' treatment — an unassessed signal
+   must not read as a passed one. */
+.harm-cell.insufficient_evidence::before{background:var(--muted2)}
 .harm-cell-label{font-size:.7rem;font-weight:700;margin-bottom:.2rem;padding-left:.1rem}
 .harm-cell.clear .harm-cell-label{color:var(--accent)}
 .harm-cell.moderate .harm-cell-label{color:var(--warn)}
 .harm-cell.elevated .harm-cell-label{color:var(--danger)}
 .harm-cell.critical .harm-cell-label{color:#f97316}
+.harm-cell.insufficient_evidence .harm-cell-label{color:var(--muted2)}
 .harm-cell-detail{font-size:.63rem;color:var(--muted2);line-height:1.5;padding-left:.1rem}
 .harm-cell-penalty{
   font-size:.6rem;font-weight:700;
@@ -574,6 +593,9 @@ a{color:inherit;text-decoration:none}
   display:flex;flex-wrap:wrap;gap:.5rem .9rem;font-size:.67rem;color:var(--muted2);
   margin-top:.4rem;
 }
+.imp-tag-not_assessed{background:rgba(148,163,184,.12);color:var(--muted2)}
+.imp-card-not_assessed{opacity:.72}
+.imp-uplift-unknown{color:var(--muted2)}
 .imp-traj-legend-dot{
   display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px;
 }
@@ -1475,6 +1497,13 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
     </div>
 
     {# ── Score Trajectory ── #}
+    {% comment %}
+      trajectory is None when the company has no current EcoIQ score. Every
+      number in this block is relative to that score, so without it the whole
+      block would render blanks around a bar of zero width. Omitted entirely
+      instead — the milestone list below still stands on its own.
+    {% endcomment %}
+    {% if traj %}
     <div class="imp-trajectory">
       <div class="imp-traj-title">
         <span>Potential EcoIQ Improvement Trajectory</span>
@@ -1501,6 +1530,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
         <span><span class="imp-traj-legend-dot" style="background:rgba(0,232,154,.2)"></span>Potential range (staged implementation)</span>
       </div>
     </div>
+    {% endif %}
 
     {# ── Milestone Cards ── #}
     <div class="imp-list">
@@ -1509,7 +1539,11 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
         <summary>
           <div class="imp-sum-top">
             <span class="imp-card-title">{{ ms.title }}</span>
+            {% if ms.status == 'not_assessed' %}
+            <span class="imp-uplift imp-uplift-unknown">Not assessed</span>
+            {% else %}
             <span class="imp-uplift">+{{ ms.uplift_low }}–{{ ms.uplift_high }} pts</span>
+            {% endif %}
           </div>
           <div class="imp-card-tags">
             <span class="imp-tag imp-tag-{{ ms.status }}">{{ ms.status_label }}</span>
@@ -1953,7 +1987,7 @@ details.imp-card[open] .imp-chevron{transform:rotate(-180deg)}
         </div>
         <div style="margin-top:.85rem;font-size:.63rem;color:var(--muted);line-height:1.55">
           Scores are AI-generated from public data. All pillars computed from sub-dimension averages.
-          <a href="/methodology/" style="color:var(--accent)">Full Methodology →</a>
+          <a href="/trust/" style="color:var(--accent)">Full Methodology →</a>
         </div>
       </div>
     </div>

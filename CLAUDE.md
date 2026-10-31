@@ -23,6 +23,49 @@ work**:
 - [`docs/AI-DEVELOPMENT-STACK.md`](docs/AI-DEVELOPMENT-STACK.md) — what's
   installed, what was skipped and why, security findings.
 
+## Context navigation
+
+Before broad repository scans:
+
+1. Read [`docs/repo-map/OBSIDIAN_BRIDGE.md`](docs/repo-map/OBSIDIAN_BRIDGE.md).
+2. Consult the relevant EcoIQ Obsidian MOC/index if accessible
+   (`~/Desktop/ecoiq/_MOC/`).
+3. Identify the smallest relevant subsystem.
+4. Read only the authoritative code files for that subsystem.
+5. Do not recursively scan the whole repository unless both the bridge and the
+   vault are insufficient.
+6. **Code is authoritative when it conflicts with knowledge notes.** The vault's
+   architecture notes predate the current evidence architecture.
+7. Update the bridge only when architecture materially changes.
+
+## Third-party AI tooling
+
+Nine third-party skills (frontend-design, canvas-design, algorithmic-art,
+theme-factory, web-artifacts-builder, systematic-debugging, obsidian-markdown,
+context-optimization, context-compression) are installed project-local at
+pinned commits, plus the Excel MCP server behind a filesystem boundary. Payloads
+are gitignored per rule 14; the pinned installer and the audit are tracked.
+
+Start at [`docs/ai-tooling/README.md`](docs/ai-tooling/README.md). Before using
+any of them, read
+[`docs/ai-tooling/SECURITY_BOUNDARIES.md`](docs/ai-tooling/SECURITY_BOUNDARIES.md)
+— several carry real restrictions (theme-factory must not restyle production;
+web-artifacts-builder is prototype-only and pulls in Tailwind/shadcn;
+algorithmic-art output is never evidence). Rejections and their reasons are in
+[`THIRD_PARTY_SKILLS_AUDIT.md`](docs/ai-tooling/THIRD_PARTY_SKILLS_AUDIT.md).
+
+Context budgets, caching rules, and the handoff contract:
+[`docs/ai-tooling/CONTEXT_POLICY.md`](docs/ai-tooling/CONTEXT_POLICY.md). The
+rule that outranks every budget in it: **never drop provenance to save tokens.**
+
+Knowledge workspace (plain Markdown; Obsidian optional, never a runtime
+dependency): [`docs/knowledge/README.md`](docs/knowledge/README.md).
+
+```
+bash scripts/ai-tooling/install-third-party-skills.sh --check  # skills are installed
+bash scripts/ai-tooling/start-excel-mcp.sh --check             # Excel MCP boundary
+```
+
 ## Standing rules
 
 1. **EcoIQ is the source of truth.** `frontend/app/src/design/tokens.ts`,

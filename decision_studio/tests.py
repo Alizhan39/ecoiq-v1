@@ -8,6 +8,7 @@ from companies.models import CompanyProfile, CompanyScoreSnapshot
 from decision_studio.models import DecisionQuery
 from decision_studio.services import capability_routing, data_availability, query_understanding
 from decision_studio.services.decision_engine import answer_question
+from core.testing_access import SignedIn
 
 
 def _seed_baseline():
@@ -147,6 +148,11 @@ class DataAvailabilityTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_baseline()
+        from django.contrib.auth import get_user_model
+        from gold_intelligence.models import GoldProject, ProjectMembership
+        cls.project = GoldProject.objects.create(name='Availability project', slug='availability-project')
+        cls.user = get_user_model().objects.create_user('availability-analyst')
+        ProjectMembership.objects.create(project=cls.project, user=cls.user, role='analyst')
 
     def test_no_profiles_returns_unknown(self):
         result = data_availability.check_data_availability([])
@@ -154,7 +160,7 @@ class DataAvailabilityTests(TestCase):
 
     def test_unscored_profile_is_insufficient(self):
         profile = CompanyProfile.objects.first()
-        result = data_availability.check_data_availability([profile])
+        result = data_availability.check_data_availability([profile], project=self.project, user=self.user)
         self.assertEqual(result['status'], 'INSUFFICIENT')
         self.assertTrue(result['missing_data'])
 
@@ -167,10 +173,10 @@ class DataAvailabilityTests(TestCase):
         scores = compute_company_intelligence_score(profile)
         CompanyScoreSnapshot.create_from_profile(profile, trigger='manual', intelligence_scores=scores)
         EvidenceMemory.objects.create(
-            text_chunk='Real evidence.', company=profile,
+            project=self.project, text_chunk='Real evidence.', company=profile,
             embedding=compute_embedding('Real evidence.'), embedding_status='embedded',
         )
-        result = data_availability.check_data_availability([profile])
+        result = data_availability.check_data_availability([profile], project=self.project, user=self.user)
         self.assertEqual(result['status'], 'AVAILABLE')
 
     def test_mixed_readiness_is_partial(self):
@@ -182,10 +188,10 @@ class DataAvailabilityTests(TestCase):
         scores = compute_company_intelligence_score(profiles[0])
         CompanyScoreSnapshot.create_from_profile(profiles[0], trigger='manual', intelligence_scores=scores)
         EvidenceMemory.objects.create(
-            text_chunk='Real evidence.', company=profiles[0],
+            project=self.project, text_chunk='Real evidence.', company=profiles[0],
             embedding=compute_embedding('Real evidence.'), embedding_status='embedded',
         )
-        result = data_availability.check_data_availability(profiles)
+        result = data_availability.check_data_availability(profiles, project=self.project, user=self.user)
         self.assertEqual(result['status'], 'PARTIAL')
 
 
@@ -222,8 +228,8 @@ class DecisionEngineTests(TestCase):
         if outcome['result']['ranking']:
             self.assertEqual(outcome['result']['ranking'][0]['dimension'], 'climate_risk_score')
 
-    def test_evidence_retrieval_is_bounded_and_deduplicated(self):
-        from decision_studio.services.decision_engine import MAX_EVIDENCE_PER_ENTITY, _retrieve_evidence
+    def test_evidence_retrieval_without_project_context_is_empty(self):
+        from decision_studio.services.decision_engine import _retrieve_evidence
         from evidence_memory.models import EvidenceMemory
         from evidence_memory.services.embeddings import compute_embedding
 
@@ -234,19 +240,35 @@ class DecisionEngineTests(TestCase):
                 embedding=compute_embedding(f'Evidence item number {i}.'), embedding_status='embedded',
             )
         items = _retrieve_evidence('evidence item', [profile], [])
-        self.assertLessEqual(len(items), MAX_EVIDENCE_PER_ENTITY)
+        self.assertEqual(items, [])
+
+    def test_platform_sharing_is_not_publication_permission(self):
+        from decision_studio.services.decision_engine import _retrieve_evidence
+        from evidence_memory.models import EvidenceMemory
+        from evidence_memory.services.embeddings import compute_embedding
+        text = 'Platform-shared evidence is restricted to authorised project analysis.'
+        EvidenceMemory.objects.create(
+            text_chunk=text, embedding=compute_embedding(text), embedding_status='embedded',
+            visibility='platform_learning_verified', verification_status='verified',
+            review_tier='independently_verified',
+        )
+        self.assertEqual(_retrieve_evidence(text, [], []), [])
 
     def test_evidence_deduplication_removes_identical_excerpts(self):
+        from unittest.mock import patch
         from decision_studio.services.decision_engine import _retrieve_evidence
         from evidence_memory.models import EvidenceMemory
         from evidence_memory.services.embeddings import compute_embedding
 
         profile = CompanyProfile.objects.first()
         text = 'This exact evidence text appears twice.'
-        EvidenceMemory.objects.create(text_chunk=text, company=profile, embedding=compute_embedding(text), embedding_status='embedded')
-        EvidenceMemory.objects.create(text_chunk=text, company=profile, embedding=compute_embedding(text), embedding_status='embedded')
-        items = _retrieve_evidence(text, [profile], [])
+        records = [EvidenceMemory.objects.create(text_chunk=text, company=profile, embedding=compute_embedding(text), embedding_status='embedded') for _ in range(2)]
+        # Exercise formatting of already-authorised results independently of
+        # the access boundary, which this legacy caller has no context to open.
+        with patch('evidence_memory.services.memory.search_company_memory', return_value=records):
+            items = _retrieve_evidence(text, [profile], [])
         excerpts = [i['excerpt'] for i in items]
+        self.assertEqual(excerpts, [text])
         self.assertEqual(len(excerpts), len(set(excerpts)))
 
     def test_analytics_integration_investigate_flags_outliers(self):
@@ -310,7 +332,7 @@ class DecisionQueryPersistenceTests(TestCase):
         self.assertIn(follow_up, parent.follow_ups.all())
 
 
-class ViewTests(TestCase):
+class ViewTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         _seed_baseline()

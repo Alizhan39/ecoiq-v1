@@ -62,8 +62,15 @@ def _defendable(verification_status, has_value):
 def _boardroom(value, unit, verification_status, confidence, evidence_used, evidence_missing, origin, defend_text):
     has = value is not None
     return {
-        "1_trust": ("%.0f%% confidence, verification: %s" % ((confidence or 0) * 100, verification_status))
-                   if has else "Insufficient evidence — do not rely on a value.",
+        # D4C. `confidence or 0` rendered "0% confidence" for a figure whose
+        # confidence was simply never recorded -- an adverse claim about the
+        # figure, invented from an absence -- and did the same to a genuine
+        # 0.0. An unrecorded confidence now says so.
+        "1_trust": (
+            ("%.0f%% confidence, verification: %s" % (confidence * 100, verification_status))
+            if confidence is not None
+            else "Confidence not recorded, verification: %s" % verification_status
+        ) if has else "Insufficient evidence — do not rely on a value.",
         "2_origin": origin,
         "3_supports": ("%d source(s) on record" % len(evidence_used)) if evidence_used else "No supporting evidence on record.",
         "4_missing": ("%d gap(s): %s" % (len(evidence_missing), ", ".join(evidence_missing[:4]))) if evidence_missing else "No material gaps detected.",
@@ -77,6 +84,19 @@ def why_company(slug: str):
     from harvester.models import RegistryCompany, Evidence, Datapoint
 
     rc = RegistryCompany.objects.filter(slug=slug).first()
+    if rc is None and not Datapoint.objects.filter(company_slug=slug).exists() \
+            and not Evidence.objects.filter(company_slug=slug).exists():
+        # Nothing is on record under this slug, so there is no organisation to
+        # report on. Returning a report anyway title-cased the URL into a
+        # company name — "no-such-org-xyz" became "No Such Org Xyz" — and
+        # published seven metrics of NOT_FOUND about an entity EcoIQ had
+        # invented from the path. Any string answered 200, which is an
+        # unbounded supply of indexable documents naming organisations that
+        # may not exist.
+        #
+        # why_country() has always returned None here. This is the company
+        # side behaving the same way, not a new rule.
+        return None
     name = rc.company_name if rc else slug.replace("-", " ").title()
     present = {}
     for d in Datapoint.objects.filter(company_slug=slug, status="NORMALIZED").order_by("metric", "period_year"):

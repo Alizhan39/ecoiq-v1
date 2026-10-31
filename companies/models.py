@@ -18,15 +18,32 @@ NOTE: The `Company` model (industrial companies, league scores) lives in
 from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
+from core.storage import upload_to_guidance_thumbnail
 
 
 # ── Choice sets ────────────────────────────────────────────────────────────────
 
+# VISIBILITY, WITH ONE EPISTEMIC VALUE THAT PREDATES THE SPLIT
+#
+# `archived` and `public` are visibility. `verified` is an evidence-quality
+# claim, and roughly six scoring and analytics queries select on
+# status__in=('public','verified') to mean "organisations worth computing over".
+# That conflation is real but causes no live defect, and unpicking it would
+# change what those queries select — so it is documented rather than rewritten.
+#
+# Publication is NOT in this field and never was: companies/eligibility.py
+# decides it from coverage, confidence and score, and never reads status. A
+# profile being visible has therefore never implied a published assessment.
+#
+# `public_demo` is the one value added for that reason. It is publicly visible
+# and it is deliberately NOT in ('public','verified'), so every scoring and
+# analytics query excludes it without needing to know it exists.
 COMPANY_STATUS = [
-    ('draft',    'Draft'),
-    ('public',   'Public'),
-    ('verified', 'Verified'),
-    ('archived', 'Archived'),
+    ('draft',       'Draft'),
+    ('public',      'Public'),
+    ('public_demo', 'Public — demonstration only'),
+    ('verified',    'Verified'),
+    ('archived',    'Archived'),
 ]
 
 SUBSCRIPTION_TIER = [
@@ -177,23 +194,23 @@ class CompanyProfile(models.Model):
                                  help_text='Target % reduction vs baseline year')
     renewable_energy_share     = models.FloatField(null=True, blank=True,
                                  help_text='% of energy from renewable sources')
-    waste_management_score     = models.FloatField(default=50.0,
+    waste_management_score     = models.FloatField(null=True, blank=True,
                                  help_text='0-100: quality of waste management practices')
-    water_impact_score         = models.FloatField(default=50.0,
+    water_impact_score         = models.FloatField(null=True, blank=True,
                                  help_text='0-100: water stewardship quality')
-    biodiversity_impact_score  = models.FloatField(default=50.0,
+    biodiversity_impact_score  = models.FloatField(null=True, blank=True,
                                  help_text='0-100: impact on biodiversity and ecosystems')
 
     # ── Social / Public Benefit ──
-    jobs_created_score               = models.FloatField(default=50.0,
+    jobs_created_score               = models.FloatField(null=True, blank=True,
                                        help_text='0-100: quality and quantity of employment')
-    regional_development_score       = models.FloatField(default=50.0,
+    regional_development_score       = models.FloatField(null=True, blank=True,
                                        help_text='0-100: contribution to regional economy')
     community_investment             = models.BigIntegerField(null=True, blank=True,
                                        help_text='Annual community investment in USD')
-    infrastructure_contribution_score= models.FloatField(default=50.0,
+    infrastructure_contribution_score= models.FloatField(null=True, blank=True,
                                        help_text='0-100: infrastructure contribution')
-    national_value_score             = models.FloatField(default=50.0,
+    national_value_score             = models.FloatField(null=True, blank=True,
                                        help_text='0-100: long-term national benefit')
 
     # ── Modernization ──
@@ -201,41 +218,41 @@ class CompanyProfile(models.Model):
                                     help_text='Annual modernization capex in USD')
     modernization_projects        = models.JSONField(default=list, blank=True,
                                     help_text='List of active modernization project names')
-    energy_transition_score       = models.FloatField(default=50.0,
+    energy_transition_score       = models.FloatField(null=True, blank=True,
                                     help_text='0-100: energy transition progress')
-    digitalization_score          = models.FloatField(default=50.0,
+    digitalization_score          = models.FloatField(null=True, blank=True,
                                     help_text='0-100: digital transformation maturity')
-    infrastructure_upgrade_score  = models.FloatField(default=50.0,
+    infrastructure_upgrade_score  = models.FloatField(null=True, blank=True,
                                     help_text='0-100: physical infrastructure modernity')
-    future_readiness_score        = models.FloatField(default=50.0,
+    future_readiness_score        = models.FloatField(null=True, blank=True,
                                     help_text='0-100: preparedness for future economy')
 
     # ── Transparency & Governance ──
-    transparency_score_detail         = models.FloatField(default=50.0,
+    transparency_score_detail         = models.FloatField(null=True, blank=True,
                                         help_text='0-100: reporting quality and openness')
-    audit_quality_score               = models.FloatField(default=50.0,
+    audit_quality_score               = models.FloatField(null=True, blank=True,
                                         help_text='0-100: audit standards and independence')
-    procurement_transparency_score    = models.FloatField(default=50.0,
+    procurement_transparency_score    = models.FloatField(null=True, blank=True,
                                         help_text='0-100: procurement process openness')
-    anti_corruption_score             = models.FloatField(default=50.0,
+    anti_corruption_score             = models.FloatField(null=True, blank=True,
                                         help_text='0-100: anti-corruption practices')
-    controversy_risk_score            = models.FloatField(default=30.0,
+    controversy_risk_score            = models.FloatField(null=True, blank=True,
                                         help_text='0-100: higher = more controversy risk')
     governance_notes                  = models.TextField(blank=True)
 
     # ── EcoIQ Composite Scores (computed + stored) ──
-    profit_extraction_score          = models.FloatField(default=50.0,
+    profit_extraction_score          = models.FloatField(null=True, blank=True,
                                        help_text='0-100: how much profit flows back to people vs. owners')
-    profit_extraction_risk_score     = models.FloatField(default=30.0,
+    profit_extraction_risk_score     = models.FloatField(null=True, blank=True,
                                        help_text='0-100: risk indicator — higher = more concern')
-    public_benefit_score             = models.FloatField(default=50.0)
-    environmental_responsibility_score = models.FloatField(default=50.0)
-    modernization_score              = models.FloatField(default=50.0)
-    transparency_anti_corruption_score = models.FloatField(default=50.0)
-    ethical_alignment_score          = models.FloatField(default=50.0)
-    harm_penalty                     = models.FloatField(default=0.0,
+    public_benefit_score             = models.FloatField(null=True, blank=True)
+    environmental_responsibility_score = models.FloatField(null=True, blank=True)
+    modernization_score              = models.FloatField(null=True, blank=True)
+    transparency_anti_corruption_score = models.FloatField(null=True, blank=True)
+    ethical_alignment_score          = models.FloatField(null=True, blank=True)
+    harm_penalty                     = models.FloatField(null=True, blank=True,
                                        help_text='Points deducted for pollution/harm (0-30)')
-    ecoiq_total_score                = models.FloatField(default=0.0)
+    ecoiq_total_score                = models.FloatField(null=True, blank=True)
     ecoiq_category                   = models.CharField(max_length=50, blank=True)
     moral_label                      = models.CharField(max_length=30,
                                        choices=MORAL_LABEL_CHOICES,
@@ -290,7 +307,11 @@ class CompanyProfile(models.Model):
         verbose_name_plural = 'Company Profiles'
 
     def __str__(self):
-        return f'{self.company.name} — EcoIQ {self.ecoiq_total_score:.1f}'
+        # D4A: the composite becomes nullable, and a profile with no score must
+        # still be nameable — in the admin, in logs, and in error messages.
+        score = self.ecoiq_total_score
+        suffix = 'EcoIQ not yet scored' if score is None else f'EcoIQ {score:.1f}'
+        return f'{self.company.name} — {suffix}'
 
     # ── Derived properties ─────────────────────────────────────────────────────
 
@@ -326,34 +347,61 @@ class CompanyProfile(models.Model):
 
     @property
     def score_label(self):
+        """
+        Band for the composite, or None when there is no composite.
+
+        None rather than 'Needs Improvement'. The old code fell through to the
+        worst band for a company nobody had scored, which reads as a finding.
+        """
         s = self.ecoiq_total_score
+        if s is None: return None
         if s >= 85: return 'Exceptional'
         if s >= 70: return 'Strong'
         if s >= 60: return 'Moderate'
         if s >= 50: return 'Fair'
         return 'Needs Improvement'
 
+    # D4A — these three are WARNINGS. Each says something adverse about a
+    # company, so an unknown input must produce False, not a warning and not a
+    # crash. False here means "we are not raising this flag", which is the
+    # honest reading of an absent input; it is not a claim that the company is
+    # fine, and nothing downstream treats it as one.
+
     @property
     def high_transition_need(self):
         return (
             self.pollution_level in ('high', 'severe') and
+            self.modernization_score is not None and
             self.modernization_score < 40
         )
 
     @property
     def low_transparency_warning(self):
-        return self.transparency_score_detail < 30
+        return (
+            self.transparency_score_detail is not None and
+            self.transparency_score_detail < 30
+        )
 
     @property
     def profit_extraction_warning(self):
         return (
+            self.profit_extraction_score is not None and
+            self.public_benefit_score is not None and
             self.profit_extraction_score > 75 and
             self.public_benefit_score < 50
         )
 
     @property
     def path_to_100_gap(self):
-        return max(0, 100 - self.ecoiq_total_score)
+        """
+        Points remaining to 100, or None when there is no score.
+
+        Not 100. A company with no assessment has not been shown to have the
+        largest possible gap — that would be the harshest reading of an
+        absence, presented as a measurement.
+        """
+        score = self.ecoiq_total_score
+        return None if score is None else max(0, 100 - score)
 
 
 # ── CompanyGuidanceVideo ───────────────────────────────────────────────────────
@@ -373,7 +421,7 @@ class CompanyGuidanceVideo(models.Model):
 
     # Video assets (filled manually by admin after Higgsfield production)
     video_url  = models.URLField(blank=True, help_text='Paste Higgsfield / Vimeo / YouTube URL')
-    thumbnail  = models.ImageField(upload_to='guidance_videos/thumbnails/', null=True, blank=True)
+    thumbnail  = models.ImageField(upload_to=upload_to_guidance_thumbnail, null=True, blank=True)
 
     # AI-generated content
     script             = models.TextField(blank=True,
@@ -484,14 +532,14 @@ class CompanyScoreSnapshot(models.Model):
     )
 
     # Full pillar snapshot at time of recording
-    total_score                    = models.FloatField()
-    public_benefit_score           = models.FloatField(default=50.0)
-    environmental_score            = models.FloatField(default=50.0)
-    modernization_score            = models.FloatField(default=50.0)
-    governance_score               = models.FloatField(default=50.0)
-    anti_corruption_score          = models.FloatField(default=50.0)
-    ethical_alignment_score        = models.FloatField(default=50.0)
-    harm_penalty                   = models.FloatField(default=0.0)
+    total_score                    = models.FloatField(null=True, blank=True)
+    public_benefit_score           = models.FloatField(null=True, blank=True)
+    environmental_score            = models.FloatField(null=True, blank=True)
+    modernization_score            = models.FloatField(null=True, blank=True)
+    governance_score               = models.FloatField(null=True, blank=True)
+    anti_corruption_score          = models.FloatField(null=True, blank=True)
+    ethical_alignment_score        = models.FloatField(null=True, blank=True)
+    harm_penalty                   = models.FloatField(null=True, blank=True)
 
     moral_label = models.CharField(max_length=40, blank=True)
     notes       = models.TextField(blank=True,
@@ -738,3 +786,246 @@ class InvestmentRelevanceReport(models.Model):
 
 
 # ── DataIngestionLog ──────────────────────────────────────────────────────────
+
+
+# ── CompanyMetricProvenance (D3A) ──────────────────────────────────────────────
+
+class CompanyMetricProvenance(models.Model):
+    """
+    Where one metric on one CompanyProfile came from.
+
+    D3A — provenance foundation. Answers "where did this value come from?", and
+    deliberately nothing else. It does not decide whether a value may be
+    published (D5), and it does not touch the score columns' nullability (D4).
+
+    Shaped after company_intelligence.CompanyFinancialFactSource, which already
+    solved this problem for financial facts: an ENUMERATED metric key, evidence
+    by ForeignKey, and a `value` property that RESOLVES the number rather than
+    storing a second copy of it. Following an existing, working pattern beats
+    inventing a parallel one — see docs/product/PROVENANCE_ARCHITECTURE.md.
+
+    Three things this model deliberately does NOT do:
+
+    1.  It does not copy the value. `CompanyProfile.public_benefit_score = 72`
+        and a provenance row storing `value = 72` would be two numbers free to
+        drift. The `value` property reads through instead.
+
+    2.  It does not duplicate EvidenceMemory. Source URL, source type,
+        verification status, review tier, reviewer and expiry all already live
+        there, and are reached through `evidence`.
+
+    3.  It does not conflate ORIGIN with EVIDENCE QUALITY. Those vary
+        independently — a MODELLED value can rest on excellent sources, and a
+        MEASURED one on poor ones — so origin lives here and quality is read
+        from the linked evidence.
+
+    Append-only: a partial unique constraint allows exactly one `is_current` row
+    per (company, metric_key) while history accumulates behind it. Overwriting
+    in place would destroy the previous provenance, which is precisely what
+    makes an audit trail impossible.
+    """
+    company = models.ForeignKey(
+        CompanyProfile, on_delete=models.CASCADE, related_name='metric_provenance',
+    )
+    metric_key = models.CharField(
+        max_length=60,
+        help_text='Registered metric key. Validated against '
+                  'companies.metric_registry on save — a typo is rejected '
+                  'rather than becoming a silently orphaned row. Material keys '
+                  'are bare CompanyProfile field names; derived keys are '
+                  'namespaced (ethics.nei, mizan.score).',
+    )
+
+    # ── Origin: HOW the value was created ────────────────────────────────────
+    origin = models.CharField(
+        max_length=30,
+        help_text='One of companies.evidence.PROVENANCE_CHOICES. No default: a '
+                  'value whose origin nobody stated must not silently become '
+                  'MEASURED, which is the strongest claim in the vocabulary.',
+    )
+
+    # ── Supporting evidence, by reference ────────────────────────────────────
+    evidence = models.ForeignKey(
+        'evidence_memory.EvidenceMemory', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='metric_provenance',
+        help_text='SET_NULL rather than CASCADE: losing the evidence record '
+                  'must not erase the fact that this value once had a stated '
+                  'origin. The row survives and says so.',
+    )
+    source_quality = models.CharField(
+        max_length=20, blank=True,
+        help_text='Optional analyst override for cases with no EvidenceMemory '
+                  'row. Where evidence IS linked, its own source_type and '
+                  'review_tier are authoritative and this stays blank.',
+    )
+
+    # ── Confidence — nullable, never defaulted ───────────────────────────────
+    confidence = models.FloatField(
+        null=True, blank=True,
+        help_text='0-100. NULL means unknown confidence — never fabricated, and '
+                  'never 50. A genuine 0.0 stays distinguishable from unknown.',
+    )
+
+    # ── Method and versioning ────────────────────────────────────────────────
+    methodology = models.TextField(
+        blank=True,
+        help_text='How the value was produced. Expected for ESTIMATED, MODELLED '
+                  'and INFERRED, where the number is only as defensible as the '
+                  'method behind it.',
+    )
+    calculation_version = models.CharField(
+        max_length=30, blank=True,
+        help_text='Version of the model or formula that produced a MODELLED or '
+                  'ESTIMATED value, so a later change is attributable.',
+    )
+    observed_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text='When the underlying observation was made — distinct from '
+                  'created_at, which is when EcoIQ recorded it.',
+    )
+
+    # ── Human review: independent of origin ──────────────────────────────────
+    review_status = models.CharField(
+        max_length=25, default='proposed',
+        help_text="Reuses company_intelligence.CompanyKPIEvidenceLink's review "
+                  'vocabulary rather than inventing a sixth. Independent of '
+                  'origin: MEASURED is not auto-reviewed, and MODELLED is not '
+                  'auto-distrusted.',
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='+',
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    #: D3C-2 — the value, ONLY for ephemeral derived metrics.
+    #:
+    #: D3A's rule stands for everything with a home: no duplicate value, because
+    #: two copies can drift. But Mizan, responsible-finance and greenwashing are
+    #: recomputed per request and never stored, so provenance that recorded only
+    #: their method could not reconstruct what was actually computed — the
+    #: lineage would describe a number nobody could see again.
+    #:
+    #: Enforced in clean(): NULL unless the metric is registered as ephemeral.
+    recorded_value = models.FloatField(
+        null=True, blank=True,
+        help_text='The computed value, for ephemeral derived metrics only. '
+                  'Must be NULL for any metric whose value has a persisted home '
+                  '— that value is resolved through the registry instead.',
+    )
+
+    #: D3C-2 — lineage AS COMPUTED.
+    #:
+    #: Points at the specific provenance ROWS a calculation consumed, not at
+    #: metric keys. Keys would resolve to whatever is current when asked, which
+    #: answers "what would this metric's lineage be if computed now?" — not
+    #: "what was it when computed?". Only the second is an audit trail.
+    inputs = models.ManyToManyField(
+        'self', symmetrical=False, blank=True, related_name='derived_from',
+        help_text='The provenance rows this calculation consumed. Empty for '
+                  'material metrics, which have no inputs.',
+    )
+
+    notes = models.TextField(blank=True)
+
+    is_current = models.BooleanField(
+        default=True,
+        help_text='Exactly one current row per company+metric, enforced by a '
+                  'partial unique constraint. Superseded rows stay for audit.',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='+',
+    )
+    written_by = models.CharField(
+        max_length=100, blank=True,
+        help_text="Machine writer that created this row (e.g. 'seed_companies', "
+                  "'ingest_sec_edgar', 'companies.scoring'). Populated by D3C.",
+    )
+
+    class Meta:
+        ordering = ['metric_key', '-created_at']
+        verbose_name = 'Company Metric Provenance'
+        verbose_name_plural = 'Company Metric Provenance'
+        constraints = [
+            # Partial unique index — supported on both SQLite and PostgreSQL.
+            # History accumulates; the current state stays unambiguous.
+            models.UniqueConstraint(
+                fields=['company', 'metric_key'],
+                condition=models.Q(is_current=True),
+                name='companies_unique_current_metric_provenance',
+            ),
+        ]
+        indexes = [
+            # The only access pattern D3A has. Deliberately NOT indexing origin,
+            # review_status or created_at: no query needs them yet, and an
+            # unused index is a write cost with no reader.
+            models.Index(fields=['company', 'metric_key'],
+                         name='companies_prov_company_metric'),
+        ]
+
+    def __str__(self):
+        return f'{self.company} — {self.metric_key} ({self.origin})'
+
+    @property
+    def value(self):
+        """
+        The number this row is provenance FOR.
+
+        Resolved through the registry for anything with a persisted home — a
+        stored copy could drift from the field it describes. For an ephemeral
+        metric there is no field to read, so the recorded value is returned:
+        that is the whole reason recorded_value exists.
+        """
+        from companies.metric_registry import get_metric_definition
+
+        definition = get_metric_definition(self.metric_key)
+        if definition is None:
+            return None
+        if definition.is_ephemeral:
+            return self.recorded_value
+        return definition.resolve(self.company)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        from companies.evidence import PROVENANCE_CHOICES
+        from companies.metric_registry import get_metric_definition
+
+        valid_origins = {code for code, _ in PROVENANCE_CHOICES}
+        if self.origin not in valid_origins:
+            raise ValidationError({'origin': f'Unknown provenance state: {self.origin!r}.'})
+
+        definition = get_metric_definition(self.metric_key)
+        if definition is None:
+            raise ValidationError({
+                'metric_key': f'{self.metric_key!r} is not a registered EcoIQ metric. '
+                              'Register it in companies/metric_registry.py — '
+                              'provenance never accepts an unregistered key.',
+            })
+
+        # An origin must be honest for the KIND of metric. This is the guard
+        # against the mislabel D3C-1 identified as most likely to slip through:
+        # a derived composite recorded as MEASURED, claiming an observation that
+        # never happened however good its inputs were.
+        if self.origin not in definition.allowed_origins:
+            raise ValidationError({
+                'origin': f'{self.origin!r} is not an honest origin for '
+                          f'{self.metric_key!r} ({definition.kind}). Allowed: '
+                          f'{", ".join(sorted(definition.allowed_origins))}.',
+            })
+
+        if self.recorded_value is not None and not definition.is_ephemeral:
+            raise ValidationError({
+                'recorded_value': f'{self.metric_key!r} has a persisted value at '
+                                  f'{definition.value_location}; storing a second '
+                                  f'copy here would let the two drift.',
+            })
+
+    def save(self, *args, **kwargs):
+        # Validate on every save, including programmatic ones. full_clean() is
+        # not called by Model.save() in Django, so an unvalidated metric_key
+        # would otherwise reach the database from a script.
+        self.clean()
+        return super().save(*args, **kwargs)

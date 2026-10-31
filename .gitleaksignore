@@ -1,0 +1,16 @@
+# Exact historical Gitleaks false positives only.
+#
+# Each line is a finding fingerprint (commit:file:rule:line). This is narrower
+# than allowlisting a whole commit or path: any new secret, another line, rule,
+# file or commit still fails the required full-history scan.
+#
+# 1) Synthetic credential-shaped literal used by the repository's own
+#    hardcoded-secret guard test in an old revision. The current fixture no
+#    longer contains the literal.
+ea6244aedc8fba8f6d25014585c3b2123bfb57ee:core/tests_no_hardcoded_secrets.py:generic-api-key:173
+#
+# 2) SHA-256 checksum of tokenizer.json in the retrieval benchmark report.
+889e9023d5c05f5dca4dcbb398710ce27346407b:docs/evaluation/retrieval-controls-v1.json:generic-api-key:1059
+#
+# 3) Documentation-only example rule identifier: evidence_missing_123.
+7d13b4307a5b1e59f87519886abb8f92a257c3d9:docs/architecture/GOVERNED_RISK_WORKFLOW.md:generic-api-key:65

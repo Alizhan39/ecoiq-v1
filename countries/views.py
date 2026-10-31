@@ -4,6 +4,8 @@ EcoIQ Country Intelligence — Views.
 /countries/           → country directory
 /countries/<slug>/    → full country intelligence page
 """
+from core.unknown import clamp
+
 from django.shortcuts import render, get_object_or_404
 
 from countries.models import CountryProfile, REGION_CHOICES
@@ -24,12 +26,15 @@ def _get_dev_bank_compat(country):
     """
     items = []
     s = country.national_ecoiq_index
-    t = country.transparency_score or 0
-    i = country.investment_climate_score or 0
+    # `or 0` put an unmeasured country below every threshold, so it silently
+    # failed each eligibility test — an implicit negative finding about a
+    # country nobody had assessed. Each test now requires its input to be known.
+    t = clamp(country.transparency_score)
+    i = clamp(country.investment_climate_score)
     r = country.region
 
     # IFC / World Bank Group
-    if s >= 50 and t >= 50:
+    if s >= 50 and t is not None and t >= 50:
         items.append({
             'name': 'IFC / World Bank',
             'mandate': 'Private sector & development finance',
@@ -83,7 +88,7 @@ def _get_dev_bank_compat(country):
     # AIIB (Asian Infrastructure Investment Bank)
     aiib_regions = ('east_asia', 'central_asia', 'middle_east', 'south_asia', 'southeast_asia',
                     'western_europe', 'eastern_europe')
-    if r in aiib_regions and i >= 40:
+    if r in aiib_regions and i is not None and i >= 40:
         items.append({
             'name': 'AIIB',
             'mandate': 'Infrastructure investment across Asia & beyond',
@@ -95,8 +100,10 @@ def _get_dev_bank_compat(country):
         })
 
     # Green Climate Fund (GCF)
-    ren = country.renewable_energy_share or 0
-    if ren >= 25 or (s >= 55 and t >= 55):
+    ren = clamp(country.renewable_energy_share)
+    if (ren is not None and ren >= 25) or (
+        s >= 55 and t is not None and t >= 55
+    ):
         items.append({
             'name': 'Green Climate Fund',
             'mandate': 'Climate adaptation & mitigation finance',
@@ -155,7 +162,17 @@ def _get_corruption_exposure(country):
     Derive a corruption exposure level from transparency score.
     Returns: {'level': str, 'score': int, 'color': str, 'detail': str}
     """
-    t = country.transparency_score or 0
+    # Corruption exposure is DERIVED from transparency — `100 - t`. With
+    # `or 0`, an unmeasured country was published at exposure 100: the maximum
+    # possible corruption exposure, generated entirely by our own missing data.
+    t = clamp(country.transparency_score)
+    if t is None:
+        return {
+            'level': 'Not assessed', 'score': None,
+            'color': '#94a3b8',
+            'detail': 'EcoIQ does not hold a transparency measurement for this country. '
+                      'This is not an indication of either low or high corruption risk.',
+        }
     exposure = round(100 - t)
 
     if t >= 75:

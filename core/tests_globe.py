@@ -12,6 +12,7 @@ from companies.models import CompanyProfile
 from countries.models import CountryProfile
 from harvester.models import RegistryCompany, HarvestJob
 from harvester.pipeline import run_harvest
+from core.testing_access import SignedIn
 
 
 class GlobeLayersEndpointTests(TestCase):
@@ -271,55 +272,6 @@ class GlobeLayersAvailabilityTests(TestCase):
             set(d["intelligence_layers"]),
             {"climate_risk", "investment_opportunity", "modernisation_priority", "evidence_strength", "stewardship_impact"},
         )
-
-
-class LivingEarthTemplateTests(TestCase):
-    """Homepage markup for the globe upgrade — quick jump, intelligence layer
-    toggles, accessibility labels, reduced-motion support. No raw template
-    tags, and no fabricated per-country claims baked into static markup."""
-
-    def setUp(self):
-        self.client = Client(SERVER_NAME="localhost")
-
-    def test_quick_jump_select_present_with_accessible_label(self):
-        r = self.client.get(reverse("home"))
-        self.assertEqual(r.status_code, 200)
-        content = r.content.decode()
-        self.assertIn('id="le-jump"', content)
-        self.assertIn('aria-label="Jump to a country"', content)
-        for label in ("Jump to United Kingdom", "Jump to Kazakhstan", "Jump to Saudi Arabia", "Jump to Türkiye"):
-            self.assertIn(label, content)
-
-    def test_intelligence_layer_toggles_present_and_hidden_by_default(self):
-        r = self.client.get(reverse("home"))
-        content = r.content.decode()
-        for key in ("climate_risk", "investment_opportunity", "modernisation_priority", "evidence_strength", "stewardship_impact"):
-            self.assertIn('data-intel-layer="%s"' % key, content)
-        # hidden until JS confirms real data exists — never shown unconditionally
-        self.assertIn('class="le-layer le-intel" data-intel-layer="climate_risk" aria-pressed="false" hidden', content)
-
-    def test_country_panel_has_accessible_dialog_role(self):
-        r = self.client.get(reverse("home"))
-        content = r.content.decode()
-        self.assertIn('role="dialog"', content)
-        self.assertIn('aria-label="Country intelligence"', content)
-        self.assertIn('aria-label="Close country panel"', content)
-
-    def test_reduced_motion_is_respected(self):
-        r = self.client.get(reverse("home"))
-        content = r.content.decode()
-        self.assertIn("prefers-reduced-motion", content)
-
-    def test_no_horizontal_overflow_rule_present_for_mobile(self):
-        r = self.client.get(reverse("home"))
-        content = r.content.decode()
-        self.assertIn("overflow-x:hidden", content)
-
-    def test_no_raw_template_tags_leak(self):
-        r = self.client.get(reverse("home"))
-        content = r.content.decode()
-        self.assertNotIn("{%", content)
-        self.assertNotIn("{{", content)
 
 
 class GlobeHeatmapEndpointTests(TestCase):
@@ -681,7 +633,7 @@ class CompareCountriesServiceTests(TestCase):
         self.assertIn("same engine as find_similar_countries", result["method"])
 
 
-class DecisionStudioPrefillTests(TestCase):
+class DecisionStudioPrefillTests(SignedIn, TestCase):
     """Optional ?q= prefill added for the globe's "Ask EcoIQ about the
     world" action — never auto-submits, never bypasses the existing
     rate-limit/cost-control path in ask()."""
@@ -707,45 +659,11 @@ class DecisionStudioPrefillTests(TestCase):
         self.assertNotIn("a" * (MAX_QUESTION_LENGTH + 1), content)
 
 
-class LivingEarthPhase2TemplateTests(TestCase):
-    """Homepage markup for Phase 2: Ask-the-planet CTA, live signals feed +
-    timeline control, reset view, and the new country panel sections."""
-
-    def setUp(self):
-        self.client = Client(SERVER_NAME="localhost")
-
-    def test_ask_planet_cta_links_to_decision_studio(self):
-        r = self.client.get(reverse("home"))
-        content = r.content.decode()
-        self.assertIn('id="le-ask-planet"', content)
-        self.assertIn('href="/decision-studio/?q=', content)
-
-    def test_signals_feed_present_with_timeline_control(self):
-        r = self.client.get(reverse("home"))
-        content = r.content.decode()
-        self.assertIn('id="le-signals-list"', content)
-        for period in ("latest", "7d", "30d", "1y"):
-            self.assertIn('data-period="%s"' % period, content)
-
-    def test_signal_type_legend_present(self):
-        r = self.client.get(reverse("home"))
-        content = r.content.decode()
-        for tag in ("risk", "opportunity", "change", "evidence_update", "agent_finding"):
-            self.assertIn('le-sig-tag %s' % tag, content)
-
-    def test_reset_view_control_present(self):
-        r = self.client.get(reverse("home"))
-        content = r.content.decode()
-        self.assertIn('id="le-reset-view"', content)
-
-    def test_new_panel_sections_present(self):
-        r = self.client.get(reverse("home"))
-        content = r.content.decode()
-        for el_id in ("le-panel-economic", "le-panel-capital", "le-panel-trade"):
-            self.assertIn('id="%s"' % el_id, content)
-
-    def test_no_raw_template_tags_leak(self):
-        r = self.client.get(reverse("home"))
-        content = r.content.decode()
-        self.assertNotIn("{%", content)
-        self.assertNotIn("{{", content)
+# LivingEarthTemplateTests and LivingEarthPhase2TemplateTests are gone.
+#
+# They asserted the controls, legends and reduced-motion rules of
+# templates/landing.html — the Living Earth homepage. `/` is served by the
+# React app now, so those assertions describe a page nobody is served.
+#
+# The globe API endpoints they sat beside are untouched and still tested above:
+# the data layer outlived the page that rendered it.

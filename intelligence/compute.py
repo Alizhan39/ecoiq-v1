@@ -267,24 +267,29 @@ def check_monitor_target(watch):
     Fetch a MonitorWatch URL, hash the content, compare.
     Returns True if a change was detected.
     """
-    import requests as http_requests
     from intelligence.models import MonitorWatch, IntelligenceAlert
     from django.utils import timezone as tz
 
+    from backend_intelligence_engine.services import http_client
+
     try:
-        resp = http_requests.get(
+        # watch.url is operator-entered and stored, so from here it is an
+        # externally supplied URL. The shared client validates it and every
+        # redirect hop against company_intelligence.services.url_safety; a
+        # refused destination comes back as an ordinary failed fetch and is
+        # counted as an error on the watch, exactly like a timeout.
+        result = http_client.fetch(
             watch.url,
             headers={'User-Agent': 'EcoIQ-Monitor/1.0 (+https://ecoiq.uk/about)'},
-            timeout=15,
         )
-        if resp.status_code != 200:
+        if not result.success or result.status_code != 200:
             MonitorWatch.objects.filter(pk=watch.pk).update(
                 last_checked_at=tz.now(),
                 consecutive_errors=watch.consecutive_errors + 1,
             )
             return False
 
-        content = resp.content[:500_000]  # first 500 KB
+        content = result.content[:500_000]  # first 500 KB
         new_hash = hashlib.sha256(content).hexdigest()
         changed  = (new_hash != watch.last_content_hash) and bool(watch.last_content_hash)
 

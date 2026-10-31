@@ -208,10 +208,16 @@ class CompanyEthicsProfileAdmin(admin.ModelAdmin):
         from ethics.scoring import compute_and_save
         updated = 0
         errors  = 0
+        skipped = 0
         for ep in queryset:
             try:
-                compute_and_save(ep.profile)
-                updated += 1
+                # None means no assessment could be computed — reporting that as
+                # "recomputed" would tell staff a number was refreshed when it
+                # was deliberately left unwritten.
+                if compute_and_save(ep.profile) is None:
+                    skipped += 1
+                else:
+                    updated += 1
             except Exception as exc:
                 errors += 1
                 self.message_user(
@@ -221,6 +227,13 @@ class CompanyEthicsProfileAdmin(admin.ModelAdmin):
                 )
         if updated:
             self.message_user(request, f'{updated} ethics profile(s) recomputed.')
+        if skipped:
+            self.message_user(
+                request,
+                f'{skipped} ethics profile(s) skipped — insufficient evidence to '
+                f'compute a master score.',
+                level='WARNING',
+            )
 
 
 # ── FormulaScore ──────────────────────────────────────────────────────────────

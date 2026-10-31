@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Accounting Operations — EcoIQ{% endblock %}
+{% block meta_description_content %}Staff-only accounting operations dashboard for client services, payments, deadlines and reminders.{% endblock %}
+
+{% block extra_head %}
+<style>
+  main { max-width: 1400px; }
+  .aops { --ink:#e7eef0; --muted:#9eb0b5; --panel:#10181b; --line:#243237; --green:#00e89a; --red:#ff7b72; --amber:#f2cc60; color:var(--ink); background:#081013; border:1px solid var(--line); border-radius:18px; padding:1.4rem; }
+  .aops * { box-sizing:border-box; }
+  .aops a { color:var(--green); }
+  .aops-head { display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; flex-wrap:wrap; }
+  .aops-kicker { color:var(--green); font-size:.73rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+  .aops h1 { color:#fff; margin:.25rem 0; }
+  .aops-sub { color:var(--muted); max-width:720px; line-height:1.55; }
+  .aops-tabs { display:flex; flex-wrap:wrap; gap:.45rem; margin:1.2rem 0; }
+  .aops-tab { text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:.45rem .8rem; color:var(--muted)!important; font-size:.8rem; }
+  .aops-tab.active { color:#06110d!important; background:var(--green); border-color:var(--green); font-weight:800; }
+  .aops-toolbar { display:grid; grid-template-columns:minmax(180px,1.3fr) minmax(180px,2fr) repeat(2,minmax(140px,1fr)) auto; gap:.65rem; padding:1rem; background:var(--panel); border:1px solid var(--line); border-radius:12px; }
+  .aops input,.aops select,.aops textarea { width:100%; border:1px solid #35464c; background:#0b1316; color:var(--ink); border-radius:8px; padding:.62rem .7rem; }
+  .aops button,.aops-btn { border:0; border-radius:8px; background:var(--green); color:#06110d; padding:.62rem .9rem; font-weight:800; cursor:pointer; text-decoration:none; }
+  .aops-btn.secondary,.aops button.secondary { background:#223036; color:var(--ink); }
+  .aops-stats { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.7rem; margin:1rem 0; }
+  .aops-stat { padding:1rem; background:var(--panel); border:1px solid var(--line); border-radius:12px; }
+  .aops-stat strong { display:block; font-size:1.5rem; color:#fff; margin-top:.2rem; }
+  .aops-stat span { color:var(--muted); font-size:.78rem; }
+  .aops-stat.danger strong { color:var(--red); }
+  .aops-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr); gap:1rem; }
+  .aops-panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:1rem; margin-bottom:1rem; min-width:0; }
+  .aops-panel h2 { color:#fff; font-size:1.05rem; margin:0 0 .8rem; display:flex; justify-content:space-between; gap:.5rem; }
+  .aops-count { color:var(--muted); font-size:.76rem; font-weight:500; }
+  .aops-list { list-style:none; margin:0; padding:0; }
+  .aops-item { border-top:1px solid var(--line); padding:.8rem 0; display:grid; gap:.35rem; }
+  .aops-item:first-child { border-top:0; padding-top:0; }
+  .aops-row { display:flex; align-items:center; justify-content:space-between; gap:.65rem; flex-wrap:wrap; }
+  .aops-title { font-weight:750; color:#fff; }
+  .aops-meta { color:var(--muted); font-size:.76rem; line-height:1.45; }
+  .aops-pill { border-radius:999px; padding:.2rem .5rem; font-size:.68rem; font-weight:800; background:#26343a; color:#cbd7da; }
+  .aops-pill.urgent,.aops-pill.overdue { background:rgba(255,123,114,.13); color:var(--red); }
+  .aops-pill.high,.aops-pill.waiting_client { background:rgba(242,204,96,.13); color:var(--amber); }
+  .aops-pill.paid,.aops-pill.active { background:rgba(0,232,154,.12); color:var(--green); }
+  .aops-actions { display:flex; flex-wrap:wrap; gap:.4rem; }
+  .aops-actions form { display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; }
+  .aops-actions input { width:110px; padding:.42rem .5rem; }
+  .aops-actions button { padding:.45rem .65rem; font-size:.72rem; }
+  .aops-table-wrap { overflow:auto; }
+  .aops-table { width:100%; border-collapse:collapse; min-width:680px; font-size:.8rem; }
+  .aops-table th,.aops-table td { text-align:left; border-top:1px solid var(--line); padding:.68rem .55rem; vertical-align:top; }
+  .aops-table th { color:var(--muted); font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; }
+  .aops-empty { color:var(--muted); font-size:.85rem; padding:.7rem 0; }
+  .aops-forms { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.7rem; margin-top:1rem; }
+  .aops details { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:.8rem; }
+  .aops summary { cursor:pointer; color:#fff; font-weight:800; }
+  .aops details form { margin-top:.8rem; }
+  .aops details p { margin:.55rem 0; }
+  .aops details label { color:var(--muted); display:block; font-size:.74rem; margin-bottom:.2rem; }
+  .aops .errorlist { color:var(--red); font-size:.75rem; padding-left:1rem; }
+  @media(max-width:1050px){ .aops-toolbar{grid-template-columns:1fr 1fr}.aops-stats{grid-template-columns:repeat(3,1fr)}.aops-grid{grid-template-columns:1fr}.aops-forms{grid-template-columns:1fr} }
+  @media(max-width:620px){ .aops{padding:.8rem}.aops-toolbar{grid-template-columns:1fr}.aops-stats{grid-template-columns:1fr 1fr}.aops-stat strong{font-size:1.2rem} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="aops">
+  <div class="aops-head">
+    <div>
+      <div class="aops-kicker">Staff workspace</div>
+      <h1>Accounting Operations</h1>
+      <p class="aops-sub">One view of every client, assigned service, deadline, reminder and payment. Alerts are calculated directly from the database, so this page does not require Celery or Redis.</p>
+    </div>
+    <a class="aops-btn secondary" href="/admin/financial_intelligence_cloud/">Manage master data</a>
+  </div>
+
+  <nav class="aops-tabs" aria-label="Financial Intelligence Cloud">
+    <a class="aops-tab" href="{% url 'financial_intelligence_cloud:overview' %}">Intelligence overview</a>
+    <a class="aops-tab active" href="{% url 'financial_intelligence_cloud:accounting_operations' %}">Accounting operations</a>
+    <a class="aops-tab" href="{% url 'financial_intelligence_cloud:clients_to_call' %}">Clients to call</a>
+    <a class="aops-tab" href="{% url 'financial_intelligence_cloud:daily_brief' %}">Daily brief</a>
+  </nav>
+
+  {% if not account %}
+    <div class="aops-panel">
+      <h2>No accounting firm configured</h2>
+      <p class="aops-empty">Create an Institutional Account with type “Accounting Firm” or “Advisory Firm” in Django Admin, then add a client-book portfolio.</p>
+    </div>
+  {% else %}
+  <form class="aops-toolbar" method="get">
+    <label><span class="aops-meta">Firm</span><select name="account">
+      {% for item in accounts %}<option value="{{ item.pk }}"{% if item.pk == account.pk %} selected{% endif %}>{{ item.firm_name }}{% if item.is_demo %} — demo{% endif %}</option>{% endfor %}
+    </select></label>
+    <label><span class="aops-meta">Search</span><input name="q" value="{{ query }}" placeholder="Client, service or employee"></label>
+    <label><span class="aops-meta">Owner</span><select name="owner">
+      <option value="">Everyone</option><option value="mine"{% if owner_filter == 'mine' %} selected{% endif %}>My work</option>
+      {% for employee in employees %}<option value="{{ employee.pk }}"{% if owner_filter == employee.pk|stringformat:'s' %} selected{% endif %}>{{ employee.get_full_name|default:employee.username }}</option>{% endfor %}
+    </select></label>
+    <label><span class="aops-meta">Service state</span><select name="status">
+      <option value="">All active rows</option>
+      <option value="active"{% if service_status == 'active' %} selected{% endif %}>Active</option>
+      <option value="waiting_client"{% if service_status == 'waiting_client' %} selected{% endif %}>Waiting for client</option>
+      <option value="paused"{% if service_status == 'paused' %} selected{% endif %}>Paused</option>
+      <option value="completed"{% if service_status == 'completed' %} selected{% endif %}>Completed</option>
+    </select></label>
+    <button type="submit">Apply</button>
+  </form>
+
+  <div class="aops-stats">
+    <div class="aops-stat"><span>Clients</span><strong>{{ clients|length }}</strong></div>
+    <div class="aops-stat"><span>Active service rows</span><strong>{{ engagements|length }}</strong></div>
+    <div class="aops-stat danger"><span>Alerts due now</span><strong>{{ due_reminders|length }}</strong></div>
+    <div class="aops-stat danger"><span>Overdue balance</span><strong>{% for total in overdue_by_currency %}{{ total.currency }} {{ total.amount|floatformat:2|intcomma }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</strong></div>
+    <div class="aops-stat"><span>Total outstanding</span><strong>{% for total in outstanding_by_currency %}{{ total.currency }} {{ total.amount|floatformat:2|intcomma }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</strong></div>
+  </div>
+
+  <div class="aops-grid">
+    <div>
+      <section class="aops-panel">
+        <h2>🔔 Due reminders <span class="aops-count">{{ due_reminders|length }} need action</span></h2>
+        <ul class="aops-list">
+          {% for reminder in due_reminders %}
+          <li class="aops-item">
+            <div class="aops-row"><span class="aops-title">{{ reminder.title }}</span><span class="aops-pill {{ reminder.priority }}">{{ reminder.get_priority_display }}</span></div>
+            <div class="aops-meta">{{ reminder.client.name|default:reminder.client_service.client.name }} · due {{ reminder.effective_due_at|date:'d M Y, H:i' }} · {{ reminder.owner.get_full_name|default:reminder.owner.username|default:'Unassigned' }}</div>
+            <div class="aops-actions"><form method="post" action="{% url 'financial_intelligence_cloud:update_accounting_reminder' reminder.pk %}">{% csrf_token %}<button name="action" value="done">Done</button><button class="secondary" name="action" value="snooze_1d">+1 day</button><button class="secondary" name="action" value="snooze_7d">+7 days</button></form></div>
+          </li>
+          {% empty %}<li class="aops-empty">Nothing is overdue. Upcoming reminders remain visible below.</li>{% endfor %}
+        </ul>
+      </section>
+
+      <section class="aops-panel">
+        <h2>Overdue payments <span class="aops-count">Record full or partial receipts</span></h2>
+        <ul class="aops-list">
+          {% for payment in overdue_payments %}
+          <li class="aops-item">
+            <div class="aops-row"><span class="aops-title">{{ payment.client_service.client.name }} — {{ payment.client_service.service.name }}</span><span class="aops-pill overdue">{{ payment.currency }} {{ payment.balance|floatformat:2|intcomma }} overdue</span></div>
+            <div class="aops-meta">Due {{ payment.due_date|date:'d M Y' }} · invoiced {{ payment.currency }} {{ payment.amount_due|floatformat:2|intcomma }} · received {{ payment.currency }} {{ payment.amount_paid|floatformat:2|intcomma }}</div>
+            <div class="aops-actions"><form method="post" action="{% url 'financial_intelligence_cloud:record_client_payment' payment.pk %}">{% csrf_token %}<input type="number" name="amount_received" step="0.01" min="0.01" max="{{ payment.balance }}" value="{{ payment.balance }}" aria-label="Amount received"><input name="reference" placeholder="Reference" aria-label="Payment reference"><button>Record</button></form></div>
+          </li>
+          {% empty %}<li class="aops-empty">No overdue payments.</li>{% endfor %}
+        </ul>
+      </section>
+
+      <section class="aops-panel">
+        <h2>Client services <span class="aops-count">Filtered operational workload</span></h2>
+        <div class="aops-table-wrap"><table class="aops-table">
+          <thead><tr><th>Client</th><th>Service</th><th>Owner</th><th>Status</th><th>Next deadline</th><th>Fee</th></tr></thead>
+          <tbody>{% for item in engagements %}<tr>
+            <td>{{ item.client.name }}</td><td>{{ item.service.name }}</td><td>{{ item.assigned_to.get_full_name|default:item.assigned_to.username|default:'Unassigned' }}</td>
+            <td><span class="aops-pill {{ item.status }}">{{ item.get_status_display }}</span></td><td>{{ item.next_due_date|date:'d M Y'|default:'—' }}</td><td>{% if item.agreed_fee %}{{ item.currency }} {{ item.agreed_fee|floatformat:2|intcomma }}{% else %}—{% endif %}</td>
+          </tr>{% empty %}<tr><td colspan="6" class="aops-empty">No services match these filters.</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </section>
+    </div>
+
+    <div>
+      <section class="aops-panel">
+        <h2>Next 7 days</h2>
+        <ul class="aops-list">{% for reminder in upcoming_reminders %}<li class="aops-item"><span class="aops-title">{{ reminder.title }}</span><span class="aops-meta">{{ reminder.client.name|default:reminder.client_service.client.name }} · {{ reminder.effective_due_at|date:'d M, H:i' }}</span></li>{% empty %}<li class="aops-empty">No upcoming reminders.</li>{% endfor %}</ul>
+      </section>
+
+      <section class="aops-panel">
+        <h2>Upcoming payments</h2>
+        <ul class="aops-list">{% for payment in upcoming_payments|slice:':10' %}<li class="aops-item"><div class="aops-row"><span class="aops-title">{{ payment.client_service.client.name }}</span><span>{{ payment.currency }} {{ payment.balance|floatformat:2|intcomma }}</span></div><span class="aops-meta">{{ payment.client_service.service.name }} · due {{ payment.due_date|date:'d M Y' }}</span></li>{% empty %}<li class="aops-empty">No upcoming payments.</li>{% endfor %}</ul>
+      </section>
+
+      <section class="aops-panel">
+        <h2>Client book</h2>
+        <ul class="aops-list">{% for client in clients|slice:':20' %}<li class="aops-item"><div class="aops-row"><span class="aops-title">{{ client.name }}</span><span class="aops-pill {{ client.relationship_stage }}">{{ client.get_relationship_stage_display }}</span></div><span class="aops-meta">{{ client.service_count }} services · {{ client.open_payment_count }} open payments · {{ client.open_reminder_count }} reminders</span></li>{% empty %}<li class="aops-empty">No clients in this account.</li>{% endfor %}</ul>
+      </section>
+
+      <section class="aops-panel">
+        <h2>Recent activity</h2>
+        <ul class="aops-list">{% for activity in recent_activity %}<li class="aops-item"><span class="aops-title">{{ activity.summary }}</span><span class="aops-meta">{{ activity.created_at|date:'d M Y, H:i' }} · {{ activity.actor.get_full_name|default:activity.actor.username|default:'System' }}</span></li>{% empty %}<li class="aops-empty">No operational changes recorded yet.</li>{% endfor %}</ul>
+      </section>
+    </div>
+  </div>
+
+  <div class="aops-forms">
+    <details><summary>+ Add client service</summary><form method="post" action="{% url 'financial_intelligence_cloud:add_client_service' %}">{% csrf_token %}<input type="hidden" name="account" value="{{ account.pk }}">{{ service_form.as_p }}<button>Add service</button></form></details>
+    <details><summary>+ Add payment due</summary><form method="post" action="{% url 'financial_intelligence_cloud:add_client_payment' %}">{% csrf_token %}<input type="hidden" name="account" value="{{ account.pk }}">{{ payment_form.as_p }}<button>Add payment</button></form></details>
+    <details><summary>+ Add reminder</summary><form method="post" action="{% url 'financial_intelligence_cloud:add_accounting_reminder' %}">{% csrf_token %}<input type="hidden" name="account" value="{{ account.pk }}">{{ reminder_form.as_p }}<button>Add reminder</button></form></details>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

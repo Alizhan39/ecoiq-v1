@@ -1,0 +1,37 @@
+name: Distributed scoring training
+on:
+  pull_request:
+    paths:
+      - 'ml/**'
+      - 'companies/management/commands/train_ml_models.py'
+      - 'requirements*.txt'
+      - '.github/workflows/distributed-training.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: distributed-training-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  tls-workers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DEBUG: 'True'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.16'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            requirements-training.txt
+      - run: pip install -r requirements-training.txt
+      # Fail rather than silently skip the integration test if Dask is absent.
+      - run: python -c 'import distributed, cryptography; print(distributed.__version__)'
+      - run: python manage.py test ml.tests_distributed_training ml.tests_distributed_integration --verbosity=2

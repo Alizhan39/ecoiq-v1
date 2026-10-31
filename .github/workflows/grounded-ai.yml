@@ -1,0 +1,56 @@
+name: EcoIQ Grounded AI Security & Citation Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+      - integration/ecoiq-os-stages-2-to-5-20261030
+    paths:
+      - "ecoiq_os/grounded_ai.py"
+      - "ecoiq_os/grounded_ai_eval.py"
+      - "ecoiq_os/tests_grounded_ai.py"
+      - ".github/workflows/grounded-ai.yml"
+      - "docs/architecture/GROUNDED_AI_V1.md"
+  push:
+    branches: [main]
+    paths:
+      - "ecoiq_os/grounded_ai.py"
+      - "ecoiq_os/grounded_ai_eval.py"
+      - "ecoiq_os/tests_grounded_ai.py"
+      - ".github/workflows/grounded-ai.yml"
+
+jobs:
+  permission-and-citation-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DJANGO_SECRET_KEY: test-secret-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: sqlite:///db.sqlite3
+      ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED: "False"
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install pinned development dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Lint, syntax, Django health and migration drift
+        run: |
+          python -m compileall -q ecoiq_os/grounded_ai.py ecoiq_os/grounded_ai_eval.py ecoiq_os/tests_grounded_ai.py
+          ruff check ecoiq_os/grounded_ai.py ecoiq_os/grounded_ai_eval.py ecoiq_os/tests_grounded_ai.py
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+      - name: Project isolation, external consent and exact citations
+        run: python manage.py test ecoiq_os.tests_grounded_ai api.tests_v2_decision_islah api.tests_os_pilot_journey --noinput
+      - name: Offline synthetic citation benchmark
+        run: python -m ecoiq_os.grounded_ai_eval

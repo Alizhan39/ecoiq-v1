@@ -43,7 +43,7 @@ class AnomalyDetector:
             logger.warning('Anomaly model not loaded: %s', exc)
             return False
 
-    def train(self, companies=None, apply: bool = False) -> dict:
+    def train(self, companies=None, apply: bool = False, *, output_dir=None, n_jobs=1) -> dict:
         """
         Train Isolation Forest on all companies with scores.
 
@@ -51,28 +51,25 @@ class AnomalyDetector:
         """
         from sklearn.ensemble import IsolationForest
         from sklearn.preprocessing import StandardScaler
-        import joblib
         from league.models import Company
-        from ml.features import company_to_vector
+        from ml.training import (
+            artifact_directory, save_training_run, training_metadata, training_rows,
+        )
+
+        from ml.training import validate_training_jobs
+
+        validate_training_jobs(n_jobs)
+        directory = artifact_directory(output_dir, MODEL_PATH.parent, apply=apply)
 
         if companies is None:
             companies = list(
                 Company.objects.filter(ecoiq_score__gt=0).select_related('profile')
             )
 
-        X_rows, ids = [], []
-        for company in companies:
-            try:
-                vec = company_to_vector(company)
-                X_rows.append(vec)
-                ids.append(company.pk)
-            except Exception as exc:
-                logger.debug('Feature extraction failed for %s: %s', company, exc)
-
-        if len(X_rows) < 5:
-            return {'error': 'insufficient_data', 'n_samples': len(X_rows)}
-
-        X = np.array(X_rows, dtype=np.float64)
+        X, y, ids, skipped = training_rows(companies)
+        result = training_metadata(X, y, skipped)
+        if len(X) < 5:
+            return {**result, 'error': 'insufficient_data'}
 
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
@@ -81,14 +78,10 @@ class AnomalyDetector:
             n_estimators=200,
             contamination=0.05,
             random_state=42,
-            n_jobs=-1,
+            n_jobs=n_jobs,
         )
         iforest.fit(X_scaled)
 
-        MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-        import joblib as _jl
-        _jl.dump(iforest, MODEL_PATH)
-        _jl.dump(scaler,  SCALER_PATH)
         self.model   = iforest
         self.scaler  = scaler
         self._loaded = True
@@ -99,16 +92,19 @@ class AnomalyDetector:
 
         logger.info(
             'IsolationForest trained: n=%d, anomalies=%d (%.1f%%)',
-            len(X_rows), n_anomalies, 100 * n_anomalies / max(len(X_rows), 1),
+            len(X), n_anomalies, 100 * n_anomalies / max(len(X), 1),
         )
+
+        result.update(n_anomalies=n_anomalies, estimator_parameters=iforest.get_params(),
+                      evaluation={'status': 'NOT_MEASURED', 'reason': 'no_reviewed_anomaly_labels'},
+                      findings_basis='statistical_outliers_not_verified_wrongdoing')
+        save_training_run({MODEL_PATH.name: iforest, SCALER_PATH.name: scaler},
+                          directory, 'anomaly', result, exclusive=output_dir is not None)
 
         if apply:
             self._apply(ids, anomaly_scores, flags)
 
-        return {
-            'n_samples':   len(X_rows),
-            'n_anomalies': n_anomalies,
-        }
+        return result
 
     def _apply(self, ids, anomaly_scores, flags):
         """Write anomaly_score and is_anomaly to Company records."""
@@ -123,10 +119,34 @@ class AnomalyDetector:
             )
 
     def score_company(self, company) -> dict | None:
-        """Score a single company. Returns anomaly_score and is_anomaly."""
+        """
+        Score a single company, or None when it cannot honestly be scored.
+
+        FAIL CLOSED ON MISSING MATERIAL INPUTS
+        --------------------------------------
+        Same rule as EcoIQScoringModel.predict_company and
+        CompanyClusterer.assign_company. `company_to_vector` imputes 50.0 for
+        unknown inputs, and this result is published as a finding:
+        /companies/<slug>/ml-insights.json returns it as `anomaly`.
+
+        An organisation with no data scored -0.45 and `is_anomaly: false` —
+        which reads as "we looked and it is unremarkable" when nothing was
+        looked at. Both halves are wrong in the same way, and the false one is
+        the more reassuring, which makes it the worse one to publish.
+        """
         if not self._load():
             return None
-        from ml.features import company_to_vector
+        from ml.features import company_to_vector, missing_material_features
+
+        missing = missing_material_features(company)
+        if missing:
+            logger.info(
+                'Anomaly scoring refused for %s — material inputs unknown: %s. '
+                'The model would have received imputed 50.0 for each.',
+                company, ', '.join(missing),
+            )
+            return None
+
         try:
             vec    = company_to_vector(company).reshape(1, -1)
             scaled = self.scaler.transform(vec)

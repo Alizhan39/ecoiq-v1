@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# New commits supersede older PR checks. Keep main runs independent so every
+# merged revision can finish its checks.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # Static checks first. The Django suite below takes ~13 minutes; Ruff takes
   # seconds, so gating on it avoids spending runner time on code with an
@@ -13,6 +19,7 @@ jobs:
   # fails the workflow.
   ruff:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Checkout repository
@@ -21,7 +28,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.11.16"
+
+      # Print the resolved interpreter. The version is pinned above, but the
+      # log is what lets anyone confirm which one a given run actually used —
+      # production once drifted to 3.14 while CI tested 3.11 and nothing said so.
+      - name: Report Python version
+        run: python -VV
 
       - name: Install Ruff
         # The pinned version from requirements-dev.txt, installed on its own so
@@ -43,6 +56,7 @@ jobs:
   # suite starts.
   mypy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     env:
       DJANGO_SECRET_KEY: test-secret-key
@@ -57,7 +71,17 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.11.16"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      # Print the resolved interpreter. The version is pinned above, but the
+      # log is what lets anyone confirm which one a given run actually used —
+      # production once drifted to 3.14 while CI tested 3.11 and nothing said so.
+      - name: Report Python version
+        run: python -VV
 
       - name: Install dependencies
         # The full tree: the django-stubs plugin loads Django settings, so it
@@ -83,9 +107,82 @@ jobs:
             notifications/management/commands/classify_notification_spam.py \
             --follow-imports=silent
 
-  django-check:
-    needs: [ruff, mypy]
+  # The React SPA. Typecheck, lint and unit tests, then a REBUILD-AND-DIFF.
+  #
+  # static/spa/ is a committed build artefact (Render's Python environment has
+  # no Node toolchain — see vite.config.ts). A committed artefact is only
+  # trustworthy if something proves it matches the source it claims to be built
+  # from, so this job rebuilds it from a clean `npm ci` and fails if the tree is
+  # dirty afterwards. Without that step, an edit to a .tsx file that nobody
+  # rebuilt would pass every test in the repository and ship nothing.
+  frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: frontend/web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/web/package-lock.json
+
+      # `npm ci`, never `npm install`: it installs exactly the lockfile and
+      # fails if package.json and package-lock.json disagree.
+      - name: Install dependencies (deterministic)
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Committed artefact matches source
+        working-directory: .
+        run: |
+          if ! git diff --quiet -- static/spa; then
+            echo "::error::static/spa/ is stale — it does not match a fresh build of frontend/web/src."
+            echo "Run: npm --prefix frontend/web ci && npm --prefix frontend/web run build"
+            echo "then commit static/spa/."
+            git --no-pager diff --stat -- static/spa
+            exit 1
+          fi
+          echo "static/spa/ matches a fresh build."
+
+  # The AI-tooling layer that PR #300 added: nine third-party skills pinned to
+  # reviewed commits, plus the Excel MCP boundary. Those skills are files from
+  # untrusted upstreams that Claude reads as instructions, and their payloads
+  # are gitignored (CLAUDE.md rule 14) — so nothing in a normal checkout proves
+  # the installed tree still matches what was audited.
+  #
+  # This job installs them from the pinned SHAs and re-runs the audit. It fails
+  # when an installed skill drifts from the lockfile, when provenance is missing
+  # or names the wrong commit, when a skill appears that no lockfile entry
+  # covers (i.e. added without review metadata), or when an installed skill
+  # contains an actual instruction-override directive.
+  #
+  # All of the logic lives in scripts/ and core/tests_ai_tooling.py. Nothing is
+  # reimplemented here: a check that exists only in YAML cannot be run locally,
+  # and one nobody runs locally is one nobody fixes.
+  #
+  # Fast enough to gate the ~18-minute suite, so django-check needs it.
+  ai-skills:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     env:
       DJANGO_SECRET_KEY: test-secret-key
@@ -100,7 +197,104 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.11.16"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Report Python version
+        run: python -VV
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      # The only network step in this job. Keyed on the lockfile AND the
+      # installer, so a re-pin busts the cache and the upstreams are re-fetched
+      # and re-verified; an unchanged pin set is a cache hit and touches no
+      # remote at all. That is what keeps this job off the network on the vast
+      # majority of runs, rather than cloning five repositories every time.
+      - name: Cache installed third-party skills
+        id: skills-cache
+        uses: actions/cache@v4
+        with:
+          path: .claude/skills
+          key: ai-skills-${{ hashFiles('docs/ai-tooling/third-party-skills.lock.json', 'scripts/ai-tooling/install-third-party-skills.sh') }}
+
+      # Idempotent, and it verifies each resolved SHA against the pin before
+      # copying — so "the pinned commit still exists upstream and is what we
+      # think it is" is checked here, at install time, rather than by a
+      # per-run API call that would make CI depend on github.com being
+      # reachable for every unrelated change.
+      - name: Install third-party skills at pinned commits
+        if: steps.skills-cache.outputs.cache-hit != 'true'
+        run: bash scripts/ai-tooling/install-third-party-skills.sh
+
+      - name: Verify every locked skill is present
+        run: bash scripts/ai-tooling/install-third-party-skills.sh --check
+
+      # Blocking. EcoIQ's own ecoiq-* skills are project source: a skill
+      # pointing at a deleted module, or two claiming one trigger, is a
+      # confidently wrong instruction. main merged these skills in #299 without
+      # this gate; this restores it.
+      - name: Validate EcoIQ skills (strict)
+        run: python manage.py validate_skills --strict
+
+      # Lockfile/installer drift, provenance, unreviewed-skill detection, the
+      # injection scan over every installed skill, the Excel MCP stdio guard,
+      # and the control tests that prove each of those failure modes actually
+      # fails.
+      - name: Audit the third-party skill tree
+        run: python manage.py test core.tests_ai_tooling --verbosity=2
+
+      # NOT run here: `manage.py seo_audit`.
+      #
+      # It is a different boundary — public-page discoverability, not skill
+      # integrity — and it is not currently deterministic in CI: it reports
+      # three findings that depend on what the app serves and on an asset
+      # (brand/ecoiq-og.png) that does not exist yet, one of which is a known
+      # open product bug. Wiring it in as a blocking gate would fail unrelated
+      # pull requests on a finding nobody introduced.
+      #
+      # Adding it belongs in its own change, after the og:image asset lands and
+      # `--strict` is actually clean. Tracked as a follow-up, deliberately not
+      # smuggled into this one.
+
+  django-check:
+    needs: [ruff, mypy, ai-skills]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    env:
+      DJANGO_SECRET_KEY: test-secret-key
+      DEBUG: "False"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: sqlite:///db.sqlite3
+      # Avoid nested BLAS/OpenMP oversubscription in small ML test fits.
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      # Print the resolved interpreter. The version is pinned above, but the
+      # log is what lets anyone confirm which one a given run actually used —
+      # production once drifted to 3.14 while CI tested 3.11 and nothing said so.
+      - name: Report Python version
+        run: python -VV
 
       - name: Install dependencies
         # requirements-dev.txt includes requirements.txt and adds the test-only

@@ -63,36 +63,33 @@ class CompanyClusterer:
             logger.warning('Clustering model not loaded: %s', exc)
             return False
 
-    def train(self, companies=None, apply: bool = False) -> dict:
+    def train(self, companies=None, apply: bool = False, *, output_dir=None) -> dict:
         from sklearn.cluster import KMeans
         from sklearn.preprocessing import StandardScaler
-        import joblib
         from league.models import Company
-        from ml.features import company_to_vector, get_feature_names
+        from ml.features import get_feature_names
+        from ml.training import (
+            artifact_directory, save_training_run, training_metadata, training_rows,
+        )
+
+        directory = artifact_directory(output_dir, MODEL_PATH.parent, apply=apply)
 
         if companies is None:
             companies = list(
                 Company.objects.filter(ecoiq_score__gt=0).select_related('profile')
             )
 
-        X_rows, ids = [], []
-        for company in companies:
-            try:
-                vec = company_to_vector(company)
-                X_rows.append(vec)
-                ids.append(company.pk)
-            except Exception as exc:
-                logger.debug('Feature extraction failed for %s: %s', company, exc)
-
-        if len(X_rows) < self.n_clusters:
-            return {'error': 'insufficient_data', 'n_samples': len(X_rows)}
-
-        X = np.array(X_rows, dtype=np.float64)
+        X, y, ids, skipped = training_rows(companies)
+        result = training_metadata(X, y, skipped)
+        if len(X) < self.n_clusters:
+            return {**result, 'error': 'insufficient_data'}
+        if len(np.unique(X, axis=0)) < self.n_clusters:
+            return {**result, 'error': 'insufficient_distinct_vectors'}
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
 
         # Use k-means++ initialisation for better centroids
-        n_c = min(self.n_clusters, len(X_rows))
+        n_c = self.n_clusters
         km = KMeans(
             n_clusters=n_c,
             init='k-means++',
@@ -106,27 +103,26 @@ class CompanyClusterer:
         labels = self._label_clusters(km.cluster_centers_, feature_names, n_c)
         self._labels = labels
 
-        MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump(km,     MODEL_PATH)
-        joblib.dump(scaler, SCALER_PATH)
-        joblib.dump(labels, MODEL_PATH.parent / 'cluster_labels.joblib')
         self.model   = km
         self.scaler  = scaler
         self._loaded = True
 
         cluster_counts = dict(zip(*np.unique(km.labels_, return_counts=True)))
-        logger.info('K-Means trained: n=%d, clusters=%s', len(X_rows), cluster_counts)
+        logger.info('K-Means trained: n=%d, clusters=%s', len(X), cluster_counts)
+
+        result.update(n_clusters=n_c, cluster_labels=labels, estimator_parameters=km.get_params(),
+                      cluster_sizes={int(k): int(v) for k, v in cluster_counts.items()},
+                      evaluation={'status': 'NOT_MEASURED', 'reason': 'no_reviewed_peer_labels'},
+                      findings_basis='heuristic_cluster_names_not_verified_judgements')
+        save_training_run({MODEL_PATH.name: km, SCALER_PATH.name: scaler,
+                           'cluster_labels.joblib': labels}, directory, 'clustering', result,
+                          exclusive=output_dir is not None)
 
         if apply:
             cluster_assignments = km.predict(X_scaled)
             self._apply(ids, cluster_assignments)
 
-        return {
-            'n_samples':      len(X_rows),
-            'n_clusters':     n_c,
-            'cluster_labels': labels,
-            'cluster_sizes':  {int(k): int(v) for k, v in cluster_counts.items()},
-        }
+        return result
 
     def _label_clusters(
         self,
@@ -176,10 +172,46 @@ class CompanyClusterer:
             )
 
     def assign_company(self, company) -> dict | None:
-        """Assign a single company to a cluster."""
+        """
+        Assign a single company to a cluster, or None when it cannot honestly
+        be assigned.
+
+        FAIL CLOSED ON MISSING MATERIAL INPUTS
+        --------------------------------------
+        Same rule, and the same reason, as EcoIQScoringModel.predict_company.
+        `ml.features.company_to_vector` imputes 50.0 for anything it does not
+        know — its own docstring says to call `missing_material_features()`
+        first "if the result will be presented as a finding about the company".
+        This is presented as a finding: /companies/<slug>/ml-insights.json
+        publishes it as `cluster.label`.
+
+        Measured before this changed: an organisation with no data at all came
+        back as
+
+            {"scoring": null, "prediction": null,
+             "cluster": {"cluster": 5, "label": "Governance Champion"}}
+
+        Scoring and prediction refused, correctly. Clustering answered — with a
+        commendation, assembled entirely from the imputed average. A label a
+        reader would take as a judgement about the organisation was a
+        description of the default vector.
+
+        Returning None costs nothing at the call sites: it is already this
+        method's documented "unavailable" return and every caller handles it.
+        """
         if not self._load():
             return None
-        from ml.features import company_to_vector
+        from ml.features import company_to_vector, missing_material_features
+
+        missing = missing_material_features(company)
+        if missing:
+            logger.info(
+                'Cluster assignment refused for %s — material inputs unknown: '
+                '%s. The model would have received imputed 50.0 for each.',
+                company, ', '.join(missing),
+            )
+            return None
+
         try:
             vec   = company_to_vector(company).reshape(1, -1)
             scaled = self.scaler.transform(vec)

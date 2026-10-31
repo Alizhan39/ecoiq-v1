@@ -8,6 +8,7 @@ Usage:
     python manage.py ingest_sec_edgar
     python manage.py ingest_sec_edgar --slug exxonmobil
 """
+from core.unknown import known
 import time
 import requests
 from django.core.management.base import BaseCommand
@@ -148,10 +149,15 @@ class Command(BaseCommand):
             try:
                 profile = company.profile  # OneToOne reverse from CompanyProfile
                 if profile and has_ghg:
-                    old_t = float(profile.transparency_anti_corruption_score or 50)
-                    profile.transparency_anti_corruption_score = min(95.0, old_t + 3.0)
-                    profile.save(update_fields=['transparency_anti_corruption_score'])
-                    fields_updated.append('transparency_anti_corruption_score')
+                    # `or 50` invented a baseline and then added 3 to it,
+                    # storing 53 as an assessed transparency score for a
+                    # company nobody had assessed. An uplift needs something to
+                    # lift: with no prior score, this records nothing.
+                    old_t = known(profile.transparency_anti_corruption_score)
+                    if old_t is not None:
+                        profile.transparency_anti_corruption_score = min(95.0, old_t + 3.0)
+                        profile.save(update_fields=['transparency_anti_corruption_score'])
+                        fields_updated.append('transparency_anti_corruption_score')
             except Exception:
                 pass
 

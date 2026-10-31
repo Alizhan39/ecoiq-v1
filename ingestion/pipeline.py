@@ -25,10 +25,14 @@ import traceback
 from datetime import date, datetime
 from decimal import Decimal
 
-import requests as http_requests
+import httpx
 
+from backend_intelligence_engine.services import http_client
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
+
+from ingestion import provenance as ing_prov
 
 log = logging.getLogger('ingestion.pipeline')
 
@@ -98,28 +102,41 @@ def _extract_html_text(content: bytes, max_chars: int = 8_000) -> str:
 
 
 def _fetch_url(url: str, timeout: int = 20) -> bytes | None:
-    """Download URL content with a browser-like UA. Returns raw bytes or None."""
+    """Download URL content with a browser-like UA. Returns raw bytes or None.
+
+    This URL arrives from `request.POST['url']` in ingestion/views.py, so it is
+    attacker-influenced even though the view is staff-only. It previously went
+    straight to `requests.get(..., allow_redirects=True)` with no destination
+    check at all: an allowed host answering `302 Location:
+    http://169.254.169.254/…` reached the cloud metadata service and the body
+    was stored as evidence.
+
+    It now goes through the shared client, which validates the initial URL and
+    every redirect hop against company_intelligence.services.url_safety, caps
+    the redirect chain, and caps the response at MAX_RESPONSE_BYTES. That is
+    the repository's existing SSRF authority — this function deliberately does
+    not re-derive those rules.
+
+    Behaviour note: the shared client's 5 MB cap replaces the 8 MB truncate
+    that used to happen here, and an oversized body is now a refusal rather
+    than silently-truncated bytes. One cap, one policy.
+    """
+    headers = {
+        'User-Agent': (
+            'Mozilla/5.0 (compatible; EcoIQ-Bot/1.0; '
+            '+https://ecoiq.uk/about)'
+        ),
+        'Accept': 'text/html,application/pdf,*/*;q=0.8',
+    }
     try:
-        headers = {
-            'User-Agent': (
-                'Mozilla/5.0 (compatible; EcoIQ-Bot/1.0; '
-                '+https://ecoiq.uk/about)'
-            ),
-            'Accept': 'text/html,application/pdf,*/*;q=0.8',
-        }
-        resp = http_requests.get(url, headers=headers, timeout=timeout,
-                                  allow_redirects=True, stream=True)
-        if resp.status_code != 200:
+        result = http_client.fetch(
+            url, headers=headers,
+            timeout=httpx.Timeout(connect=5.0, read=float(timeout), write=5.0, pool=5.0),
+        )
+        if not result.success or result.status_code != 200:
+            log.warning('Fetch rejected or failed for %s: %s', url, result.error)
             return None
-        # Guard against huge files (>8 MB)
-        chunks = []
-        total = 0
-        for chunk in resp.iter_content(chunk_size=65536):
-            chunks.append(chunk)
-            total += len(chunk)
-            if total > 8_000_000:
-                break
-        return b''.join(chunks)
+        return result.content
     except Exception as exc:
         log.warning('Fetch failed for %s: %s', url, exc)
         return None
@@ -593,6 +610,47 @@ Rules:
 
     # ── Step 5: Save ──────────────────────────────────────────────────────────
 
+    def _persist_source_evidence(self, company):
+        """
+        Create Evidence + EvidenceMemory rows for every downloaded source.
+
+        Idempotent via get_or_create, so calling it twice in one run is a
+        no-op the second time. It is called BEFORE the profile write (so
+        ingestion provenance can link to a real EvidenceMemory) and again at
+        the original point in the flow.
+
+        Returns the league.Evidence rows persisted, so the caller can pick the
+        strongest one to cite in provenance.
+        """
+        from evidence_memory.services.memory import create_memory_from_league_evidence
+        from league.models import Evidence
+
+        doc_map = {
+            'esg_report':    'audit_report',
+            'annual_report': 'audit_report',
+            'pdf':           'other',
+            'government':    'government_report',
+            'news':          'press_release',
+            'web':           'press_release',
+        }
+        persisted = []
+        for src in self._sources:
+            if not src.get('url') or not src.get('downloaded'):
+                continue
+            evidence, _ = Evidence.objects.get_or_create(
+                company=company,
+                url=src['url'][:2000],
+                defaults={
+                    'doc_type':   doc_map.get(src['source_type'], 'other'),
+                    'title':      src['title'][:255] or src['url'][:255],
+                    'notes':      src['snippet'][:1000] if src.get('snippet') else '',
+                    'verification_status': 'pending',
+                },
+            )
+            create_memory_from_league_evidence(evidence)
+            persisted.append(evidence)
+        return persisted
+
     def _step_save(self):
         from ingestion.models import IngestionJob, IngestionSource
         from league.models import Company, EnvironmentalProject, Evidence, ScoreHistory, SECTOR_CHOICES
@@ -805,16 +863,39 @@ Rules:
                 status = 'public',
             )
 
-            profile, profile_created = CompanyProfile.objects.get_or_create(
-                company=company,
-                defaults=profile_data,
-            )
-            if not profile_created:
-                for field, value in profile_data.items():
-                    setattr(profile, field, value)
-                profile.save()
+            # Sources first, so the provenance rows below can link to a real
+            # EvidenceMemory instead of recording an origin with no source.
+            evidence_rows = self._persist_source_evidence(company)
+            source_evidence = ing_prov.best_evidence_memory(evidence_rows)
 
-            # Compute 6-pillar composite + moral label via scoring engine
+            # The value write and the provenance write are ONE operation. A
+            # value stored without provenance is indistinguishable from a
+            # legacy value and would be relabelled LEGACY_UNKNOWN_PROVENANCE by
+            # the next backfill, laundering a known origin into an unknown one.
+            with transaction.atomic():
+                profile, profile_created = CompanyProfile.objects.get_or_create(
+                    company=company,
+                    defaults=profile_data,
+                )
+                if not profile_created:
+                    for field, value in profile_data.items():
+                        setattr(profile, field, value)
+                    profile.save()
+
+                prov_result = ing_prov.record_ingestion_write(
+                    profile, profile_data, evidence=source_evidence,
+                )
+
+            log.info(
+                '[job %s] Ingestion provenance: %s INFERRED rows, evidence '
+                'linked=%s', self.job_pk, prov_result['recorded'],
+                prov_result['evidence_linked'],
+            )
+
+            # Compute 6-pillar composite + moral label via scoring engine.
+            # Runs OUTSIDE the block above: it records its own MODELLED
+            # provenance for the pillars, and must see the material rows this
+            # write just created rather than racing them.
             profile_rescore(profile)
 
             # Compute Ethical Intelligence layer (NEI / TSS / RVI) — non-fatal
@@ -826,7 +907,8 @@ Rules:
 
             _progress(self.job_pk, 95,
                       f'{"Created" if profile_created else "Updated"} EcoIQ profile: '
-                      f'score {profile.ecoiq_total_score:.1f} — {profile.moral_label}')
+                      f'score {ing_prov.fmt_score(profile.ecoiq_total_score)} — '
+                      f'{profile.moral_label}')
 
         except Exception as exc:
             log.warning('[job %s] CompanyProfile save failed (non-fatal): %s', self.job_pk, exc)
@@ -890,30 +972,10 @@ Rules:
         _progress(self.job_pk, 96, f'Saved {projects_saved} projects.')
 
         # ── Evidence from report URLs ─────────────────────────────────────────
-        for src in self._sources:
-            if not src.get('url') or not src.get('downloaded'):
-                continue
-            doc_map = {
-                'esg_report':    'audit_report',
-                'annual_report': 'audit_report',
-                'pdf':           'other',
-                'government':    'government_report',
-                'news':          'press_release',
-                'web':           'press_release',
-            }
-            doc_type = doc_map.get(src['source_type'], 'other')
-            evidence, _ = Evidence.objects.get_or_create(
-                company=company,
-                url=src['url'][:2000],
-                defaults={
-                    'doc_type':   doc_type,
-                    'title':      src['title'][:255] or src['url'][:255],
-                    'notes':      src['snippet'][:1000] if src.get('snippet') else '',
-                    'verification_status': 'pending',
-                },
-            )
-            from evidence_memory.services.memory import create_memory_from_league_evidence
-            create_memory_from_league_evidence(evidence)
+        # Idempotent, and already run before the profile write so provenance
+        # had something real to link to. Kept here so the ordering change
+        # cannot drop evidence if the earlier call is ever removed.
+        self._persist_source_evidence(company)
 
         # ── ScoreHistory ──────────────────────────────────────────────────────
         today = date.today()

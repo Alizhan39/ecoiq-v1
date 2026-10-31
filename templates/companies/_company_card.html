@@ -6,7 +6,15 @@
   <div class="cc-body">
 
     {# ── LEFT zone: score ring + pillar bars ── #}
+    {% comment %}
+      Fail closed. The ring, the number and the four pillar bars are all the
+      composite in different clothes — a bar drawn to 61% of its width states a
+      score just as plainly as the digits do. So the whole zone is gated on
+      evidence, not just the numeral.
+    {% endcomment %}
+    {% with pss=profile|public_score %}
     <div class="cc-left">
+      {% if pss.available %}
       <div class="cc-ring" style="background:conic-gradient({% if score >= 70 %}var(--accent){% elif score >= 50 %}var(--warn){% else %}var(--danger){% endif %} {{ score }}%, rgba(255,255,255,.06) 0);">
         <div class="cc-ring-inner" style="color:{% if score >= 70 %}var(--accent){% elif score >= 50 %}var(--warn){% else %}var(--danger){% endif %}">{{ score|floatformat:1 }}</div>
       </div>
@@ -17,7 +25,11 @@
         <div class="cc-bar"><span class="cc-bar-l">Modern.</span><span class="cc-bar-t"><span class="cc-bar-f" style="width:{{ profile.modernization_score }}%;background:var(--info);opacity:.75"></span></span></div>
         <div class="cc-bar"><span class="cc-bar-l">Gov.</span><span class="cc-bar-t"><span class="cc-bar-f" style="width:{{ profile.transparency_anti_corruption_score }}%;background:var(--warn);opacity:.75"></span></span></div>
       </div>
+      {% else %}
+      <div class="cc-score-cap" style="text-align:center;line-height:1.4;">{{ pss.headline }}</div>
+      {% endif %}
     </div>
+    {% endwith %}
 
     {# ── RIGHT zone: identity header + signal-chip panel ── #}
     <div class="cc-right">

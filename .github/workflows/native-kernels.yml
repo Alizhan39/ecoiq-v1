@@ -1,0 +1,71 @@
+name: EcoIQ Native Rust C++ Candidate CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "native/**"
+      - "scripts/native/test_rust_python_parity.py"
+      - "docs/architecture/NATIVE_RUST_CPP_ARCHITECTURE.md"
+      - ".github/workflows/native-kernels.yml"
+  push:
+    branches: [main]
+    paths:
+      - "native/**"
+      - "scripts/native/test_rust_python_parity.py"
+      - ".github/workflows/native-kernels.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  rust-resource-and-cpp-twin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DJANGO_SECRET_KEY: test-secret-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: sqlite:///db.sqlite3
+      ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED: "False"
+      AI_ENABLED: "false"
+      ECOIQ_BILLING_PROVIDER: none
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pin and report Rust version
+        run: |
+          rustup toolchain install 1.85.1 --profile minimal
+          rustup default 1.85.1
+          rustc --version
+          cargo --version
+      - name: Rust standard-library-only unit tests
+        run: cargo test --offline --manifest-path native/rust_resource_kernel/Cargo.toml
+      - name: Build standalone Rust CLI
+        run: cargo build --offline --manifest-path native/rust_resource_kernel/Cargo.toml
+      - name: Configure C++20 candidate
+        run: |
+          cmake -S native/cpp_twin_geometry -B /tmp/ecoiq-native-build \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build /tmp/ecoiq-native-build --parallel 2
+      - name: Validate C++ geometry including rejected unsafe inputs
+        run: ctest --test-dir /tmp/ecoiq-native-build --output-on-failure
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install pinned Django dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Cross-language parity with existing EcoIQ OS
+        run: |
+          python -m unittest scripts.native.test_rust_python_parity -v
+          python manage.py test ecoiq_os.test_process_diagnostic ecoiq_os.test_kernel --noinput
+      - name: Enforce isolation from production build
+        run: |
+          test ! -f native/rust_resource_kernel/target/release/libecoiq_resource_kernel.so
+          test ! -f native/cpp_twin_geometry/ecoiq_twin_geometry.so
+          git diff --exit-code -- render.yaml requirements.txt

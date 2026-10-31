@@ -43,13 +43,20 @@ def build_assessment(profile, evidence_qs=None) -> dict:
     buckets = _say_do_show(evidence_qs)
     company = profile.company
 
+    # D4A. Mizan re-normalises across the dimensions it can compute, so any of
+    # these can legitimately be None. round(None, 1) raises; substituting a
+    # number would report a dimension nobody assessed as though it had been.
+    def _dim(key):
+        value = m.get(key)
+        return None if value is None else round(value, 1)
+
     dimensions = {
-        "public_benefit": round(m["public_benefit_score"], 1),
-        "harm_reduction": round(m["harm_reduction_score"], 1),
-        "justice_distribution": round(m["justice_distribution_score"], 1),
-        "transparency_accountability": round(m["transparency_accountability_score"], 1),
-        "stewardship": round(m["stewardship_score"], 1),
-        "evidence_confidence": round(m["evidence_confidence_score"], 1),
+        "public_benefit": _dim("public_benefit_score"),
+        "harm_reduction": _dim("harm_reduction_score"),
+        "justice_distribution": _dim("justice_distribution_score"),
+        "transparency_accountability": _dim("transparency_accountability_score"),
+        "stewardship": _dim("stewardship_score"),
+        "evidence_confidence": _dim("evidence_confidence_score"),
     }
     risk_flags = m["risk_flags"]
     source_evidence_ids = [e.id for e in evidence_qs]

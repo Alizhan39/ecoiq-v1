@@ -18,6 +18,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 
 from companies.models import CompanyProfile
+from companies.visibility import PUBLICLY_VISIBLE_STATUSES
 from league.models import Company, SECTOR_CHOICES
 
 from company_intelligence.models import CompanyShariahScreen
@@ -31,7 +32,7 @@ SHARIAH_STATUS_CHOICES = [c for c, _ in CompanyShariahScreen._meta.get_field('ov
 
 def _profile_or_404(slug):
     company = get_object_or_404(Company, slug=slug)
-    return get_object_or_404(CompanyProfile, company=company, status__in=('public', 'verified', 'draft'))
+    return get_object_or_404(CompanyProfile, company=company, status__in=PUBLICLY_VISIBLE_STATUSES)
 
 
 def _criteria_from_request(request):
@@ -291,11 +292,20 @@ def register_document_source_view(request, slug):
         messages.error(request, 'A valid document URL and document type are required.')
         return redirect('companies:detail', slug=slug)
 
-    from company_intelligence.services.url_safety import is_safe_external_url
+    from company_intelligence.services.url_safety import validate_url
 
-    is_safe, reason = is_safe_external_url(source_url)
-    if not is_safe:
-        messages.error(request, f'This URL cannot be registered: {reason}')
+    verdict = validate_url(source_url)
+    if not verdict.safe:
+        # The submitter is told THAT it was refused, never why. `verdict.detail`
+        # can name a resolved address, and echoing it back would turn this form
+        # into an internal port scanner with a helpful oracle: submit a hostname,
+        # read which internal IP it resolved to.
+        import logging
+        logging.getLogger(__name__).warning(
+            'company_intelligence.register_document_source blocked url=%s category=%s detail=%s actor=%s',
+            source_url, verdict.category, verdict.detail, request.user.pk,
+        )
+        messages.error(request, verdict.public_reason)
         return redirect('companies:detail', slug=slug)
 
     from company_intelligence.services.evidence_ingestion import ingest_sustainability_document

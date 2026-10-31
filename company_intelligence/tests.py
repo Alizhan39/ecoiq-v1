@@ -25,6 +25,7 @@ from company_intelligence.services import identity_sync, kpi_engine, rate_limite
 from company_intelligence.services.company_trace import build_company_trace
 from evidence_memory.models import EvidenceMemory
 from league.models import Company
+from core.testing_access import SignedIn
 
 User = get_user_model()
 
@@ -418,12 +419,28 @@ class WatchlistTests(TestCase):
 class CompanyDetailIntegrationTests(TestCase):
     def setUp(self):
         self.client = Client(SERVER_NAME='localhost')
+        # The public company page is evidence-gated (D1.5): an anonymous visitor
+        # now receives the "Evidence assessment pending" page. This suite is about
+        # what the FULL profile renders, so it asks as staff — the audience that
+        # still sees it. See companies/tests_public_containment.py for the
+        # anonymous contract.
+        from django.contrib.auth import get_user_model
+        self.client.force_login(get_user_model().objects.create_user(
+            username='ci-detail-staff', is_staff=True))
         self.methodology = _methodology()
         self.profile = _profile(slug='detail-co', description='Operates solar power assets.')
 
     def test_detail_page_shows_shariah_and_kpi_sections(self):
+        """
+        These panels live on the internal profile now. The PUBLIC page is React
+        and renders the Shariah result from the assessment API, with the
+        disclaimer in the same component — asserted in
+        frontend/web/src/pages/CompanyDetail.test.tsx.
+        """
         shariah_screening.run_shariah_screen(self.profile, self.methodology)
-        r = self.client.get(reverse('companies:detail', args=[self.profile.company.slug]))
+        r = self.client.get(
+            reverse('companies:detail_internal',
+                    args=[self.profile.company.slug]))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Shariah Eligibility Screen')
         self.assertContains(r, '114-KPI Alignment')
@@ -438,7 +455,13 @@ class CompanyDetailIntegrationTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_never_shows_not_screened_as_pass(self):
-        r = self.client.get(reverse('companies:detail', args=[self.profile.company.slug]))
+        """
+        An unrun screen must read as unrun, never as a pass. On the internal
+        profile, where the panel lives now.
+        """
+        r = self.client.get(
+            reverse('companies:detail_internal',
+                    args=[self.profile.company.slug]))
         self.assertContains(r, 'Not Screened')
 
     def test_no_buy_sell_language_anywhere_on_page(self):
@@ -450,11 +473,31 @@ class CompanyDetailIntegrationTests(TestCase):
 
 
 class ExplainViewTests(TestCase):
+    """
+    The explain page, for a reader who can reach it.
+
+    /companies/<slug>/explain/ stopped answering anonymously in Phase 10
+    (core.access.COMPANY_LEAF_SUFFIXES) — it is a Django page left over from
+    when the organisation page was server-rendered, reachable now only from
+    surfaces that already require sign-in. What it SAYS is unchanged, so every
+    assertion below is unchanged; only the client is.
+    """
+
     def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        self.reader = get_user_model().objects.create_user('explain-reader')
         self.client = Client(SERVER_NAME='localhost')
+        self.client.force_login(self.reader)
         self.profile = _profile(slug='explain-view-co')
 
-    def test_explain_view_public_get(self):
+    def test_explain_view_does_not_answer_anonymously(self):
+        r = Client(SERVER_NAME='localhost').get(
+            reverse('companies:explain', args=[self.profile.company.slug]))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/login/', r['Location'])
+
+    def test_explain_view_signed_in_get(self):
         r = self.client.get(reverse('companies:explain', args=[self.profile.company.slug]))
         self.assertEqual(r.status_code, 200)
         self.assertContains(r, 'Why Does EcoIQ Classify This Company This Way?')
@@ -611,6 +654,39 @@ STALE_CONCEPT_XBRL_FACTS = {
     'LongTermDebtNoncurrent': {'units': {'USD': [{'val': 0, 'end': '2013-12-31', 'form': '10-K'}]}},
     'LongTermDebt': {'units': {'USD': [{'val': 300_000_000, 'end': '2025-12-31', 'form': '10-K'}]}},
 }
+
+
+#: A resolver that always answers with one ordinary public address.
+#:
+#: WHY THESE CLASSES PATCH DNS
+#: ---------------------------
+#: `url_safety.validate_url` resolves the hostname for real, and registering a
+#: source runs it. So the classes below — which register real SEC EDGAR and
+#: document sources — performed live DNS lookups as a side effect of testing
+#: the registry.
+#:
+#: Under `--parallel 4` one lookup timing out took fifteen tests red at once,
+#: with a message indistinguishable from a genuine security rejection:
+#:
+#:     ValueError: Refusing to register unsafe URL: This URL cannot be used
+#:     as a source.
+#:
+#: The same tests passed in isolation, and the same suite passed and then
+#: failed across two runs of unchanged code. A suite whose greenness depends
+#: on the resolver cannot be used to decide whether a change is safe.
+#:
+#: The guard's own behaviour is not what these classes are for and is already
+#: pinned without a network, here (test_dns_resolving_to_private_ip_blocked
+#: and its neighbours) and in backend_intelligence_engine/tests_ssrf.py. This
+#: only stops the registry tests depending on DNS to reach their own subject.
+def _resolves_to_a_public_address(host, *args, **kwargs):
+    return [(2, 1, 6, '', ('93.184.216.34', 0))]
+
+
+#: Applied to every class whose subject is registration, not resolution.
+deterministic_dns = patch(
+    'company_intelligence.services.url_safety.socket.getaddrinfo',
+    new=_resolves_to_a_public_address)
 
 
 def _real_profile(slug='apple'):
@@ -1358,20 +1434,23 @@ class ExplainMatchTests(TestCase):
         self.assertFalse(shariah_node.available)
 
 
-class DiscoveryViewTests(TestCase):
+class DiscoveryViewTests(SignedIn, TestCase):
     def test_discover_view_public_get(self):
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:discover'))
         self.assertEqual(response.status_code, 200)
 
     def test_strongest_alignment_view_public_get(self):
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:strongest_alignment'))
         self.assertEqual(response.status_code, 200)
 
     def test_strongest_alignment_view_excludes_no_qualifying_evidence(self):
         _profile(slug='sa-no-evidence-co')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:strongest_alignment'))
         self.assertNotContains(response, 'sa-no-evidence-co')
 
@@ -1379,6 +1458,7 @@ class DiscoveryViewTests(TestCase):
         profile = _profile(slug='sa-with-evidence-co')
         _confirmed_kpi_link(profile, kpi_id=11, relationship='supports')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:strongest_alignment'))
         self.assertContains(response, profile.company.name)
 
@@ -1386,6 +1466,7 @@ class DiscoveryViewTests(TestCase):
         profile = _profile(slug='sa-clean-co')
         _confirmed_kpi_link(profile, kpi_id=12, relationship='supports')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:strongest_alignment'))
         body = response.content.decode().lower()
         for banned in BANNED_INVESTMENT_WORDS:
@@ -1393,6 +1474,7 @@ class DiscoveryViewTests(TestCase):
 
     def test_strongest_alignment_view_shows_mandatory_disclaimer(self):
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:strongest_alignment'))
         normalized = ' '.join(response.content.decode().split())
         self.assertIn(
@@ -1404,6 +1486,7 @@ class DiscoveryViewTests(TestCase):
     def test_discover_view_never_contains_investment_language(self):
         _profile(slug='disc-view-clean-co')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:discover'))
         body = response.content.decode().lower()
         for banned in BANNED_INVESTMENT_WORDS:
@@ -1414,6 +1497,7 @@ class DiscoveryViewTests(TestCase):
         demo = _profile(slug='disc-view-demo-co')
         shariah_screening.run_shariah_screen(demo, methodology, is_demo=True)
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:discover'))
         self.assertNotContains(response, 'disc-view-demo-co')
 
@@ -1421,6 +1505,7 @@ class DiscoveryViewTests(TestCase):
         profile = _profile(slug='disc-view-kpi-co')
         _confirmed_kpi_link(profile, kpi_id=7, relationship='supports')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:discover'), {'kpi': ['7']})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, profile.company.name)
@@ -1428,12 +1513,14 @@ class DiscoveryViewTests(TestCase):
     def test_explain_match_view_public_get(self):
         profile = _profile(slug='disc-explain-view-co')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:explain_match', args=[profile.company.slug]))
         self.assertEqual(response.status_code, 200)
 
     def test_compare_view_requires_at_least_two_companies(self):
         profile = _profile(slug='disc-compare-solo-co')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:compare'), {'companies': profile.company.slug})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Select 2')
@@ -1442,6 +1529,7 @@ class DiscoveryViewTests(TestCase):
         a = _profile(slug='disc-compare-a')
         b = _profile(slug='disc-compare-b')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:compare'), {'companies': f'{a.company.slug},{b.company.slug}'})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, a.company.name)
@@ -1452,6 +1540,7 @@ class DiscoveryViewTests(TestCase):
         b = _profile(slug='disc-compare-extras-b')
         _confirmed_kpi_link(a, kpi_id=13, relationship='supports')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:compare'), {'companies': f'{a.company.slug},{b.company.slug}'})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Confirmed KPIs Supported')
@@ -1464,12 +1553,14 @@ class DiscoveryViewTests(TestCase):
         b = _profile(slug='disc-compare-clean-b')
         _confirmed_kpi_link(a, kpi_id=14, relationship='supports')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         response = client.get(reverse('companies:compare'), {'companies': f'{a.company.slug},{b.company.slug}'})
         body = response.content.decode().lower()
         for banned in BANNED_INVESTMENT_WORDS:
             self.assertNotIn(banned, body)
 
 
+@deterministic_dns
 class RegisterDocumentSourceViewTests(TestCase):
     def setUp(self):
         self.profile = _profile(slug='register-doc-co')
@@ -1542,17 +1633,25 @@ class KPIExplorerDiscoveryIntegrationTests(TestCase):
         methodology = _methodology()
         profile = _profile(slug='kpi-explorer-link-co', description='Operates solar power assets.')
         shariah_screening.run_shariah_screen(profile, methodology)
+        # Evidence-gated public page (D1.5) — this asserts what the FULL profile
+        # renders, so it asks as staff. companies/tests_public_containment.py
+        # owns the anonymous contract.
+        from django.contrib.auth import get_user_model
         client = Client()
-        response = client.get(reverse('companies:detail', args=[profile.company.slug]))
+        client.force_login(get_user_model().objects.create_user(
+            username='ci-kpi-staff', is_staff=True))
+        response = client.get(
+            reverse('companies:detail_internal', args=[profile.company.slug]))
         self.assertContains(response, f"{reverse('companies:discover')}?kpi=1")
 
 
-class DiscoveryObservatoryTelemetryTests(TestCase):
+class DiscoveryObservatoryTelemetryTests(SignedIn, TestCase):
     def test_discover_view_records_company_discovery_session_with_no_anchor(self):
         from ai_observatory.models import AnalysisSession
 
         _profile(slug='disc-observatory-co')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         client.get(reverse('companies:discover'))
         session = AnalysisSession.objects.filter(kind='company_discovery').order_by('-pk').first()
         self.assertIsNotNone(session)
@@ -1567,6 +1666,7 @@ class DiscoveryObservatoryTelemetryTests(TestCase):
         a = _profile(slug='disc-observatory-cmp-a')
         b = _profile(slug='disc-observatory-cmp-b')
         client = Client()
+        client.force_login(self.signed_in_user)  # page now requires sign-in
         client.get(reverse('companies:compare'), {'companies': f'{a.company.slug},{b.company.slug}'})
         session = AnalysisSession.objects.filter(kind='company_discovery').order_by('-pk').first()
         self.assertIsNotNone(session)
@@ -2217,6 +2317,21 @@ class TrackingModelTests(TestCase):
         self.assertIsNone(run.duration_seconds)  # completed_at never set here
 
 
+def _safe_verdict(reason='ok'):
+    """
+    A passing UrlSafetyVerdict, for tests that are not testing URL safety.
+
+    These call sites previously patched `is_safe_external_url` to force-allow a
+    fixture URL. The production code now calls `validate_url`, so the patch has
+    to move with it — same intent, same bypass, no assertion changed. Patching
+    the old name would have silently stopped taking effect and let the fixture
+    URL be resolved for real against the network.
+    """
+    from company_intelligence.services.url_safety import UrlSafetyVerdict, CATEGORY_OK
+
+    return UrlSafetyVerdict(True, CATEGORY_OK, reason, reason, frozenset({'93.184.216.34'}))
+
+
 class UrlSafetyTests(TestCase):
     def test_non_http_scheme_blocked(self):
         safe, reason = url_safety.is_safe_external_url('ftp://example.com/file')
@@ -2325,6 +2440,7 @@ class SourceDiscoveryTests(TestCase):
         self.assertIsNotNone(profile.last_source_discovery_at)
 
 
+@deterministic_dns
 class SourceRegistryTests(TestCase):
     def test_register_approved_candidate_creates_harvester_source(self):
         from harvester.models import Source as HarvesterSource
@@ -2372,7 +2488,8 @@ class SourceRegistryTests(TestCase):
         [candidate] = source_discovery.discover_sources_for_company(profile)
         staff = User.objects.create_user(username='approver1', password='pw', is_staff=True)
 
-        with patch('company_intelligence.services.source_registry.is_safe_external_url', return_value=(True, 'test override')):
+        with patch('company_intelligence.services.source_registry.validate_url',
+                   return_value=_safe_verdict('test override')):
             source_registry.approve_discovered_source(candidate, actor=staff, notes='Looks legitimate.')
         candidate.refresh_from_db()
         self.assertEqual(candidate.status, 'registered')
@@ -2493,6 +2610,7 @@ class StewardshipHealthAndStateTests(TestCase):
         self.assertEqual(state['state'], 'CURRENT')
 
 
+@deterministic_dns
 class RefreshOrchestratorTests(TestCase):
     def test_dry_run_performs_zero_database_writes(self):
         profile = _real_profile('apple')
@@ -2746,7 +2864,8 @@ class StewardshipViewsTests(TestCase):
         [candidate] = source_discovery.discover_sources_for_company(profile)
         client = Client()
         client.login(username='su_staff', password='pw')
-        with patch('company_intelligence.services.source_registry.is_safe_external_url', return_value=(True, 'ok')):
+        with patch('company_intelligence.services.source_registry.validate_url',
+                        return_value=_safe_verdict('ok')):
             response = client.post(reverse('companies:approve_source', args=[profile.company.slug, candidate.pk]), {'notes': 'ok'})
         self.assertEqual(response.status_code, 302)
         candidate.refresh_from_db()
@@ -3134,6 +3253,7 @@ class ChangeTimelineTests(TestCase):
         self.assertEqual(len(timeline), 2)
 
 
+@deterministic_dns
 class RefreshOrchestratorLockingAndSchedulingTests(TestCase):
     def test_concurrent_refresh_is_refused_not_double_run(self):
         profile = _profile(slug='lock-co')
@@ -3180,6 +3300,7 @@ class RefreshOrchestratorLockingAndSchedulingTests(TestCase):
         self.assertEqual(run2.sources_skipped_not_due, 0)
 
 
+@deterministic_dns
 class RefreshOrchestratorChangeWiringTests(TestCase):
     @patch('harvester.services.fetchers.fetch_sustainability_document')
     @patch('harvester.services.fetchers.fetch_sec_edgar')
@@ -3445,6 +3566,7 @@ class MonitorViewsTests(TestCase):
         self.assertGreaterEqual(row['open_alerts_count'], 1)
 
 
+@deterministic_dns
 class SchedulerManagementCommandTests(TestCase):
     @patch('harvester.services.fetchers.fetch_sustainability_document')
     @patch('harvester.services.fetchers.fetch_sec_edgar')
@@ -3935,6 +4057,7 @@ class RateLimiterTests(TestCase):
         self.assertEqual(dropped, 0)
 
 
+@deterministic_dns
 class RefreshOrchestratorRateLimitingTests(TestCase):
     @patch('harvester.services.fetchers.fetch_sustainability_document')
     @patch('harvester.services.fetchers.fetch_sec_edgar')

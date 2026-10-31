@@ -58,21 +58,49 @@ def compute_ethical_screening(profile) -> dict:
     reasons = []
     status = 'passed'
 
-    if profile.harm_penalty >= FAIL_HARM_PENALTY:
+    # D4A. Both criteria below become nullable, and neither direction is safe
+    # by default: an unknown harm penalty must not FAIL a company (an adverse
+    # finding invented from an absence), and it must not silently PASS one
+    # either (a clean bill of health for a check nobody ran).
+    #
+    # So an unevaluable adverse criterion downgrades the outcome to
+    # review_required and says which check could not run. That is the only
+    # honest third answer, and it is the safe direction for a screening gate.
+    harm = profile.harm_penalty
+    controversy = profile.controversy_risk_score
+    unassessable = []
+    if harm is None:
+        unassessable.append('harm penalty')
+    if controversy is None:
+        unassessable.append('controversy risk score')
+
+    if harm is not None and harm >= FAIL_HARM_PENALTY:
         status = 'failed'
-        reasons.append(f'Harm penalty of {profile.harm_penalty:.1f} pts exceeds the fail threshold.')
-    elif profile.controversy_risk_score >= FAIL_CONTROVERSY:
+        reasons.append(f'Harm penalty of {harm:.1f} pts exceeds the fail threshold.')
+    elif controversy is not None and controversy >= FAIL_CONTROVERSY:
         status = 'failed'
-        reasons.append(f'Controversy risk score of {profile.controversy_risk_score:.0f}/100 exceeds the fail threshold.')
-    elif profile.harm_penalty >= REVIEW_HARM_PENALTY:
+        reasons.append(f'Controversy risk score of {controversy:.0f}/100 exceeds the fail threshold.')
+    elif harm is not None and harm >= REVIEW_HARM_PENALTY:
         status = 'review_required'
-        reasons.append(f'Harm penalty of {profile.harm_penalty:.1f} pts warrants manual review.')
-    elif profile.controversy_risk_score >= REVIEW_CONTROVERSY:
+        reasons.append(f'Harm penalty of {harm:.1f} pts warrants manual review.')
+    elif controversy is not None and controversy >= REVIEW_CONTROVERSY:
         status = 'review_required'
-        reasons.append(f'Controversy risk score of {profile.controversy_risk_score:.0f}/100 warrants manual review.')
+        reasons.append(f'Controversy risk score of {controversy:.0f}/100 warrants manual review.')
     elif profile.pollution_level in REVIEW_POLLUTION_LEVELS:
         status = 'review_required'
         reasons.append(f'Pollution level is classified as "{profile.pollution_level}".')
+
+    if unassessable and status == 'passed':
+        status = 'review_required'
+        reasons.append(
+            f'Could not evaluate {" and ".join(unassessable)} — not recorded '
+            'for this company. Screening cannot pass a criterion it did not run.'
+        )
+    elif unassessable:
+        reasons.append(
+            f'Note: {" and ".join(unassessable)} could not be evaluated — not '
+            'recorded for this company.'
+        )
 
     if not profile.is_verified:
         reasons.append('Underlying company profile is unverified by EcoIQ.')

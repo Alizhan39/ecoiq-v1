@@ -10,6 +10,7 @@ from django.urls import reverse
 from countries.models import CountryProfile
 from geo_intelligence.models import GeoAsset, GeoRiskZone, InvestmentGeoOpportunity
 from geo_intelligence.services import spatial, weather
+from core.testing_access import SignedIn
 
 TEMPLATE_LEAK_RE = re.compile(r'\{%|\{\{')
 
@@ -174,7 +175,7 @@ class SeedCommandTests(TestCase):
         self.assertEqual(GeoRiskZone.objects.count(), 0)  # honestly skipped, not fabricated
 
 
-class CommandCentreViewTests(TestCase):
+class CommandCentreViewTests(SignedIn, TestCase):
     @classmethod
     def setUpTestData(cls):
         call_command('seed_khalifa_stewardship_demo')
@@ -241,7 +242,7 @@ class CommandCentreViewTests(TestCase):
         )
 
 
-class NavigationIntegrationTests(TestCase):
+class NavigationIntegrationTests(SignedIn, TestCase):
     """Geo Intelligence must be reachable from anywhere, and link back to the
     Kazakhstan tour that supplied its one real demo asset/opportunity."""
 
@@ -249,10 +250,31 @@ class NavigationIntegrationTests(TestCase):
     def setUpTestData(cls):
         call_command('seed_khalifa_stewardship_demo')
 
-    def test_geo_intelligence_reachable_from_global_nav(self):
+    def test_geo_intelligence_is_not_in_the_public_global_nav(self):
+        """
+        Geo Intelligence was a header item on every page. It is an internal
+        analysis surface, so it left the public navigation when that was
+        reduced to five items. Still reachable at its own URL — this asserts
+        placement, not existence.
+        """
+        import re as _re
+
+        # base.html still renders the unmigrated pages, and its navigation is
+        # what this protects. /about/ and /pricing/ are React now and carry no
+        # server-rendered nav at all.
+        for url in ('/heating/', '/khalifa-tours/'):
+            body = self.client.get(url).content.decode()
+            nav = _re.search(r'<nav[^>]*>(.*?)</nav>', body, _re.S)
+            self.assertIsNotNone(nav, url)
+            self.assertNotIn('/geo-intelligence/', nav.group(1), url)
+
+        # The React shell promotes it no more than base.html does.
         for url in (reverse('home'), '/about/', '/pricing/'):
-            resp = self.client.get(url)
-            self.assertContains(resp, '/geo-intelligence/')
+            self.assertNotIn('/geo-intelligence/',
+                             self.client.get(url).content.decode(), url)
+
+    def test_geo_intelligence_is_still_reachable_at_its_own_url(self):
+        self.assertEqual(self.client.get('/geo-intelligence/').status_code, 200)
 
     def test_kazakhstan_tour_links_back_to_geo_intelligence(self):
         resp = self.client.get(

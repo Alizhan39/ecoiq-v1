@@ -24,6 +24,12 @@ from django.db import transaction
 from django.utils.text import slugify
 
 from companies.management.commands._target_market_data import ADDITIONAL_COMPANIES
+from companies.provenance import record_seed_write
+
+#: STEP 7 — a stable, exact writer identity. Not 'seed' or 'script': naming the
+#: command is what makes future lineage reconstructible, which D3B proved is
+#: impossible after the fact.
+WRITER_ID = 'seed:focus_target_markets'
 
 # ── Target markets ─────────────────────────────────────────────────────────────
 TARGET_MARKETS = {'United Kingdom', 'Kazakhstan', 'Saudi Arabia', 'Türkiye'}
@@ -326,20 +332,28 @@ class Command(BaseCommand):
                 ai_summary=make_ai_summary(name, sector, country, scores),
             )
 
-            profile, pr_created = CompanyProfile.objects.get_or_create(
-                company=company, defaults=profile_defaults,
-            )
+            # D3C-1 — value and provenance in one atomic block. Note the
+            # `continue` below: a skipped company gets NO provenance row,
+            # because nothing was written to it. Recording SEEDED for a value
+            # this run did not produce would be a claim about someone else's
+            # write.
+            with transaction.atomic():
+                profile, pr_created = CompanyProfile.objects.get_or_create(
+                    company=company, defaults=profile_defaults,
+                )
 
-            if not pr_created and overwrite:
-                for k, v in profile_defaults.items():
-                    setattr(profile, k, v)
-                profile.save()
-                updated += 1
-            elif pr_created:
-                created += 1
-            else:
-                skipped += 1
-                continue
+                if not pr_created and overwrite:
+                    for k, v in profile_defaults.items():
+                        setattr(profile, k, v)
+                    profile.save()
+                    updated += 1
+                elif pr_created:
+                    created += 1
+                else:
+                    skipped += 1
+                    continue
+
+                record_seed_write(profile, profile_defaults, WRITER_ID)
 
             verb = 'Created' if pr_created else 'Updated'
             self.stdout.write(

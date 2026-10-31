@@ -1,5 +1,6 @@
 import 'package:ecoiq_app/core/api/ecoiq_api_client.dart';
 import 'package:ecoiq_app/data/models/company.dart';
+import 'package:ecoiq_app/data/models/evidence.dart';
 import 'package:ecoiq_app/data/repositories/company_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -7,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class _MockApiClient extends Mock implements EcoIqApiClient {}
 
-const _profileA = CompanyProfileData(
+final _profileA = CompanyProfileData(
   slug: 'company-a',
   name: 'Company A',
   sector: 'Energy',
@@ -18,12 +19,12 @@ const _profileA = CompanyProfileData(
   description: '',
   isPublic: true,
   verified: true,
-  ecoiqScore: 80,
+  score: EvidenceScore.published(80),
   rank: 1,
   harmSignals: [],
 );
 
-const _profileB = CompanyProfileData(
+final _profileB = CompanyProfileData(
   slug: 'company-b',
   name: 'Company B',
   sector: 'Mining',
@@ -34,7 +35,7 @@ const _profileB = CompanyProfileData(
   description: '',
   isPublic: true,
   verified: false,
-  ecoiqScore: 50,
+  score: EvidenceScore.published(50),
   rank: 2,
   harmSignals: [],
 );
@@ -87,12 +88,12 @@ void main() {
 
   test('search delegates straight to the api client', () async {
     when(() => apiClient.searchCompanies('foo')).thenAnswer((_) async => [
-          const CompanySummary(
+          CompanySummary(
             slug: 'company-a',
             name: 'Company A',
             sector: 'Energy',
             country: 'UK',
-            ecoiqScore: 80,
+            score: EvidenceScore.published(80),
             rank: 1,
             isPublic: true,
             verified: true,

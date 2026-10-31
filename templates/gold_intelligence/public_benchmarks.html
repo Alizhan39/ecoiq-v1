@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}EcoIQ · Kazakhstan Gold — Public Operator Benchmarks{% endblock %}
+{% block meta_description_content %}Non-exhaustive source-linked 2025 public Kazakhstan mine benchmark research, not operational audit or certified mineral resources.{% endblock %}
+
+{% block content %}
+<div class="gold-wrap">
+  <span class="gold-eyebrow">ECOIQ GOLD INTELLIGENCE · RESEARCH DATA</span>
+  <h1 class="gold-h1">Kazakhstan Gold · Public Benchmarks</h1>
+  <p class="gold-sub">
+    Reference snapshot {{ catalogue.snapshot_date }} ·
+    {{ catalogue.assets|length }} source-reported operating sites or producing complexes ·
+    {{ catalogue.observations|length }} site observations ·
+    {{ catalogue.optimisation_hypotheses|length }} testable hypotheses.
+  </p>
+  <p class="gold-honest-stub">
+    <strong>NON-EXHAUSTIVE PUBLIC RESEARCH — NOT A COMPLETE MINE CENSUS.</strong>
+    Activity is primarily documented for 2025, not confirmed live for every mine in 2026.
+    A processing hub and its feed mines may appear separately without their production
+    being counted twice. Neither licences nor operating KPIs are independently verified
+    by EcoIQ. Optimization suggestions are hypotheses, not engineering findings.
+  </p>
+  <p class="gold-sub"><a href="{% url 'gold_intelligence:directory' %}">← Project directory</a></p>
+  <p class="gold-sub"><a href="{% url 'gold_intelligence:public_time_series' %}">View time series & source usage rights →</a></p>
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Research inventory — select an asset</h2>
+    <div class="gold-list">
+      {% for asset in catalogue.assets %}
+      <div class="gold-list-row">
+        <span>
+          <a href="?asset={{ asset.id|urlencode }}">{{ asset.name }}</a>
+          <span class="gold-card-sub"> · {{ asset.operator }} · {{ asset.region }}</span>
+        </span>
+        <span class="gold-card-sub">2025 evidence</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if selected and not card %}
+  <section class="gold-section">
+    <p class="gold-honest-stub">The selected mine is not in the cited public research seed.</p>
+  </section>
+  {% endif %}
+
+  {% if card %}
+  <section class="gold-section">
+    <h2 class="gold-h2">{{ card.asset.name }} · Evidence card</h2>
+    <p class="gold-sub">{{ card.asset.notes }}</p>
+    <p class="gold-honest-stub">Historical operator-report facts only; not site audit, real-time production or an
+      independently certified Mizan/industry KPI.</p>
+    <h3 class="gold-h2">Reported operating indicators</h3>
+    {% for metric in card.observations %}
+      <div class="gold-list-row">
+        <span class="gold-list-label">{{ metric.metric }} ({{ metric.period }})</span>
+        <span>{{ metric.value }} {{ metric.unit }}</span>
+      </div>
+      {% if metric.caveat %}<p class="gold-card-sub">{{ metric.caveat }}</p>{% endif %}
+    {% empty %}
+      <p class="gold-honest-stub">Mine-specific output/operational measurements not disclosed in these sources.</p>
+    {% endfor %}
+    <h3 class="gold-h2">Modernisation hypotheses to validate</h3>
+    {% for hyp in card.hypotheses %}
+      <div class="gold-card">
+        <strong>{{ hyp.process }}</strong>
+        <p class="gold-card-sub">Published clue: {{ hyp.problem }}</p>
+        <p class="gold-card-sub">Candidate improvement: {{ hyp.hypothesis }}</p>
+        <p class="gold-card-sub"><strong>Validation experiment:</strong> {{ hyp.test }}</p>
+        <p class="gold-honest-stub">{{ hyp.status }} — No benefit or savings established.</p>
+      </div>
+    {% empty %}
+      <p class="gold-honest-stub">No reviewed improvement hypothesis from the cited public sources.</p>
+    {% endfor %}
+
+    <h3 class="gold-h2">Original source links</h3>
+    {% for key, src in card.sources.items %}
+      <p class="gold-card-sub">
+        <a href="{{ src.url }}" rel="noopener noreferrer" target="_blank">{{ src.title }}</a>
+        · {{ src.origin }}
+      </p>
+      {% if src.caveat %}<p class="gold-honest-stub">{{ src.caveat }}</p>{% endif %}
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <section class="gold-section">
+    <h2 class="gold-h2">Missing mines and data coverage</h2>
+    <p class="gold-honest-stub">For a complete current census reconcile the Kazakhstan
+      Minerals e-Qazyna extraction licences/contracts map with each operator’s
+      published 2026 operating status, mineral type, project-specific mining activity
+      and legal data reuse terms. Mine sites, processing hubs, feed deposits, exploration
+      licences and planned POX facilities must remain distinct.</p>
+    <a href="https://minerals.e-qazyna.kz/ru/contracts-map"
+       target="_blank" rel="noopener noreferrer">Kazakhstan official subsoil map →</a>
+  </section>
+</div>
+{% include 'gold_intelligence/_styles.html' %}
+{% endblock %}

@@ -1,0 +1,1 @@
+function n(e){return e.score_status==="PUBLISHED"&&e.ecoiq_score!==null}function r(e){return n(e)?e.ecoiq_score:null}function s(e){switch(e){case"HIGH":return"High";case"MEDIUM":return"Medium";case"LOW":return"Low";case"INSUFFICIENT_EVIDENCE":return"Insufficient evidence"}}function c(e){return e.status==="clear"}export{c as a,s as c,n as i,r as p};

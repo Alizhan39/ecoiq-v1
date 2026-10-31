@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ecoiq.uk/schema/research-ingest-manifest.json",
+  "title": "EcoIQ research ingestion manifest",
+  "description": "The manual, auditable boundary for bringing an external research source (NotebookLM export, regulator publication, standards document, third-party report) into EcoIQ. Validated by `python manage.py validate_research_manifest`. Rationale and the mapping onto evidence_memory.EvidenceMemory are in .claude/skills/ecoiq-research-ingest/SKILL.md. Note: rules that are cross-field (a reviewer being required once review_state leaves 'unreviewed', an AI summary never being approved without one) are enforced by the command, not expressible here.",
+  "type": "object",
+  "required": ["manifest_version", "created_date", "sources"],
+  "additionalProperties": false,
+  "properties": {
+    "manifest_version": {
+      "const": 1,
+      "description": "Bumped only for a breaking change to this schema."
+    },
+    "created_date": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO date the batch was assembled."
+    },
+    "operator": {
+      "type": "string",
+      "description": "Person who assembled the batch. Not a model name."
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/source" }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": [
+        "source_id",
+        "title",
+        "origin",
+        "retrieved_date",
+        "document_sha256",
+        "confidence",
+        "review_state",
+        "citations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{2,63}$",
+          "description": "Stable local identifier. Becomes EvidenceMemory.source_reference as 'manifest:<source_id>'."
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "origin": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Where it came from: a URL, a publication reference, or 'NotebookLM: <notebook name>'. Never a guessed deep link."
+        },
+        "publication_date": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "When the source was published. Null when genuinely unknown — never inferred."
+        },
+        "retrieved_date": {
+          "type": "string",
+          "format": "date",
+          "description": "When the bytes were actually obtained. Distinct from publication_date."
+        },
+        "document_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the bytes received. Detects drift between what was cited and what is held. NOT proof the document is authentic, and never to be described as immutability or tamper-proofing."
+        },
+        "jurisdiction": {
+          "type": ["string", "null"],
+          "enum": ["GB", "KZ", "SA", "TR", null],
+          "description": "Required by ecoiq-regulatory-review when the source states a regulatory position."
+        },
+        "summary": { "type": ["string", "null"] },
+        "summary_author": {
+          "type": ["string", "null"],
+          "enum": ["human", "ai", null],
+          "description": "Required whenever summary is present. An 'ai' summary cannot reach review_state 'approved' without a named reviewer."
+        },
+        "citations": {
+          "type": "array",
+          "minItems": 1,
+          "description": "At least one locator into the source. A source with no citable location cannot be traced back to.",
+          "items": { "$ref": "#/$defs/citation" }
+        },
+        "confidence": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Null until a real value is known. Never a plausible default — mirrors EvidenceMemory.confidence being nullable on purpose."
+        },
+        "review_state": {
+          "type": "string",
+          "enum": ["unreviewed", "reviewed", "approved"],
+          "description": "Everything arrives 'unreviewed'. Promotion is a human act."
+        },
+        "reviewer": {
+          "type": ["string", "null"],
+          "description": "A person. Required once review_state is 'reviewed' or 'approved'. Never a model name."
+        },
+        "review_date": { "type": ["string", "null"], "format": "date" },
+        "expiry_date": {
+          "type": ["string", "null"],
+          "format": "date",
+          "description": "Maps to EvidenceMemory.expiry_date. A regulatory source with no expiry becomes stale advice silently."
+        },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+    "citation": {
+      "type": "object",
+      "required": ["locator"],
+      "additionalProperties": false,
+      "properties": {
+        "locator": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Page, section, clause, or timestamp within the source. 'p. 14', '§ 3.2', 'Art. 8(1)'."
+        },
+        "quote": {
+          "type": ["string", "null"],
+          "maxLength": 1000,
+          "description": "Optional verbatim excerpt. Keep it short; this is a locator aid, not a reproduction of the work."
+        }
+      }
+    }
+  }
+}

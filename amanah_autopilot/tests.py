@@ -1,7 +1,8 @@
 from django.test import TestCase
+from core.staff_page_testcase import StaffPageTestCase
 
 
-class AmanahAutopilotOverviewPageTests(TestCase):
+class AmanahAutopilotOverviewPageTests(StaffPageTestCase):
     def test_page_returns_200(self):
         response = self.client.get('/amanah-autopilot/')
         self.assertEqual(response.status_code, 200)

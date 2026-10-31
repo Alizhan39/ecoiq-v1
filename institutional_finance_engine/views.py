@@ -4,6 +4,7 @@ apps.py's module docstring: 100% static content, zero real functionality.
 financial_intelligence_cloud is the real institutional intelligence
 interface going forward. Not to be extended with new content or logic.
 """
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
 
 # Connected EcoIQ modules — the Finance Engine turns verified evidence into investable decisions
@@ -329,6 +330,10 @@ CTA_BUTTONS = [
 ]
 
 
+# Internal concept page — staff-only. This app is a hard-coded architecture
+# description with no models, no migrations and no ORM access; it was never a
+# customer-facing product surface. See docs/product/PHASE_1_ARCHITECTURE.md §3.
+@staff_member_required(login_url='/login/')
 def overview(request):
     return render(request, 'institutional_finance_engine/overview.html', {
         'connected_modules': CONNECTED_MODULES,

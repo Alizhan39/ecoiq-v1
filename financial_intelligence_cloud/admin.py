@@ -1,8 +1,9 @@
 from django.contrib import admin
 
 from financial_intelligence_cloud.models import (
-    AdvisoryOpportunity, InstitutionalAccount, OpportunityFeedItem, Portfolio,
-    PortfolioDailyBrief, PortfolioEntity, PortfolioSignal,
+    AccountingActivity, AccountingService, AdvisoryOpportunity, ClientPayment,
+    ClientReminder, ClientService, InstitutionalAccount, OpportunityFeedItem,
+    PaymentReceipt, Portfolio, PortfolioDailyBrief, PortfolioEntity, PortfolioSignal,
 )
 
 
@@ -53,3 +54,91 @@ class OpportunityFeedItemAdmin(admin.ModelAdmin):
 class PortfolioDailyBriefAdmin(admin.ModelAdmin):
     list_display = ('institutional_account', 'brief_date', 'new_signals_count', 'human_approvals_pending')
     list_filter = ('brief_date',)
+
+
+@admin.register(AccountingService)
+class AccountingServiceAdmin(admin.ModelAdmin):
+    list_display = ('name', 'institutional_account', 'frequency', 'default_fee', 'currency', 'is_active')
+    list_filter = ('institutional_account', 'frequency', 'is_active')
+    search_fields = ('name', 'code')
+
+
+@admin.register(ClientService)
+class ClientServiceAdmin(admin.ModelAdmin):
+    list_display = ('client', 'service', 'assigned_to', 'status', 'next_due_date', 'agreed_fee', 'is_active')
+    list_filter = ('status', 'is_active', 'service', 'assigned_to')
+    search_fields = ('client__name', 'service__name', 'assigned_to__username')
+    list_select_related = ('client', 'service', 'assigned_to')
+
+
+@admin.register(ClientPayment)
+class ClientPaymentAdmin(admin.ModelAdmin):
+    list_display = ('client_name', 'service_name', 'amount_due', 'amount_paid', 'currency', 'due_date', 'status')
+    list_filter = ('status', 'currency', 'due_date')
+    search_fields = ('client_service__client__name', 'client_service__service__name', 'reference')
+    list_select_related = ('client_service__client', 'client_service__service')
+
+    @admin.display(description='Client', ordering='client_service__client__name')
+    def client_name(self, obj):
+        return obj.client_service.client.name
+
+    @admin.display(description='Service', ordering='client_service__service__name')
+    def service_name(self, obj):
+        return obj.client_service.service.name
+
+
+@admin.register(PaymentReceipt)
+class PaymentReceiptAdmin(admin.ModelAdmin):
+    list_display = ('received_at', 'client_name', 'amount', 'currency', 'payment_method', 'reference', 'recorded_by')
+    list_filter = ('received_at', 'payment_method')
+    search_fields = ('payment__client_service__client__name', 'reference', 'recorded_by__username')
+    readonly_fields = ('payment', 'amount', 'received_at', 'payment_method', 'reference', 'recorded_by', 'created_at')
+
+    @admin.display(description='Client')
+    def client_name(self, obj):
+        return obj.payment.client_service.client.name
+
+    @admin.display(description='Currency')
+    def currency(self, obj):
+        return obj.payment.currency
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ClientReminder)
+class ClientReminderAdmin(admin.ModelAdmin):
+    list_display = ('title', 'client_name', 'owner', 'due_at', 'priority', 'status')
+    list_filter = ('priority', 'status', 'owner')
+    search_fields = ('title', 'client__name', 'client_service__client__name')
+
+    @admin.display(description='Client')
+    def client_name(self, obj):
+        client = obj.client or (obj.client_service.client if obj.client_service_id else None)
+        return client.name if client else '—'
+
+
+@admin.register(AccountingActivity)
+class AccountingActivityAdmin(admin.ModelAdmin):
+    list_display = ('created_at', 'institutional_account', 'client', 'event_type', 'summary', 'actor')
+    list_filter = ('institutional_account', 'event_type', 'created_at')
+    search_fields = ('summary', 'client__name', 'actor__username')
+    readonly_fields = (
+        'institutional_account', 'client', 'client_service', 'actor',
+        'event_type', 'summary', 'metadata', 'created_at',
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

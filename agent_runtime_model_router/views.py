@@ -1,4 +1,5 @@
 from django.db.models import Avg, Sum
+from gold_intelligence.access import visible_results
 from django.shortcuts import get_object_or_404, render
 
 from ai_agent_council.models import CouncilRun
@@ -36,22 +37,23 @@ SAFETY_ENGINE_NOTE = (
 
 
 def _dashboard_stats():
+    public_runs = AgentRun.objects.filter(project__isnull=True)
     return {
         'registered_agents': AgentRegistryEntry.objects.count(),
         'live_enabled_agents': AgentRegistryEntry.objects.filter(enabled=True).count(),
-        'deterministic_test_runs': AgentRun.objects.filter(execution_mode_used='deterministic_test').count(),
-        'simulated_demo_runs': AgentRun.objects.filter(execution_mode_used='simulated_demo').count(),
-        'successful_runs': AgentRun.objects.filter(status='completed').count(),
-        'schema_failures': AgentRun.objects.filter(schema_valid=False).count(),
-        'safety_blocks': AgentRun.objects.filter(safety_status='blocking').count(),
-        'human_reviews_required': AgentRun.objects.filter(
+        'deterministic_test_runs': public_runs.filter(execution_mode_used='deterministic_test').count(),
+        'simulated_demo_runs': public_runs.filter(execution_mode_used='simulated_demo').count(),
+        'successful_runs': public_runs.filter(status='completed').count(),
+        'schema_failures': public_runs.filter(schema_valid=False).count(),
+        'safety_blocks': public_runs.filter(safety_status='blocking').count(),
+        'human_reviews_required': public_runs.filter(
             human_approval_required=True, human_approved__isnull=True,
         ).count(),
-        'average_calibrated_confidence': AgentRun.objects.filter(
+        'average_calibrated_confidence': public_runs.filter(
             calibrated_confidence__isnull=False,
         ).aggregate(avg=Avg('calibrated_confidence'))['avg'],
-        'fallback_events': AgentRun.objects.exclude(fallback_chain=[]).count(),
-        'estimated_model_cost_usd': AgentRun.objects.filter(
+        'fallback_events': public_runs.exclude(fallback_chain=[]).count(),
+        'estimated_model_cost_usd': public_runs.filter(
             estimated_cost_usd__isnull=False,
         ).aggregate(total=Sum('estimated_cost_usd'))['total'],
     }
@@ -61,7 +63,7 @@ def overview(request):
     demo_case = CouncilRun.objects.filter(
         slug='boiler-house-3-modernisation-runtime-demo',
     ).first()
-    recent_runs = AgentRun.objects.select_related('agent').order_by('-created_at')[:10]
+    recent_runs = AgentRun.objects.filter(project__isnull=True).select_related('agent').order_by('-created_at')[:10]
 
     return render(request, 'agent_runtime_model_router/overview.html', {
         'core_purpose': CORE_PURPOSE,
@@ -77,7 +79,7 @@ def overview(request):
 
 
 def run_detail(request, run_id):
-    agent_run = get_object_or_404(AgentRun.objects.select_related('agent', 'council_case', 'council_position'), pk=run_id)
+    agent_run = get_object_or_404(visible_results(AgentRun.objects.select_related('agent', 'council_case', 'council_position'), request.user), pk=run_id)
     return render(request, 'agent_runtime_model_router/run_detail.html', {
         'run': agent_run,
     })
@@ -90,7 +92,7 @@ def case_trace(request, case_slug):
 
     return render(request, 'agent_runtime_model_router/case_trace.html', {
         'council_run': council_run,
-        'agent_runs': council_run.agent_runs.select_related('agent').order_by('created_at'),
+        'agent_runs': council_run.agent_runs.filter(project__isnull=True).select_related('agent').order_by('created_at'),
         'tasks': council_run.tasks.all(),
         'disagreements': council_run.disagreements.select_related('position_a', 'position_b').all(),
         'cross_examinations': council_run.cross_examinations.all(),

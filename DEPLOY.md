@@ -26,14 +26,11 @@ Never add `migrate`, `bootstrap_*`, or any `seed_*` command to `build.sh`.
 | Phase | Script | Runs | Purpose |
 |-------|--------|------|---------|
 | Build | `build.sh` | build env (no DB) | deps, translations, static files |
-| Pre-Deploy | `predeploy.sh` | runtime net (DB resolves) | `migrate` + all seeds, **once per deploy** |
-| Start | `start.sh` | runtime net (DB resolves) | best-effort `migrate` safety net, then Gunicorn |
+| Start | `start.sh` | runtime net (DB resolves) | strict `migrate`, then Gunicorn |
 
-Both `predeploy.sh` and `start.sh` are **best-effort**: if the database is
-temporarily unavailable they log a warning and exit 0 / start the server anyway,
-so **a database hiccup can never block a deploy or stop the web service booting.**
-The app has no import-time database access, so Gunicorn serves even with the DB down;
-schema/data catch up automatically on the next start once the DB is back.
+The Free web plan does not support Render's paid Pre-Deploy command. `start.sh`
+therefore retries migrations in the runtime network and refuses to open the HTTP
+port if they fail. New code never serves against an old schema.
 
 ## Render service configuration (must match `render.yaml`)
 
@@ -42,10 +39,10 @@ were ever set **manually in the Render dashboard**, the dashboard value override
 `render.yaml` — set them to exactly:
 
 - **Build Command:** `pip install -r requirements.txt && ./build.sh`
-- **Pre-Deploy Command:** `./predeploy.sh`
 - **Start Command:** `./start.sh`
 
-`preDeployCommand` requires a paid instance type (this service runs on **Starter**).
+The web service runs on **Free**. Keep `predeploy.sh` only as the migration step
+if the service later returns to paid compute.
 
 ## Required environment variables (Render dashboard)
 
@@ -144,6 +141,37 @@ pasting it in. Before flipping the latch, confirm: live API keys set, a live
 webhook endpoint registered with its own signing secret, live price ids set and
 synced, tax registrations resolved, and the Customer Portal configured in the
 live account.
+
+## The React frontend
+
+`ecoiq.uk` serves the React SPA through Django. There is no second service, no
+second hostname and no static host to configure — the built app lives in
+`static/spa/`, is committed to the repository, and WhiteNoise serves its assets
+like any other static file.
+
+**Render's Python environment has no Node toolchain**, and `build.sh` does not
+run Vite. It *verifies* the committed artefact instead, and **refuses to
+deploy** if `static/spa/index.html` is missing, has lost its metadata markers,
+or names an asset that is not on disk. A half-committed frontend would
+otherwise ship as a blank white page with one 404 in the console and no
+server-side error at all.
+
+So the rule for anyone changing the frontend is:
+
+```bash
+npm --prefix frontend/web ci && npm --prefix frontend/web run build
+```
+
+and commit `static/spa/` in the same change. CI fails the pull request if you
+forget.
+
+Nothing else about the Render configuration changes: same service, same start
+command, same health check, no new environment variable, no Redis, no worker.
+
+Full detail — routing, the catch-all's exclusions, caching, the SEO position
+and the rollback procedure — is in `docs/product/FRONTEND_DEPLOYMENT.md`.
+
+---
 
 ## Post-deploy smoke check
 

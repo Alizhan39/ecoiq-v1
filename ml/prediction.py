@@ -9,6 +9,8 @@ Method:
 
 Fallback: if fewer than 3 data points, returns current ecoiq_score + estimated delta
 based on recent DataIngestionLog signals (harm → small negative, positive → small positive).
+Returns None if the company has no current score — a forecast is a projection
+FROM something, and there is nothing to project from.
 
 Usage:
     from ml.prediction import predict_12m
@@ -18,9 +20,35 @@ from __future__ import annotations
 
 import logging
 from datetime import timedelta
+from itertools import islice
 import numpy as np
 
+from core.unknown import known
+
 logger = logging.getLogger(__name__)
+
+HISTORY_LIMIT = 12
+SIGNAL_LIMIT = 50
+BATCH_SIZE = 128
+_HISTORY_ATTR = '_forecast_history'
+_SIGNALS_ATTR = '_forecast_signals'
+
+
+def _history_for(company):
+    if hasattr(company, _HISTORY_ATTR):
+        rows = getattr(company, _HISTORY_ATTR)
+        return [(row.date, row.ecoiq_score) for row in reversed(rows)]
+    # Select the latest window before restoring chronological order for OLS.
+    latest = list(company.history.order_by('-date', '-pk').values_list(
+        'date', 'ecoiq_score')[:HISTORY_LIMIT])
+    return list(reversed(latest))
+
+
+def _signals_for(company, since):
+    if hasattr(company, _SIGNALS_ATTR):
+        return [row.raw_data for row in getattr(company, _SIGNALS_ATTR)]
+    return company.ingestion_logs.filter(ingested_at__gte=since, source='rss').order_by(
+        '-ingested_at', '-pk').values_list('raw_data', flat=True)[:SIGNAL_LIMIT]
 
 
 def predict_12m(company) -> float | None:
@@ -35,9 +63,7 @@ def predict_12m(company) -> float | None:
     target_date = today + timedelta(days=365)
 
     # ── Try historical trend first ─────────────────────────────────────────
-    history = list(
-        company.history.order_by('date').values_list('date', 'ecoiq_score')[:24]
-    )
+    history = _history_for(company)
 
     if len(history) >= 3:
         dates  = np.array([(h[0] - history[0][0]).days for h in history], dtype=np.float64)
@@ -48,23 +74,34 @@ def predict_12m(company) -> float | None:
         try:
             slope, intercept = np.linalg.lstsq(A, scores, rcond=None)[0]
         except np.linalg.LinAlgError:
-            slope, intercept = 0.0, float(company.ecoiq_score or 50.0)
+            # Was `company.ecoiq_score or 50.0` — a degenerate fit fell back to
+            # forecasting an average company. With no current score there is
+            # nothing to project from, so refuse.
+            fallback = known(company.ecoiq_score)
+            if fallback is None:
+                return None
+            slope, intercept = 0.0, fallback
 
         days_forward = (target_date - history[0][0]).days
         predicted = slope * days_forward + intercept
         return float(np.clip(predicted, 0, 100))
 
     # ── Fallback: signal-based delta ──────────────────────────────────────
-    base = float(company.ecoiq_score or 50.0)
+    #
+    # Was `float(company.ecoiq_score or 50.0)`. That produced a 12-month
+    # FORECAST for a company with no score at all — anchored on an invented
+    # average, nudged by news signals, and written to ml_predicted_score_12m as
+    # though it projected something. `or` also rewrote a genuine 0.0 to 50,
+    # forecasting the worst-scoring company as an average one.
+    base = known(company.ecoiq_score)
+    if base is None:
+        return None
     delta = 0.0
 
     try:
         # Look at last 90 days of ingestion signals
         since = timezone.now() - timedelta(days=90)
-        recent_logs = company.ingestion_logs.filter(
-            ingested_at__gte=since,
-            source='rss',
-        ).values_list('raw_data', flat=True)[:50]
+        recent_logs = _signals_for(company, since)
 
         for raw in recent_logs:
             sig_type = (raw or {}).get('signal_type', '')
@@ -81,31 +118,119 @@ def predict_12m(company) -> float | None:
     return float(np.clip(base + delta, 0, 100))
 
 
+# ── Derived provenance (D3C-3f) ───────────────────────────────────────────────
+
+PREDICTION_METHOD = 'ecoiq-forecast-ols-12m'
+PREDICTION_VERSION = '2'
+PREDICTION_METRIC_KEY = 'ml.predicted_12m'
+
+#: The ONLY registered metric this forecast consumes.
+#:
+#: Read this before treating the lineage as complete. predict_12m has two
+#: paths and neither is well described by metric provenance:
+#:
+#:   * PRIMARY (>= 3 history points) — an OLS fit over ScoreHistory rows. It
+#:     does not read company.ecoiq_total at all. The declared input below is
+#:     therefore NOT the thing that produced the number; it is the closest
+#:     provenance-bearing relative of it, since the history rows are snapshots
+#:     of that same composite over time. ScoreHistory is a record, not a
+#:     metric, and has no provenance rows to point at.
+#:
+#:   * FALLBACK (< 3 points) — anchored on company.ecoiq_score, nudged by up to
+#:     +/-10 points of DataIngestionLog RSS signal. The anchor IS this input;
+#:     the signals are again records with no provenance.
+#:
+#: So the recorded lineage understates both paths, in different ways. This is
+#: stated here, asserted in the tests, and tracked in
+#: docs/product/CALCULATION_CONTEXT_PROVENANCE.md rather than papered over.
+#:
+#: The forecast is MODELLED regardless. It must never inherit the provenance of
+#: the current score: a projection about the future is a model output even when
+#: every input to it was measured.
+PREDICTION_INPUTS: tuple[str, ...] = (
+    'company.ecoiq_total',
+)
+
+
 def apply_predictions(companies=None) -> dict:
     """
     Compute and write ml_predicted_score_12m for all (or provided) companies.
     """
     from django.utils import timezone
-    from league.models import Company
+    from django.db.models import Prefetch, QuerySet, prefetch_related_objects
+    from league.models import Company, ScoreHistory
+    from companies.models import DataIngestionLog
 
     if companies is None:
-        companies = Company.objects.filter(ecoiq_score__gt=0).select_related(
-            'profile', 'history'
-        ).prefetch_related('history', 'ingestion_logs')
+        companies = Company.objects.filter(ecoiq_score__gt=0)
+
+    if isinstance(companies, QuerySet):
+        companies = companies.select_related('profile').iterator(chunk_size=BATCH_SIZE)
+
+    iterator = iter(companies)
+    since = timezone.now() - timedelta(days=90)
+    history_query = ScoreHistory.objects.only('company_id', 'date', 'ecoiq_score').order_by(
+        '-date', '-pk')[:HISTORY_LIMIT]
+    signal_query = DataIngestionLog.objects.filter(ingested_at__gte=since, source='rss').only(
+        'company_id', 'raw_data', 'ingested_at').order_by('-ingested_at', '-pk')[:SIGNAL_LIMIT]
 
     updated = 0
     failed  = 0
-    for company in companies:
-        try:
-            pred = predict_12m(company)
-            if pred is not None:
-                Company.objects.filter(pk=company.pk).update(
-                    ml_predicted_score_12m=round(pred, 1),
-                    ml_last_run=timezone.now(),
-                )
-                updated += 1
-        except Exception as exc:
-            logger.error('Prediction failed for %s: %s', company, exc)
-            failed += 1
+    while batch := list(islice(iterator, BATCH_SIZE)):
+        # Sliced prefetch uses a SQL window per company, not all historical
+        # rows. to_attr prevents predict_12m from issuing per-company reads.
+        prefetch_related_objects(batch, 'profile',
+            Prefetch('history', queryset=history_query, to_attr=_HISTORY_ATTR),
+            Prefetch('ingestion_logs', queryset=signal_query, to_attr=_SIGNALS_ATTR))
+        for company in batch:
+            try:
+                pred = predict_12m(company)
+                if pred is not None:
+                    _write_prediction(company, round(pred, 1), timezone.now())
+                    updated += 1
+            except Exception as exc:
+                logger.error('Prediction failed for %s: %s', company, exc)
+                failed += 1
+            finally:
+                # A caller-provided list may be reused after this run. Never
+                # leave stale private prefetch snapshots attached to it.
+                for attr in (_HISTORY_ATTR, _SIGNALS_ATTR):
+                    if hasattr(company, attr):
+                        delattr(company, attr)
 
     return {'updated': updated, 'failed': failed}
+
+
+def _write_prediction(company, prediction: float, now) -> str:
+    """
+    Persist one 12-month forecast together with its provenance, atomically.
+
+    ml.predicted_12m IS persisted (league.Company.ml_predicted_score_12m), so
+    the provenance row stores no recorded_value.
+
+    Value write and provenance write share a transaction: a provenance failure
+    rolls back the forecast rather than leaving a persisted projection with no
+    recorded origin.
+
+    Returns the provenance status, or 'no-profile' when there is nothing to
+    attach lineage to.
+    """
+    from django.db import transaction
+    from league.models import Company
+    from companies import provenance as prov
+
+    profile = getattr(company, 'profile', None)
+
+    with transaction.atomic():
+        Company.objects.filter(pk=company.pk).update(
+            ml_predicted_score_12m=prediction,
+            ml_last_run=now,
+        )
+        if profile is None:
+            return 'no-profile'
+        return prov.record_calculated(
+            profile, PREDICTION_METRIC_KEY, prediction, PREDICTION_INPUTS,
+            writer='ml.prediction.apply_predictions',
+            methodology=PREDICTION_METHOD,
+            calculation_version=PREDICTION_VERSION,
+        )

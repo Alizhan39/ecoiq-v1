@@ -12,6 +12,10 @@ requires an explicit, named human action; there is no code path that moves
 a link to 'confirmed' without a reviewer argument recording who did it.
 """
 from company_intelligence.services import evidence_quality, kpi_engine
+from company_intelligence.services.review_recommendation import (
+    recommendation_for_link,
+)
+from company_intelligence.services.source_provenance import provenance_for_memory
 from company_intelligence.services.evidence_quality import _harvester_evidence_for_memory
 from core.esg_principles_data import PRINCIPLES
 
@@ -55,6 +59,10 @@ def apply_review_decision(link, action, reviewer, reason=''):
         kpi_evidence_link=link, evidence=link.evidence, action=action, reviewer=reviewer, reason=reason,
         previous_review_state=previous_state, new_review_state=new_state,
         relationship_decision=new_relationship or '',
+        # Pin WHICH text this judgement was about. Read from the evidence as it
+        # stands at this moment, never recomputed later — a hash computed at
+        # read time would say what the text is now, not what the reviewer saw.
+        evidence_version=getattr(link.evidence, 'integrity_reference', '') or '',
     )
 
     link.review_state = new_state
@@ -268,7 +276,15 @@ def pending_review_queue(criteria=None):
             'company': link.assessment.company,
             'kpi_id': link.assessment.kpi_id,
             'kpi_title': principle.get('title', f'KPI #{link.assessment.kpi_id}'),
+            # The question is what the reviewer is actually deciding against; a
+            # title alone is a category label.
+            'kpi_question': principle.get('question', ''),
             'kpi_category': principle.get('category', ''),
+            # Real source metadata, resolved through the harvester lineage —
+            # never `source_reference`, which is the idempotency key.
+            'provenance': provenance_for_memory(link.evidence),
+            # Non-binding, and never a valence. See review_recommendation.
+            'recommendation': recommendation_for_link(link),
             'source_tier': tier,
             'evidence_quality': quality,
             'evidence_freshness': evidence_freshness_info(link),
@@ -279,7 +295,22 @@ def pending_review_queue(criteria=None):
             'appearance': appearance_context(link),
         })
 
-    rows.sort(key=lambda r: (-r['priority_score'], r['link'].added_at))
+    # Strongest source authority first, then the deterministic relevance
+    # signals, then oldest — so a regulator filing never sits below a blog post
+    # because the blog post happened to trip more indicators.
+    #
+    # ORDERING IS NOT A VERDICT. Tier 1 means the SOURCE is a regulator or
+    # statutory filing; it says nothing about whether the evidence supports or
+    # damns the organisation, and every component stays visible beside the row
+    # so a reviewer sees what produced the position rather than a rank.
+    #
+    # Unclassified sources sort last rather than middle, matching the tier
+    # table's own conservative default.
+    rows.sort(key=lambda r: (
+        r['source_tier'] if r['source_tier'] is not None else 99,
+        -r['priority_score'],
+        r['link'].added_at,
+    ))
     return rows
 
 

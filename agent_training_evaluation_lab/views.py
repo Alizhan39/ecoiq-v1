@@ -1,3 +1,4 @@
+from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
 
 CORE_PURPOSE = "Turn EcoIQ's 14 AI agent categories into testable, safe and measurable agent workflows."
@@ -255,6 +256,15 @@ CTA_BUTTONS = [
 ]
 
 
+# Internal concept page — staff-only. Unlike the other pages gated in this
+# change, this app DOES own models (GoldenDatasetCase, AgentEvaluationRun,
+# AgentRegression, AgentHumanFeedback, ImprovementRecommendation) — but this
+# view uses none of them. It renders hard-coded architecture copy; the models
+# are driven from agent_training_evaluation_lab/services/ and
+# backend_intelligence_engine/tasks.py, neither of which is reachable from this
+# route. Gating the route therefore changes no persistence behaviour.
+# See docs/product/PHASE_1_ARCHITECTURE.md §3.
+@staff_member_required(login_url='/login/')
 def overview(request):
     return render(request, 'agent_training_evaluation_lab/overview.html', {
         'core_purpose': CORE_PURPOSE,

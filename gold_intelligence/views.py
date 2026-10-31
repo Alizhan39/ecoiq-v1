@@ -16,10 +16,14 @@ agent-orchestration path is created here.
 """
 from urllib.parse import quote
 
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 
 from gold_intelligence.models import GoldProject
-from gold_intelligence.services import aggregates, project_finance, risk_intelligence
+from gold_intelligence.access import projects_for
+from gold_intelligence.services import aggregates, mizan_bridge, project_finance, risk_intelligence, stewardship_lenses
+from gold_intelligence.services import public_operator_benchmarks
+from gold_intelligence.services import source_time_series
 
 # Preset questions routed straight into the existing Decision Studio / AI
 # Agent Workbench — never a second question-answering path.
@@ -37,29 +41,55 @@ DECISION_STUDIO_QUESTIONS = [
 
 def _decision_studio_links(project):
     return [
-        {'question': q, 'href': f'/decision-studio/?q={quote(q + " — " + project.name)}'}
+        {'question': q, 'href': f'/decision-studio/?q={quote(q + " — " + project.name)}&project_id={project.pk}'}
         for q in DECISION_STUDIO_QUESTIONS
     ]
 
 
-def _project_or_404(slug):
-    return get_object_or_404(GoldProject.objects.select_related('country'), slug=slug)
+def _project_or_404(slug, user):
+    return get_object_or_404(projects_for(user).select_related('country'), slug=slug)
 
 
 def directory(request):
-    projects = GoldProject.objects.select_related('country').all()
+    projects = projects_for(request.user).select_related('country')
     return render(request, 'gold_intelligence/directory.html', {'projects': projects})
+
+
+@login_required
+def public_benchmarks_view(request):
+    """Publicly reported facts for research, separate from private GoldProject."""
+    catalogue = public_operator_benchmarks.public_gold_inventory()
+    selected = request.GET.get('asset', '')
+    card = public_operator_benchmarks.mine_evidence_card(selected) if selected else None
+    return render(request, 'gold_intelligence/public_benchmarks.html', {
+        'catalogue': catalogue, 'card': card, 'selected': selected,
+    })
+
+
+@login_required
+def public_time_series_view(request):
+    """Rights-aware research view, no ingestion into private mining KPIs."""
+    series_list = source_time_series.available_time_series()
+    selected = request.GET.get('series', '')
+    card = source_time_series.time_series_card(selected) if selected else None
+    return render(request, 'gold_intelligence/public_time_series.html', {
+        'series_list': series_list,
+        'card': card,
+        'selected': selected,
+        'rights_summary': source_time_series.source_rights_summary(),
+    })
 
 
 def investor_view(request, slug):
     """The one-page Investor View — every section summarised, nothing
     requiring more than five minutes to read."""
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     economics = project_finance.compute_project_economics(project)
     risk = risk_intelligence.compute_risk_intelligence(project)
     capital = aggregates.capital_tracker_summary(project)
     equipment = aggregates.equipment_summary(project)
     timeline = aggregates.timeline_summary(project)
+    mizan_readiness = mizan_bridge.build_gold_mizan_readiness(project)
 
     top_risks = sorted(
         [{'key': k, 'label': risk_intelligence.RISK_DIMENSION_LABELS[k], **v} for k, v in risk.items() if v['available']],
@@ -69,7 +99,17 @@ def investor_view(request, slug):
     return render(request, 'gold_intelligence/investor_view.html', {
         'project': project, 'economics': economics, 'risk': risk, 'top_risks': top_risks,
         'capital': capital, 'equipment': equipment, 'timeline': timeline,
+        'mizan_readiness': mizan_readiness,
         'decision_studio_links': _decision_studio_links(project)[:3],
+    })
+
+
+def stewardship_view(request, slug):
+    """Private 20-principle evidence overview; no religious or mining certification."""
+    project = _project_or_404(slug, request.user)
+    readiness = stewardship_lenses.build_stewardship_readiness(project)
+    return render(request, 'gold_intelligence/stewardship.html', {
+        'project': project, 'stewardship': readiness,
     })
 
 
@@ -86,11 +126,12 @@ def mine_map(request):
         'gold_deposit', 'active_mine', 'processing_plant', 'exploration_licence',
         'transport_hub', 'rail', 'road', 'airport', 'water_source', 'power_plant',
     ]
-    project_country_ids = list(GoldProject.objects.exclude(country=None).values_list('country_id', flat=True).distinct())
+    project_country_ids = list(projects_for(request.user).exclude(country=None).values_list('country_id', flat=True).distinct())
 
-    assets_qs = GeoAsset.objects.filter(asset_type__in=gold_asset_types).select_related('country')
+    project_refs = [f'gold_intelligence.GoldProject:{p.slug}' for p in projects_for(request.user)]
+    assets_qs = GeoAsset.objects.filter(asset_type__in=gold_asset_types, source_reference__in=project_refs).select_related('country')
     opportunities_qs = InvestmentGeoOpportunity.objects.filter(
-        source_reference__startswith='gold_intelligence.GoldProject:',
+        source_reference__in=project_refs,
     ).select_related('country')
     zones_qs = GeoRiskZone.objects.filter(country_id__in=project_country_ids).select_related('country') if project_country_ids else GeoRiskZone.objects.none()
 
@@ -101,14 +142,14 @@ def mine_map(request):
 
     return render(request, 'gold_intelligence/mine_map.html', {
         'map_html': map_html, 'asset_count': len(assets), 'zone_count': len(zones),
-        'opportunity_count': len(opportunities), 'projects': GoldProject.objects.all(),
+        'opportunity_count': len(opportunities), 'projects': projects_for(request.user),
     })
 
 
 def investment_dashboard(request, slug):
     from plotly_visual_intelligence.services import charts
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     economics = project_finance.compute_project_economics(project)
     sensitivity = project_finance.run_sensitivity_analysis(project) if economics.get('available') else economics
     scenarios = project_finance.run_scenario_analysis(project)
@@ -120,7 +161,7 @@ def investment_dashboard(request, slug):
 
 
 def risk_intelligence_view(request, slug):
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     risk = risk_intelligence.compute_risk_intelligence(project)
     rows = [{'key': k, 'label': risk_intelligence.RISK_DIMENSION_LABELS[k], **v} for k, v in risk.items()]
     return render(request, 'gold_intelligence/risk_intelligence.html', {'project': project, 'rows': rows})
@@ -129,7 +170,7 @@ def risk_intelligence_view(request, slug):
 def timeline_view(request, slug):
     from plotly_visual_intelligence.services import charts
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     timeline = aggregates.timeline_summary(project)
     timeline_chart = charts.mine_timeline_chart(timeline['milestones']) if timeline['available'] else None
     return render(request, 'gold_intelligence/timeline.html', {'project': project, 'timeline': timeline, 'timeline_chart': timeline_chart})
@@ -138,13 +179,13 @@ def timeline_view(request, slug):
 def capital_tracker_view(request, slug):
     from plotly_visual_intelligence.services import charts
 
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     capital = aggregates.capital_tracker_summary(project)
     capital_chart = charts.capital_tracker_chart(capital) if capital['available'] else None
     return render(request, 'gold_intelligence/capital_tracker.html', {'project': project, 'capital': capital, 'capital_chart': capital_chart})
 
 
 def equipment_intelligence_view(request, slug):
-    project = _project_or_404(slug)
+    project = _project_or_404(slug, request.user)
     equipment = aggregates.equipment_summary(project)
     return render(request, 'gold_intelligence/equipment_intelligence.html', {'project': project, 'equipment': equipment})

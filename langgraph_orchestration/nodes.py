@@ -76,20 +76,29 @@ def retrieve_evidence_memory(state):
     """Reuses evidence_memory.services.memory.search_similar/search_company_memory/search_country_memory."""
     record_node(state, 'retrieve_evidence_memory')
     from evidence_memory.services import memory as memory_service
+    from gold_intelligence.access import resolve_context
+    user, project = resolve_context(state.get('requesting_user_id'), state.get('project_id'))
 
     company_obj = None
     if state.get('company'):
         from companies.models import CompanyProfile
         company_obj = CompanyProfile.objects.filter(pk=state['company']['id']).first()
+        if company_obj is None:
+            raise ValueError('The requested company no longer exists.')
     country_obj = None
     if state.get('country'):
         from countries.models import CountryProfile
         country_obj = CountryProfile.objects.filter(pk=state['country']['id']).first()
+        if country_obj is None:
+            raise ValueError('The requested country no longer exists.')
 
     query = state.get('user_request') or (state.get('company') or state.get('country') or {}).get('name', '')
-    results = memory_service.search_similar(query, top_k=5, company=company_obj, country=country_obj) if query else []
+    results = memory_service.search_similar(
+        query, top_k=5, company=company_obj, country=country_obj, user=user, project=project,
+    ) if query else []
     memories = [
-        {'id': m.pk, 'text': m.text_chunk[:200], 'confidence': m.confidence, 'source_type': m.source_type}
+        {'id': m.pk, 'text': m.text_chunk[:200], 'confidence': m.confidence, 'source_type': m.source_type,
+         'source_reference': m.source_reference, 'verification_status': m.verification_status}
         for m in results
     ]
     known_confidences = [m['confidence'] for m in memories if m['confidence'] is not None]
@@ -157,6 +166,8 @@ def run_agent_analysis(state):
     record_node(state, 'run_agent_analysis')
     from ai_agent_workbench.services.recommender import recommend_agent_for_task
     from agent_runtime_model_router.services.execution import create_agent_run, execute_agent
+    from gold_intelligence.access import resolve_context
+    user, project = resolve_context(state.get('requesting_user_id'), state.get('project_id'))
 
     question = state.get('user_request') or f'Analyse this {state.get("target_type", "target")}'
     recommendation = recommend_agent_for_task(question)
@@ -167,7 +178,7 @@ def run_agent_analysis(state):
 
     agent_run = create_agent_run(
         agent_name, 'langgraph_orchestration_analysis', execution_mode=execution_mode,
-        input_summary=f'{question} (target: {target_label})',
+        input_summary=f'{question} (target: {target_label})', project=project, user=user,
     )
     agent_run = execute_agent(agent_run)
 

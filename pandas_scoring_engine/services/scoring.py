@@ -88,21 +88,39 @@ def _component_evidence_quality(company_profile):
 
     embedded = memories.filter(embedding_status='embedded').count()
     confidences = list(memories.exclude(confidence__isnull=True).values_list('confidence', flat=True))
-    avg_confidence = float(np.mean(confidences)) if confidences else 50.0
+    # No recorded confidence means no confidence figure. The previous `else
+    # 50.0` was the most self-undermining fallback in the codebase: the field
+    # whose entire job is to express uncertainty was inventing a value when it
+    # had none, and reporting "50% confident" about evidence nobody had scored.
+    #
+    # evidence_memory.confidence is already null=True with the comment "Never
+    # fabricated — null until a real confidence value is known"; this restores
+    # that intent downstream. A genuine recorded 0.0 stays 0.0.
+    avg_confidence = float(np.mean(confidences)) if confidences else None
     embedded_ratio = embedded / total
 
-    normalized = float(np.clip(avg_confidence * 0.7 + embedded_ratio * 100 * 0.3, 0, 100))
+    # With no recorded confidence the component rests on the embedded ratio
+    # alone rather than on an invented 50.
+    if avg_confidence is None:
+        normalized = float(np.clip(embedded_ratio * 100, 0, 100))
+    else:
+        normalized = float(np.clip(avg_confidence * 0.7 + embedded_ratio * 100 * 0.3, 0, 100))
     # More corroborating evidence records = more confidence in this component
     # itself (capped — ten or more records is already a strong signal).
     component_confidence = float(np.clip(total * 10, 0, 90))
 
     return {
-        'raw': {'evidence_count': total, 'embedded_count': embedded, 'avg_confidence': round(avg_confidence, 1)},
+        'raw': {
+            'evidence_count': total,
+            'embedded_count': embedded,
+            'avg_confidence': None if avg_confidence is None else round(avg_confidence, 1),
+        },
         'normalized': round(normalized, 1),
         'confidence': round(component_confidence, 1),
         'explanation': (
             f'{total} evidence memory record(s) for this company, {embedded} embedded, '
-            f'average recorded confidence {avg_confidence:.1f}%.'
+            + ('no recorded confidence values.' if avg_confidence is None
+               else f'average recorded confidence {avg_confidence:.1f}%.')
         ),
     }
 
@@ -120,12 +138,13 @@ def _component_climate_risk(country_profile):
     df['severity_score'] = df['severity'].map(_SEVERITY_TO_SCORE)
     normalized = float(df['severity_score'].mean())
     confidences = df['confidence'].dropna()
-    avg_confidence = float(confidences.mean()) if not confidences.empty else 40.0
+    # Same defect as the 50.0 above, with a different invented number.
+    avg_confidence = float(confidences.mean()) if not confidences.empty else None
 
     return {
         'raw': {'risk_zone_count': len(df), 'severities': df['severity'].value_counts().to_dict()},
         'normalized': round(normalized, 1),
-        'confidence': round(avg_confidence, 1),
+        'confidence': None if avg_confidence is None else round(avg_confidence, 1),
         'explanation': (
             f'Country-level proxy (via {country_profile.name}) from {len(df)} Geo Intelligence risk '
             f'zone(s) — not a per-asset measurement for this specific company.'
@@ -148,12 +167,13 @@ def _component_investment_opportunity(country_profile):
     df = pd.DataFrame(rows)
     normalized = float(np.clip(df['investment_score'].mean(), 0, 100))
     confidences = df['confidence'].dropna()
-    avg_confidence = float(confidences.mean()) if not confidences.empty else 40.0
+    # Same defect as the 50.0 above, with a different invented number.
+    avg_confidence = float(confidences.mean()) if not confidences.empty else None
 
     return {
         'raw': {'opportunity_count': len(df), 'avg_investment_score': round(normalized, 1)},
         'normalized': round(normalized, 1),
-        'confidence': round(avg_confidence, 1),
+        'confidence': None if avg_confidence is None else round(avg_confidence, 1),
         'explanation': (
             f'Country-level proxy (via {country_profile.name}) from {len(df)} Geo Intelligence '
             f'investment opportunity/ies — not specific to this company\'s own assets.'

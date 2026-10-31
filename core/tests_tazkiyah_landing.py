@@ -12,9 +12,10 @@ from django.test import TestCase
 from django.urls import reverse
 
 from core.management.commands.validate_tazkiyah114_seeds import DEFAULT_SEED_PATH
+from core.testing_access import SignedIn
 
 
-class TazkiyahLandingTests(TestCase):
+class TazkiyahLandingTests(SignedIn, TestCase):
     def setUp(self):
         self.url = reverse('tazkiyah')  # /tazkiyah-114/
 

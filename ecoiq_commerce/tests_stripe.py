@@ -16,6 +16,7 @@ Coverage maps to the integration's actual risks:
 * subscription lifecycle — created → past_due → recovered → cancelled
 * the redirect must not grant access; only the webhook may
 """
+import datetime
 import json
 import time
 from unittest.mock import patch
@@ -37,6 +38,52 @@ from ecoiq_commerce.services.stripe_webhooks import (
 )
 
 User = get_user_model()
+
+
+# ── A fixed test clock ────────────────────────────────────────────────────────
+#
+# These fixtures used to carry absolute epoch literals: period_start=1785000000
+# and period_end=1787678400, the latter being 2026-08-25T17:20:00Z. Every
+# entitlement test passed until real time crossed that instant, and then six of
+# them failed permanently — on unchanged code, in CI, on main. A subscription
+# whose period has ended is correctly denied by
+# `entitlements._active_subscription_qs`, which filters
+# `current_period_end__gt=now`; the tests were asserting against a date that had
+# quietly become the past.
+#
+# The fix is not a later date. A later date is the same bug with a longer fuse.
+# The fixtures are now defined RELATIVE to a frozen clock, and the clock the
+# entitlement code reads is frozen to match, so the gap between "now" and
+# "period end" is a constant that no amount of calendar time can close.
+#
+# Chosen deliberately mid-month and mid-day so no test can accidentally depend
+# on a month or day boundary.
+FROZEN_NOW = datetime.datetime(2026, 1, 15, 12, 0, 0, tzinfo=datetime.timezone.utc)
+FROZEN_EPOCH = int(FROZEN_NOW.timestamp())
+
+#: A period that STARTED 30 days before the frozen clock and ENDS 30 days after
+#: it. Both are relative, so both stay on the correct side of "now" forever.
+PERIOD_BEHIND_SECONDS = 30 * 24 * 3600
+PERIOD_AHEAD_SECONDS = 30 * 24 * 3600
+
+DEFAULT_PERIOD_START = FROZEN_EPOCH - PERIOD_BEHIND_SECONDS
+DEFAULT_PERIOD_END = FROZEN_EPOCH + PERIOD_AHEAD_SECONDS
+
+
+def frozen_clock():
+    """
+    Freeze the clock that entitlement decisions read.
+
+    Patched on `entitlements` specifically rather than on
+    `django.utils.timezone` globally: this is the module whose `timezone.now()`
+    decides whether a subscription is live, and freezing it there leaves
+    `auto_now_add`, webhook signature staleness and everything else running on
+    the real clock — which is what those other tests are actually testing.
+
+    `new=` so the decorator injects no argument into every test method.
+    """
+    return patch('ecoiq_commerce.services.entitlements.timezone.now',
+                 new=lambda: FROZEN_NOW)
 
 # Fake credentials for the local test suite. Every value contains the literal
 # word "placeholder" so secret scanners (and humans skimming a diff) classify
@@ -92,13 +139,22 @@ def sign(payload: dict, secret: str = WEBHOOK_SECRET, timestamp: int = None) -> 
 def subscription_payload(*, sub_id='sub_test123', customer='cus_test123',
                          status='active', price_id='price_pro_monthly',
                          metadata=None, cancel_at_period_end=False,
-                         canceled_at=None, period_start=1785000000,
-                         period_end=1787678400):
+                         canceled_at=None, period_start=None,
+                         period_end=None):
     """
     A Stripe Subscription in the CURRENT API shape — period boundaries on the
     item, not on the subscription. stripe_sync reads the legacy shape too;
     test_period_dates_read_from_legacy_shape covers that path.
+
+    `period_start`/`period_end` default to a window around FROZEN_NOW rather
+    than to fixed epochs, so the subscription is live relative to the frozen
+    clock no matter what today's date is. Pass explicit values to test an
+    expired or future period.
     """
+    if period_start is None:
+        period_start = DEFAULT_PERIOD_START
+    if period_end is None:
+        period_end = DEFAULT_PERIOD_END
     return {
         'id': sub_id,
         'object': 'subscription',
@@ -344,6 +400,7 @@ class WebhookIdempotencyTests(StripeBillingTestCase):
 # ── Subscription lifecycle ───────────────────────────────────────────────────
 
 @override_settings(**STRIPE_TEST_SETTINGS)
+@patch('ecoiq_commerce.services.entitlements.timezone.now', new=lambda: FROZEN_NOW)
 class SubscriptionLifecycleTests(StripeBillingTestCase):
 
     def _create(self, **kwargs):
@@ -405,7 +462,7 @@ class SubscriptionLifecycleTests(StripeBillingTestCase):
     def test_deleted_cancels_and_withdraws_entitlement(self):
         self._create()
         self.post_webhook(event('customer.subscription.deleted',
-                                subscription_payload(status='canceled', canceled_at=1787678400,
+                                subscription_payload(status='canceled', canceled_at=DEFAULT_PERIOD_END,
                                                      metadata={'ecoiq_user_id': str(self.user.pk)}),
                                 event_id='evt_deleted'))
         sub = Subscription.objects.get()
@@ -451,8 +508,8 @@ class SubscriptionLifecycleTests(StripeBillingTestCase):
         payload = subscription_payload(metadata={'ecoiq_user_id': str(self.user.pk)})
         payload['items']['data'][0].pop('current_period_start')
         payload['items']['data'][0].pop('current_period_end')
-        payload['current_period_start'] = 1785000000
-        payload['current_period_end'] = 1787678400
+        payload['current_period_start'] = DEFAULT_PERIOD_START
+        payload['current_period_end'] = DEFAULT_PERIOD_END
 
         self.post_webhook(event('customer.subscription.created', payload))
         sub = Subscription.objects.get()
@@ -470,6 +527,7 @@ class SubscriptionLifecycleTests(StripeBillingTestCase):
 # ── Invoices ─────────────────────────────────────────────────────────────────
 
 @override_settings(**STRIPE_TEST_SETTINGS)
+@patch('ecoiq_commerce.services.entitlements.timezone.now', new=lambda: FROZEN_NOW)
 class InvoiceWebhookTests(StripeBillingTestCase):
 
     def setUp(self):
@@ -487,7 +545,8 @@ class InvoiceWebhookTests(StripeBillingTestCase):
             'total_taxes': [],
             'description': 'EcoIQ Professional',
             'hosted_invoice_url': 'https://invoice.stripe.com/i/test',
-            'status_transitions': {'finalized_at': 1785000000, 'paid_at': 1785000100},
+            'status_transitions': {'finalized_at': DEFAULT_PERIOD_START,
+                                   'paid_at': DEFAULT_PERIOD_START + 100},
             'parent': {'subscription_details': {'subscription': 'sub_test123'}},
             'payment_intent': 'pi_invoice_test',
             'metadata': {'ecoiq_user_id': str(self.user.pk)},
@@ -1094,6 +1153,7 @@ class DisputeWebhookTests(StripeBillingTestCase):
 
 
 @override_settings(**STRIPE_TEST_SETTINGS)
+@patch('ecoiq_commerce.services.entitlements.timezone.now', new=lambda: FROZEN_NOW)
 class SubscriptionDisputeTests(StripeBillingTestCase):
     """A dispute against a subscription invoice suspends and restores exactly."""
 
@@ -1106,7 +1166,7 @@ class SubscriptionDisputeTests(StripeBillingTestCase):
             'id': 'in_disputed', 'object': 'invoice', 'customer': 'cus_test123',
             'currency': 'gbp', 'total': 9900, 'total_taxes': [],
             'payment_intent': 'pi_sub_invoice',
-            'status_transitions': {'finalized_at': 1785000000, 'paid_at': 1785000100},
+            'status_transitions': {'finalized_at': DEFAULT_PERIOD_START, 'paid_at': DEFAULT_PERIOD_START + 100},
             'parent': {'subscription_details': {'subscription': 'sub_test123'}},
             'metadata': {'ecoiq_user_id': str(self.user.pk)},
         }, event_id='evt_inv'))
@@ -1143,7 +1203,7 @@ class SubscriptionDisputeTests(StripeBillingTestCase):
         self.post_webhook(event('charge.dispute.created', self._dispute(),
                                  event_id='evt_sub_dispute'))
         self.post_webhook(event('customer.subscription.deleted',
-                                subscription_payload(status='canceled', canceled_at=1787678400,
+                                subscription_payload(status='canceled', canceled_at=DEFAULT_PERIOD_END,
                                                      metadata={'ecoiq_user_id': str(self.user.pk)}),
                                 event_id='evt_sub_deleted'))
         self.assertEqual(Subscription.objects.get().status, 'cancelled')
@@ -1165,7 +1225,7 @@ class BillingProviderExclusivityTests(StripeBillingTestCase):
     def _invoice(self):
         return {'id': 'in_exclusive', 'object': 'invoice', 'customer': 'cus_test123',
                 'currency': 'gbp', 'total': 9900, 'total_taxes': [],
-                'status_transitions': {'finalized_at': 1785000000, 'paid_at': 1785000100},
+                'status_transitions': {'finalized_at': DEFAULT_PERIOD_START, 'paid_at': DEFAULT_PERIOD_START + 100},
                 'metadata': {'ecoiq_user_id': str(self.user.pk)}}
 
     def test_null_provider_cannot_write_while_stripe_is_configured(self):
@@ -1242,3 +1302,89 @@ class DiscountSourceOfTruthTests(StripeBillingTestCase):
         import inspect
         from ecoiq_commerce.services import stripe_gateway
         self.assertNotIn('Coupon', inspect.getsource(stripe_gateway))
+
+
+# ── The fixture clock itself ─────────────────────────────────────────────────
+
+@override_settings(**STRIPE_TEST_SETTINGS)
+class FixtureClockTests(StripeBillingTestCase):
+    """
+    Guards the bug that produced this class.
+
+    Six entitlement tests passed for months and then failed permanently, on
+    unchanged code, because `period_end` was an absolute epoch and real time
+    crossed it (see the fixed-clock note at the top of this module). These
+    assert the property that makes that impossible to repeat: the fixture is
+    defined relative to a frozen clock, and the entitlement code reads that
+    same frozen clock.
+    """
+
+    def _create(self, **kwargs):
+        return self.post_webhook(event(
+            'customer.subscription.created',
+            subscription_payload(metadata={'ecoiq_user_id': str(self.user.pk)}, **kwargs)))
+
+    def test_fixture_period_is_relative_to_the_frozen_clock(self):
+        item = subscription_payload()['items']['data'][0]
+        self.assertEqual(item['current_period_start'], FROZEN_EPOCH - PERIOD_BEHIND_SECONDS)
+        self.assertEqual(item['current_period_end'], FROZEN_EPOCH + PERIOD_AHEAD_SECONDS)
+
+    def test_fixture_straddles_the_frozen_clock(self):
+        """Live at 'now': started in the past, ends in the future."""
+        item = subscription_payload()['items']['data'][0]
+        self.assertLess(item['current_period_start'], FROZEN_EPOCH)
+        self.assertGreater(item['current_period_end'], FROZEN_EPOCH)
+
+    def test_no_absolute_epoch_literal_survives_in_the_fixtures(self):
+        """
+        A hardcoded epoch is a date that will arrive. Comments may mention the
+        old values; executable lines may not reintroduce them.
+        """
+        import re
+        from pathlib import Path
+
+        source = Path(__file__).read_text(encoding='utf-8')
+        offenders = [
+            (n, line) for n, line in enumerate(source.splitlines(), 1)
+            if not line.lstrip().startswith('#') and re.search(r'\b1[6-9]\d{8}\b', line)
+        ]
+        self.assertEqual(offenders, [], f'absolute epoch literal reintroduced: {offenders}')
+
+    @patch('ecoiq_commerce.services.entitlements.timezone.now', new=lambda: FROZEN_NOW)
+    def test_active_period_is_allowed_before_the_end(self):
+        self._create()
+        self.assertTrue(has_entitlement(self.user, 'evidence_access').allowed)
+
+    @patch('ecoiq_commerce.services.entitlements.timezone.now', new=lambda: FROZEN_NOW)
+    def test_expired_period_is_denied_after_the_end(self):
+        """The real rule, asserted directly rather than inferred."""
+        self._create(period_start=FROZEN_EPOCH - 60 * 24 * 3600,
+                     period_end=FROZEN_EPOCH - 1)
+        self.assertFalse(has_entitlement(self.user, 'evidence_access').allowed)
+
+    @patch('ecoiq_commerce.services.entitlements.timezone.now', new=lambda: FROZEN_NOW)
+    def test_boundary_exactly_at_period_end_is_denied(self):
+        """
+        `entitlements._active_subscription_qs` filters `current_period_end__gt=now`,
+        so the instant the period ends is already outside it. Pinned explicitly
+        because `gt` versus `gte` here is one character and a day of access.
+        """
+        self._create(period_start=FROZEN_EPOCH - 30 * 24 * 3600,
+                     period_end=FROZEN_EPOCH)
+        self.assertFalse(has_entitlement(self.user, 'evidence_access').allowed)
+
+    def test_outcome_does_not_depend_on_the_wall_clock(self):
+        """
+        The regression test proper: run the same fixture against an entitlement
+        clock set a decade apart and confirm the verdict is decided by the
+        frozen clock, not by today's date.
+
+        Under the old fixture this was impossible — the verdict flipped the
+        moment real time passed a fixed epoch.
+        """
+        self._create()
+        far_future = FROZEN_NOW + datetime.timedelta(days=3650)
+        with patch('ecoiq_commerce.services.entitlements.timezone.now', new=lambda: FROZEN_NOW):
+            self.assertTrue(has_entitlement(self.user, 'evidence_access').allowed)
+        with patch('ecoiq_commerce.services.entitlements.timezone.now', new=lambda: far_future):
+            self.assertFalse(has_entitlement(self.user, 'evidence_access').allowed)

@@ -10,6 +10,7 @@ Usage:
     python manage.py ingest_yfinance --ticker SHEL.L
     python manage.py ingest_yfinance --update-scores
 """
+from core.unknown import known
 import datetime
 import time
 import yfinance as yf
@@ -253,8 +254,15 @@ class Command(BaseCommand):
                         # Yahoo ESG: lower = less risky (inverted from EcoIQ).
                         # Convert: yahoo 10 → EcoIQ ~90, yahoo 50 → EcoIQ ~50
                         yahoo_converted = max(10.0, min(95.0, 100.0 - yahoo_esg))
-                        old_score = float(profile.ecoiq_total_score or 50.0)
-                        blended   = round(old_score * 0.70 + yahoo_converted * 0.30, 1)
+                        # `or 50.0` blended an INVENTED average into a real
+                        # reading and stored the result as a measurement. With
+                        # no prior score there is nothing to blend, so the
+                        # converted Yahoo figure stands alone rather than being
+                        # averaged with a number nobody produced.
+                        old_score = known(profile.ecoiq_total_score)
+                        blended = (round(yahoo_converted, 1) if old_score is None
+                                   else round(old_score * 0.70
+                                              + yahoo_converted * 0.30, 1))
                         profile.ecoiq_total_score = blended
                         profile.save(update_fields=['ecoiq_total_score'])
                         fields_updated.append('ecoiq_total_score')

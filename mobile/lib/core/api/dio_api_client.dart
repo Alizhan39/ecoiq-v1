@@ -20,6 +20,7 @@ class DioEcoIqApiClient implements EcoIqApiClient {
       {required Environment environment,
       required AuthTokenProvider tokenProvider})
       : _tokenProvider = tokenProvider,
+        _v2BaseUrl = environment.apiV2BaseUrl,
         _dio = Dio(BaseOptions(
           baseUrl: environment.apiBaseUrl,
           connectTimeout: const Duration(seconds: 15),
@@ -38,6 +39,11 @@ class DioEcoIqApiClient implements EcoIqApiClient {
 
   final Dio _dio;
   final Dio _rawDio;
+
+  /// Absolute base for company endpoints. Dio ignores baseUrl when a path is a
+  /// full URL, so this moves exactly those calls to v2 while auth and config
+  /// keep using the v1 baseUrl.
+  final String _v2BaseUrl;
   final AuthTokenProvider _tokenProvider;
 
   EcoIqApiException _wrap(Object error) {
@@ -171,8 +177,10 @@ class DioEcoIqApiClient implements EcoIqApiClient {
   @override
   Future<List<CompanySummary>> searchCompanies(String query) async {
     try {
-      final resp =
-          await _dio.get<dynamic>('/search/', queryParameters: {'q': query});
+      // v2 has no /search/; its company list takes the same `q` filter and
+      // returns the evidence-aware shape.
+      final resp = await _dio.get<dynamic>('$_v2BaseUrl/companies/',
+          queryParameters: {'q': query});
       final results = (resp.data as Map<String, dynamic>)['results'] as List;
       return results
           .map((e) => CompanySummary.fromJson(e as Map<String, dynamic>))
@@ -185,7 +193,7 @@ class DioEcoIqApiClient implements EcoIqApiClient {
   @override
   Future<CompanyProfileData> getCompanyProfile(String slug) async {
     try {
-      final resp = await _dio.get<dynamic>('/companies/$slug/');
+      final resp = await _dio.get<dynamic>('$_v2BaseUrl/companies/$slug/');
       return CompanyProfileData.fromJson(resp.data as Map<String, dynamic>);
     } catch (e) {
       throw _wrap(e);
