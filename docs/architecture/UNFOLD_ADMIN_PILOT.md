@@ -54,3 +54,20 @@ staff account. Do not use production credentials.
 Wagtail and allauth remain separate projects. Wagtail was removed from
 INSTALLED_APPS and schema must be audited on a staging PostgreSQL copy;
 allauth must reconcile session/mobile/API-key identities before enabling.
+
+## Verified 2026-11-01
+
+GitHub Actions run:
+https://github.com/Alizhan39/ecoiq-v1/actions/runs/41353668639
+
+- **Python 3.12, Unfold 0.110.0:** package install, Django checks,
+  migration consistency, and **4/4 preview tests passed** (anonymous/staff
+  access; index, list and add form rendering).
+- **Python 3.11, unchanged default settings:** installed normal
+  production/test dependencies without Unfold; Ruff, Django checks and
+  migration consistency passed. The 4 preview-only cases were **skipped**
+  as designed because the preview flag is off.
+- The one-off branch-only validation workflow has been removed after
+  successful verification to avoid ongoing CI cost.
+- This is **not** a full Python 3.12 application regression nor a
+  browser/visual accessibility test. No production switch is authorized.
