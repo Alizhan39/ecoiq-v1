@@ -73,6 +73,7 @@ class FormulaFlowAPITests(TestCase):
         self.assertEqual([x["id"] for x in body["nodes"]],
                          [x.key for x in PROVISIONAL_KPI_FORMULAS])
         self.assertFalse(body["execution_enabled"])
+        self.assertFalse(body["can_preview_calculate"])
         self.assertIn("no-store", response["Cache-Control"])
         self.assertEqual(self.post(self.valid_payload()).status_code, 404)
 
