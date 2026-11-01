@@ -124,6 +124,7 @@ def project_formula_flow(request, project_slug):
         return _private({
             "project_slug": project.slug, "mode": "candidate_preview",
             "execution_enabled": False,
+            "can_preview_calculate": access.can(request.user, project, access.ANALYSE),
             "formula_count": len(PROVISIONAL_KPI_FORMULAS),
             "formulas": formula_catalogue_view(),
             **_graph(),
