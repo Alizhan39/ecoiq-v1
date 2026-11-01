@@ -38,6 +38,7 @@ export interface FormulaFlow {
   project_slug: string;
   mode: 'candidate_preview';
   execution_enabled: false;
+  can_preview_calculate: boolean;
   formula_count: number;
   formulas: FormulaCandidate[];
   nodes: FormulaGraphNode[];
