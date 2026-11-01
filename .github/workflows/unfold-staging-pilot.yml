@@ -1,0 +1,61 @@
+# Temporary branch-only validation; removed once staging pilot is verified.
+name: EcoIQ Unfold staging compatibility pilot
+
+on:
+  push:
+    branches: [feat/unfold-admin-staging-preview]
+
+permissions:
+  contents: read
+
+jobs:
+  python-311-standard-admin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DJANGO_SECRET_KEY: test-secret-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: sqlite:///db.sqlite3
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+      - name: Install current production/test dependencies (no Unfold)
+        run: |
+          pip install -r requirements-dev.txt
+      - name: Ruff and standard admin regression
+        run: |
+          ruff check ecoiq_commerce/admin.py ecoiq_commerce/tests_unfold_preview.py ecoiq/settings_unfold_preview.py
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+          python manage.py test ecoiq_commerce.tests_unfold_preview
+  python-312-unfold-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      DJANGO_SETTINGS_MODULE: ecoiq.settings_unfold_preview
+      DJANGO_SECRET_KEY: test-secret-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: sqlite:///db.sqlite3
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies including pinned Unfold
+        run: |
+          pip install -r requirements-unfold-preview.txt
+      - name: Unfold admin smoke and permissions
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+          python manage.py test ecoiq_commerce.tests_unfold_preview --noinput --verbosity=2
