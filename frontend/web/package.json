@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "EcoIQ public product frontend. A standalone React SPA that consumes API v2. Separate from frontend/app (build-time Django islands) and frontend/remotion (offline video authoring) \u2014 see frontend/web/README.md.",
+  "description": "EcoIQ public product frontend. A standalone React SPA that consumes API v2. Separate from frontend/app (build-time Django islands) and frontend/remotion (offline video authoring) — see frontend/web/README.md.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@google/model-viewer": "4.3.1",
+    "@xyflow/react": "12.12.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0"

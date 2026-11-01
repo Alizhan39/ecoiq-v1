@@ -40,3 +40,19 @@ def formula_studio(request, project_slug):
     response["Pragma"] = "no-cache"
     response["X-Robots-Tag"] = "noindex, nofollow"
     return response
+
+
+@login_required(login_url="/login/")
+@never_cache
+def formula_flow_shell(request, project_slug):
+    """Same project READ gate as Formula Studio, but render the React SPA shell."""
+    if request.method not in ("GET", "HEAD"):
+        response = HttpResponseNotAllowed(["GET", "HEAD"])
+    else:
+        get_object_or_404(access.projects_for(request.user, access.READ), slug=project_slug)
+        from core.spa import spa_view
+        response = spa_view(request)
+    response["Cache-Control"] = "private, no-store, max-age=0"
+    response["Pragma"] = "no-cache"
+    response["X-Robots-Tag"] = "noindex, nofollow"
+    return response
