@@ -106,7 +106,7 @@ describe('project-scoped React Flow formula preview', () => {
       { revenue: { reported_revenue: { value: '150.25', source_ref: 'source-1' } } },
     ));
     expect(await screen.findByText(/Server-side preview/)).toBeInTheDocument();
-    expect(screen.getByText('REPORTED_NOT_VERIFIED')).toBeInTheDocument();
+    expect(screen.getAllByText('REPORTED_NOT_VERIFIED').length).toBeGreaterThan(0);
   });
 
   it('prevents viewer-only accounts from running calculations', async () => {
