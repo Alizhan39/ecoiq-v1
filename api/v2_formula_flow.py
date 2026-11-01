@@ -48,10 +48,11 @@ def _graph():
     nodes = []
     edges = []
     for i, spec in enumerate(PROVISIONAL_KPI_FORMULAS):
-        column, row = divmod(i, 5)
+        row, offset = divmod(i, 4)
+        column = offset if row % 2 == 0 else 3 - offset
         nodes.append({
             "id": spec.key, "type": "default",
-            "position": {"x": column * 320, "y": row * 145},
+            "position": {"x": column * 290, "y": row * 155},
             "data": {
                 "key": spec.key, "label": spec.title,
                 "expression": spec.expression,
