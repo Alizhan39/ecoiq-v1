@@ -40,6 +40,8 @@ lxml>=4.9
 
 # ── ML scoring pipeline ──────────────────────────────────────────────────────
 # ── REST API ─────────────────────────────────────────────────────────────────
+# Typed, fail-closed AI decision drafts and read-only workflow graph contracts.
+pydantic>=2.11,<3
 djangorestframework>=3.15
 # Model-field translation (future: translating Company/Country names in DB)
 # Not activated in INSTALLED_APPS yet — add translation.py per-app when ready
