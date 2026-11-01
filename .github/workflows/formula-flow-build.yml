@@ -48,3 +48,31 @@ jobs:
             git commit -m "Generate pinned React Flow lockfile and reproducible SPA build"
             git push origin HEAD:feat/sequential-kpi-reactflow
           fi
+
+  django-formulas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      DJANGO_SECRET_KEY: test-only-secret
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: sqlite:///db.sqlite3
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+      - name: Install project and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Django checks
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+      - name: Formula, access, and gateway contracts
+        run: |
+          python manage.py test api.tests_v2_formula_flow core.tests_formula_studio ecoiq_os.test_formula_registry ai_gateway.tests_workflow_contracts --noinput
