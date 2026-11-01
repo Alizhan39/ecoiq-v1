@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import FormulaFlow from './FormulaFlow';
@@ -97,7 +97,7 @@ describe('project-scoped React Flow formula preview', () => {
     await screen.findByTestId('reactflow');
     await user.click(screen.getByRole('button', { name: /run deterministic preview/i }));
     expect(screen.getByRole('alert')).toHaveTextContent(/reporting month/i);
-    await user.type(screen.getByLabelText(/Reporting period/), '2026-10');
+    fireEvent.change(screen.getByLabelText(/Reporting period/), { target: { value: '2026-10' } });
     await user.type(screen.getByLabelText('reported_revenue (GBP)'), '150.25');
     await user.type(screen.getByLabelText('Source ID (unverified)'), 'source-1');
     await user.click(screen.getByRole('button', { name: /run deterministic preview/i }));
