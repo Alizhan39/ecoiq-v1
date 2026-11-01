@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import ReactFlow, { Background, Controls, type Node } from '@xyflow/react';
+import { ReactFlow, Background, Controls, type Node } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { getFormulaFlow, previewFormulaSequence } from '@/api/formulaFlow';
 import type {
