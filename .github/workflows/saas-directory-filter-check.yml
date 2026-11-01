@@ -1,0 +1,44 @@
+# Temporary, branch-only verification. Remove after recording CI result.
+name: SaaS directory filter focused checks
+
+on:
+  push:
+    branches: [feat/saas-directory-filter-foundation]
+
+permissions:
+  contents: read
+
+jobs:
+  focused-backend-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DJANGO_SECRET_KEY: test-secret-key
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: sqlite:///db.sqlite3
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Static and configuration checks
+        run: |
+          ruff check api/v2_filters.py api/v2_views.py api/tests_v2_filtering.py
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+      - name: API contracts and filtering regressions
+        run: |
+          python manage.py test \
+            api.tests_v2_filtering \
+            api.tests_v2_search \
+            api.tests_v2_evidence \
+            api.tests_v2_query_cost \
+            api.tests_frontend_contract --noinput
