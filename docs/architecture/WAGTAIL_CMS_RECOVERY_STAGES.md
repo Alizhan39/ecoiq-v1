@@ -79,3 +79,19 @@ DEBUG=True DJANGO_SETTINGS_MODULE=ecoiq.settings_wagtail_audit \
 DEBUG=True DJANGO_SETTINGS_MODULE=ecoiq.settings_wagtail_audit \
   python manage.py test core.tests_wagtail_cms_audit
 ```
+
+## Isolated verification — 2026-11-01
+
+[GitHub Actions audit run](https://github.com/Alizhan39/ecoiq-v1/actions/runs/41355702652)
+passed on both configurations.
+
+- Production-equivalent Python 3.11 configuration (no Wagtail): normal
+  requirements install, Ruff, Django check and the 5 optional audit tests
+  **skipped as intended**, with no import/dependency regression.
+- Python 3.11 + Wagtail 7.4.3 isolated configuration: dependency install,
+  Django checks, no pending model changes in migrations, and **5/5 migration /
+  route-boundary tests passed** against a disposable test DB.
+- Temporary branch-only workflow was removed after checks passed.
+- **Not covered:** the real production PostgreSQL migration records/schema,
+  existing Wagtail content, security of legacy admin dashboard hooks, manual
+  browser and field editor/permission behavior. Keep this PR in draft.
