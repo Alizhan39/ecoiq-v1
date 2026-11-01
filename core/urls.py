@@ -11,6 +11,8 @@ from . import formula_studio
 
 urlpatterns = [
     path('business-os/formulas/<slug:project_slug>/', formula_studio.formula_studio, name='formula_studio'),
+    path('business-os/formulas/<slug:project_slug>/flow/', formula_studio.formula_flow_shell,
+         name='formula_flow_shell'),
     path('business-os/ai-review/', ai_review.review_queue, name='ai_review_queue'),
     path('business-os/ai-review/<slug:project_slug>/<int:review_id>/',
          ai_review.review_detail, name='ai_review_detail'),
