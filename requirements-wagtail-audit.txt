@@ -1,0 +1,4 @@
+# ISOLATED migration compatibility audit, never installed by Render.
+# Keep Django/Python on the existing supported versions.
+-r requirements-dev.txt
+wagtail==7.4.3
