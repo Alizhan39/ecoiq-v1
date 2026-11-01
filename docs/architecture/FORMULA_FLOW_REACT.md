@@ -51,8 +51,21 @@ review workflows.
 - Uses EcoIQ's existing design tokens; no new Tailwind or Next.js stack.
 - No interactive schema editing, automated chained AI execution, or background
   financial actions are provided.
-- Requires a rebuilt and committed `frontend/web/package-lock.json` and
-  `static/spa` bundle. Production Render does **not** compile Node packages.
+- The `frontend/web/package-lock.json` has been updated to pin React Flow
+  12.12.0, and `static/spa` was rebuilt and committed through a one-off
+  GitHub Actions branch build. The temporary write-enabled helper workflow
+  was removed after its successful run. Production Render does **not**
+  compile Node packages.
+
+## Verified in GitHub Actions on 2026-11-01
+
+- Frontend: `npm ci`, TypeScript, ESLint, **567 React tests**, production SPA
+  build and generated artifact commit passed.
+- Django: `manage.py check`, `makemigrations --check --dry-run` and **27
+  targeted tests** passed, including Formula Flow project permissions and
+  Pydantic gateway contracts.
+- **Not yet verified:** manual real-browser checks at 375/768/1280px,
+  keyboard interaction, reduced motion, and a live staging deployment.
 
 ## Local verification
 
