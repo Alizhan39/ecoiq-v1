@@ -117,7 +117,7 @@ export default function FormulaFlow() {
   if (!chosen) return <p role="status">There are no candidate formulas to display.</p>;
 
   return (
-    <main className="formula-flow">
+    <div className="formula-flow">
       <header className="prose">
         <p><a href={`/business-os/formulas/${encodeURIComponent(projectSlug ?? '')}/`}>← Formula Studio</a></p>
         <h1>Business Plan 2.0 · KPI Formula Flow</h1>
@@ -219,6 +219,6 @@ export default function FormulaFlow() {
         <Link to="/trust">Evidence policy</Link> · Only reviewed evidence can
         support verified conclusions. No religious verdicts are generated.
       </p>
-    </main>
+    </div>
   );
 }
