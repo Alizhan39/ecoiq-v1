@@ -85,7 +85,7 @@ export default function FormulaFlow() {
   }
 
   async function calculate() {
-    if (state.status !== 'ready' || pending || !projectSlug) return;
+    if (state.status !== 'ready' || pending || !projectSlug || !state.data.can_preview_calculate) return;
     setMessage(null);
     setRun(null);
     const prepared = buildObservations(formulas, fields);
@@ -191,10 +191,11 @@ export default function FormulaFlow() {
             and explicitly labels unsupplied formulas.</p>
         </div>
         <div className="formula-flow__actions">
+          {!state.data.can_preview_calculate && <p role="note">Your project role permits viewing formulas, but not running previews.</p>}
           <label htmlFor="formula-period">Reporting period (YYYY-MM)</label>
           <input id="formula-period" type="month" value={period}
             onChange={(event) => { setPeriod(event.target.value); setRun(null); }} />
-          <button type="button" onClick={() => { void calculate(); }} disabled={pending}>
+          <button type="button" onClick={() => { void calculate(); }} disabled={pending || !state.data.can_preview_calculate}>
             {pending ? 'Calculating…' : 'Run deterministic preview in sequence'}
           </button>
           {message && <p role="alert">{message}</p>}
