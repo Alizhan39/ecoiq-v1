@@ -23,6 +23,8 @@ const League = lazy(() => import('@/pages/League'));
 const Pricing = lazy(() => import('@/pages/Pricing'));
 const Labs = lazy(() => import('@/pages/Labs'));
 const InteractiveLab = lazy(() => import('@/pages/InteractiveLab'));
+// Internal project-scoped formula graph; Django checks membership before serving the shell.
+const FormulaFlow = lazy(() => import('@/pages/FormulaFlow'));
 const TrustCenter = lazy(() => import('@/pages/TrustCenter'));
 // The industrial-modernisation product page. Lazy on its own chunk: the
 // scene, its canvas painter and the whole transition model cost nothing to a
@@ -74,6 +76,7 @@ export function AppRoutes() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/labs" element={<Labs />} />
         <Route path="/labs/interactive" element={<InteractiveLab />} />
+        <Route path="/business-os/formulas/:projectSlug/flow" element={<FormulaFlow />} />
         <Route path="/trust" element={<TrustCenter />} />
         <Route
           path="/industrial-modernisation"
