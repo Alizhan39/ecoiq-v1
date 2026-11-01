@@ -11,7 +11,7 @@ vi.mock('@/api/formulaFlow', () => ({
 }));
 
 vi.mock('@xyflow/react', () => ({
-  default: ({ nodes, onNodeClick }: {
+  ReactFlow: ({ nodes, onNodeClick }: {
     nodes: Array<{ id: string; data: { label: string } }>;
     onNodeClick: (event: unknown, node: { id: string }) => void;
   }) => (
