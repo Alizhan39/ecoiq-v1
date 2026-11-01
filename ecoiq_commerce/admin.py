@@ -1,4 +1,12 @@
 from django.contrib import admin
+from django.conf import settings
+
+# Staging Python 3.12 Unfold pilot only. Never import the theme in the
+# production Python 3.11 runtime; the default admin remains identical.
+if getattr(settings, "ECOIQ_UNFOLD_PREVIEW", False):
+    from unfold.admin import ModelAdmin as FeatureAdminBase
+else:
+    FeatureAdminBase = admin.ModelAdmin
 
 from .models import (
     AddOn, BillingCustomer, CommercialEvent, Coupon, Entitlement, Feature,
@@ -52,7 +60,7 @@ class PlanAdmin(admin.ModelAdmin):
 
 
 @admin.register(Feature)
-class FeatureAdmin(admin.ModelAdmin):
+class FeatureAdmin(FeatureAdminBase):
     list_display = ['key', 'name', 'category']
     list_filter = ['category']
     search_fields = ['key', 'name']
