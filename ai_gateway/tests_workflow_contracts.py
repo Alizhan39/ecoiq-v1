@@ -62,7 +62,7 @@ class DecisionFlowContractTests(SimpleTestCase):
 
 class DecisionFlowPreviewPermissionTests(TestCase):
     def test_preview_is_staff_only(self):
-        url = "/api/ai/workflow-preview/"
+        url = "/api/v2/decision-flow/preview/"
         self.assertIn(self.client.get(url).status_code, (401, 403))
         User = get_user_model()
         ordinary = User.objects.create_user("flow_member", password="notused")
