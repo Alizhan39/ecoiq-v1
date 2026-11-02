@@ -63,11 +63,17 @@ export default function FormulaFlow() {
     if (state.status !== 'ready') return [];
     return state.data.nodes.map((node) => ({
       ...node,
-      data: { ...node.data, label: `${node.data.ordinal}. ${node.data.label}` },
+      data: {
+        ...node.data,
+        label: `${node.data.ordinal}. ${node.data.label}${results.get(node.id) ? ` · ${results.get(node.id)?.status}` : ''}`,
+      },
       className: [
         'formula-flow__node',
         node.id === chosen?.key ? 'formula-flow__node--selected' : '',
         results.get(node.id)?.status === 'REPORTED_NOT_VERIFIED' ? 'formula-flow__node--calculated' : '',
+        results.get(node.id)?.status === 'NEEDS_MEASUREMENTS' ? 'formula-flow__node--missing' : '',
+        results.get(node.id) && !['REPORTED_NOT_VERIFIED', 'NEEDS_MEASUREMENTS', 'NOT_SUPPLIED'].includes(results.get(node.id)!.status)
+          ? 'formula-flow__node--blocked' : '',
       ].filter(Boolean).join(' '),
     }));
   }, [state, chosen?.key, results]);
