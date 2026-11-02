@@ -1,0 +1,7 @@
+.formula-flow__process{border:1px solid var(--line);border-radius:var(--radius);padding:1rem;display:grid;gap:1rem}
+.formula-flow__process-picker,.formula-flow__process-details{display:grid;gap:.7rem}
+.formula-flow__process-picker input,.formula-flow__process-details input,.formula-flow__process-details select{max-width:100%;padding:.65rem;border:1px solid var(--line);color:var(--ink);background:var(--paper);border-radius:var(--radius)}
+.formula-flow__process-picker button,.formula-flow__process-details button{padding:.65rem 1rem;border:1px solid var(--accent-strong);border-radius:var(--radius);cursor:pointer}
+.formula-flow__parameter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:1rem}
+.formula-flow__parameter-grid .formula-flow__field{padding:.6rem;border:1px solid var(--line);border-radius:var(--radius)}
+.formula-flow__parameter-grid small{overflow-wrap:anywhere;color:var(--ink-soft)}
