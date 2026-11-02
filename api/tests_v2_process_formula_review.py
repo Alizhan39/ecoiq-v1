@@ -135,6 +135,34 @@ class ProcessFormulaReviewTests(TestCase):
         self.assertFalse(body["model_called"])
         self.assertEqual(ProcessAnalysisRun.objects.count(), 2)
 
+    def test_complete_shared_parameter_set_evaluates_every_candidate_once(self):
+        from api.v2_process_formula_review import parameter_contract
+
+        self.client.force_login(self.analyst)
+        _, parameters = parameter_contract()
+        measurements = {
+            item["key"]: self.measurement("1", item["unit"], f"source-{item['key']}")
+            for item in parameters
+        }
+        response = self.post({"measurements": measurements})
+        self.assertEqual(response.status_code, 200, response.content)
+        body = response.json()
+        self.assertEqual(body["formula_count"], 20)
+        self.assertEqual(body["counts"], {
+            "reported_not_verified": 20,
+            "needs_measurements": 0,
+            "blocked": 0,
+        })
+        self.assertEqual(
+            [item["formula_key"] for item in body["results"]],
+            [spec.key for spec in PROVISIONAL_KPI_FORMULAS],
+        )
+        self.assertTrue(all(item["status"] == "REPORTED_NOT_VERIFIED"
+                            and item["value_decimal"] is not None
+                            and item["approved_for_implementation"] is False
+                            for item in body["results"]))
+        self.assertEqual(len(measurements), len(parameters))
+
     def test_zero_denominator_is_undefined_not_zero_or_ready(self):
         self.client.force_login(self.analyst)
         measurements = {
