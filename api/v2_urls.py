@@ -12,6 +12,7 @@ maintenance surface for no truthfulness gain.
 """
 from django.urls import path
 from api.v2_formula_flow import project_formula_flow
+from api.v2_process_formula_review import process_formula_review
 from ai_gateway.workflow_views import decision_flow_preview
 
 from api import (
@@ -22,6 +23,8 @@ from api import (
 app_name = 'api_v2'
 
 urlpatterns = [
+    path('projects/<slug:project_slug>/process-analyses/<int:run_id>/formula-review/',
+         process_formula_review, name='process_formula_review'),
     path('projects/<slug:project_slug>/formulas/flow/', project_formula_flow,
          name='project_formula_flow'),
     # Staff-only, read-only React Flow-compatible draft (no AI execution).
