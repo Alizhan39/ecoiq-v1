@@ -34,7 +34,7 @@ class ProcessFormulaReviewTests(TestCase):
         ProjectMembership.objects.create(
             project=cls.project, user=cls.viewer, role=ProjectMembership.Role.VIEWER,
         )
-        cls.run = ProcessAnalysisRun.objects.create(
+        cls.analysis_run = ProcessAnalysisRun.objects.create(
             project=cls.project, created_by=cls.analyst,
             case_id="CASE-TEST-01", domain="construction", process_name="Site Delivery",
             resource_type="material", period="2026-10", unit="kg",
@@ -51,7 +51,7 @@ class ProcessFormulaReviewTests(TestCase):
     def setUp(self):
         cache.clear()
         self.url = reverse("api_v2:process_formula_review", kwargs={
-            "project_slug": self.project.slug, "run_id": self.run.pk,
+            "project_slug": self.project.slug, "run_id": self.analysis_run.pk,
         })
 
     def post(self, payload, url=None):
@@ -73,7 +73,7 @@ class ProcessFormulaReviewTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         info = response.json()
-        self.assertEqual(info["process_analysis_id"], self.run.pk)
+        self.assertEqual(info["process_analysis_id"], self.analysis_run.pk)
         self.assertEqual(info["period"], "2026-10")
         self.assertFalse(info["can_preview_calculate"])
         self.assertFalse(info["source_measurements_stored_in_process_analysis"])
