@@ -1,0 +1,4 @@
+# CI / local staging visual check ONLY, never installed by render.yaml.
+# Production remains on Python 3.11 and uses requirements.txt unmodified.
+-r requirements-dev.txt
+django-unfold==0.110.0
