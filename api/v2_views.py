@@ -12,6 +12,7 @@ from django.db.models import Q
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.generics import ListAPIView
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 
 from api.authentication import APIKeyAuthentication
@@ -20,6 +21,7 @@ from api.permissions import IsPublicOrAPIKey
 # paginate identically to v1, and a second copy would be free to drift.
 from api.views import StandardPagination
 from api.v2_serializers import CompanyProfileV2Serializer, CompanyV2Serializer
+from api.v2_filters import CompanyDirectoryFilter
 from companies.provenance import attach_current_maps
 from companies.visibility import profile_for, profiles_visible_to
 from league.models import Company
@@ -42,6 +44,9 @@ class CompanyListV2View(ListAPIView):
     """
     serializer_class = CompanyV2Serializer
     pagination_class = StandardPagination
+    # Per-view only; do not change the authentication or other v2 endpoints.
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = CompanyDirectoryFilter
     #: SessionAuthentication alongside the API key, so a signed-in staff
     #: session is recognised here as it already is on the sub-resources.
     #:
@@ -89,12 +94,9 @@ class CompanyListV2View(ListAPIView):
         # a different job, deliberately left alone.
         for token in (self.request.query_params.get('q') or '').split():
             qs = qs.filter(Q(name__icontains=token) | Q(slug__icontains=token))
-        sector = self.request.query_params.get('sector')
-        if sector:
-            qs = qs.filter(sector__iexact=sector)
-        country = self.request.query_params.get('country')
-        if country:
-            qs = qs.filter(country__iexact=country)
+        # django-filter applies sector/country to this already permission-
+        # constrained queryset, preserving the historical case-insensitive
+        # exact-match semantics. `q` stays the dedicated tokenised text search.
         return qs
 
     def paginate_queryset(self, queryset):

@@ -114,6 +114,7 @@ INSTALLED_APPS = [
 
     # REST API
     'rest_framework',
+    'django_filters',  # Registered for opt-in DRF FilterSet views; not global.
 
     # Project apps
     'core',
