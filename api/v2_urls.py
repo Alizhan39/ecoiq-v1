@@ -11,6 +11,7 @@ score and have nothing to correct, so duplicating them would double the
 maintenance surface for no truthfulness gain.
 """
 from django.urls import path
+from api.v2_formula_flow import project_formula_flow
 from ai_gateway.workflow_views import decision_flow_preview
 
 from api import (
@@ -21,6 +22,8 @@ from api import (
 app_name = 'api_v2'
 
 urlpatterns = [
+    path('projects/<slug:project_slug>/formulas/flow/', project_formula_flow,
+         name='project_formula_flow'),
     # Staff-only, read-only React Flow-compatible draft (no AI execution).
     path('decision-flow/preview/', decision_flow_preview, name='decision_flow_preview'),
     path('interactive/libraries/', v2_interactive.libraries, name='interactive_libraries'),

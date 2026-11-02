@@ -19,6 +19,7 @@
 <main class="fs-root" aria-labelledby="fs-heading">
   <p><a href="{% url 'process_workspace' %}">Back to EcoIQ Business OS</a></p>
   <h1 id="fs-heading">Formula Studio · {{ project.name }}</h1>
+  <p><a href="{% url 'formula_flow_shell' project.slug %}">Explore the 20 KPI candidates in the visual sequence (React Flow)</a></p>
   <p>20 initial KPI formula definitions and six additional case-specific research templates. Each formula declares its inputs, units and known limits. These are proposed definitions awaiting domain validation.</p>
   <aside class="fs-alert" role="note">
     <strong>Important:</strong> A mathematically valid formula is not proof of measurement quality, causation, financial savings, social justice or religious compliance. Unknown values are not replaced with zero. AI-generated additional formulas remain unapproved and are only available through a separately authorised internal gateway.
