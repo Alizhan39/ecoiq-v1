@@ -98,3 +98,19 @@ npm run build
 
 **Deploy blocker:** This PR is stacked on PR #378; it must only reach main
 once its base is integrated and CI plus staging/browser tests succeed.
+
+## Verified GitHub CI — 2026-11-02
+
+- [Focused run 41534213676](https://github.com/Alizhan39/ecoiq-v1/actions/runs/41534213676):
+  Python 3.11 + Django configuration, Ruff and migration checks **PASS**;
+  **27/27 targeted Django tests passed**, including complete 20-formula
+  shared-parameter evaluation, missing-data protection and project boundaries.
+- TypeScript, ESLint, **570/570 React tests**, production Vite build **PASS**.
+- The separately triggered interactive browser check for the same revision
+  [41534221946](https://github.com/Alizhan39/ecoiq-v1/actions/runs/41534221946)
+  passed its configured checks. This is not a substitute for human review
+  of real customer workflows or production deploy verification.
+- The feature-only CI workflow was removed after success to avoid future
+  duplicate jobs. All calculated outputs remain unverified and unapproved.
+- Merge this PR only after its base PR #378 lands in main and regular PR
+  checks/reviews are satisfactory. Render production was not deployed.
