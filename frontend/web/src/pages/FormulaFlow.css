@@ -4,6 +4,9 @@
 .formula-flow__node{border-color:var(--line)!important;color:var(--ink)!important;background:var(--paper)!important;border-radius:var(--radius)!important;font-size:.75rem!important;max-width:230px}
 .formula-flow__node--selected{outline:3px solid var(--accent-strong)}
 .formula-flow__node--calculated{border-color:var(--accent-strong)!important}
+.formula-flow__node--missing{border-style:dashed!important;opacity:.85}
+.formula-flow__node--blocked{border-style:double!important;border-width:3px!important}
+
 .formula-flow__order{margin-top:1rem}
 .formula-flow__order ol{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.6rem;padding-left:1.6rem}
 .formula-flow__order li{padding:.2rem 0}
