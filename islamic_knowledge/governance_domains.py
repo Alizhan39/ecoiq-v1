@@ -114,7 +114,7 @@ GOVERNANCE_DOMAINS: tuple[GovernanceDomain, ...] = (
             ("Are property rights and contracts documented?",
              "Who receives the benefits and bears the financial risks?"),
             ((4, 29), (59, 7))),
-    _domain("03", "Islamic Finance Research", "Исламские финансы",
+    _domain("03", "Finance Contract Integrity", "Исламские финансы",
             ("riba", "gharar", "zakat"),
             ("Are finance terms, fees and risk allocations disclosed?",
              "Which compliance questions require qualified specialist review?"),
