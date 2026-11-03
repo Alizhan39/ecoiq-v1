@@ -47,3 +47,7 @@ Quran-locator hints checked against the existing Hafs index.
 `python manage.py test islamic_knowledge.test_governance_domains`
 
 This command is documented, not asserted as executed. Normal CI applies before merging.
+
+## Research crosswalk to the 20 existing candidate KPIs
+
+`islamic_knowledge/governance_kpi_crosswalk.py` links all twelve domain codes to existing keys in `ecoiq_os.formula_registry.FORMULAS_BY_KEY`; it does **not** clone or extend those formulas. All 20 existing candidates are referenced at least once. The links are contextual operational signals, not domain scores, proof of theological claims, verified source measurements, legal determinations or approved norms. The crosswalk has targeted tests in `islamic_knowledge/test_governance_kpi_crosswalk.py`. Any actual measurement needs a project-authorised provenance review and a validated observation-to-source binding.
