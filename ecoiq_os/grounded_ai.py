@@ -14,6 +14,7 @@ from typing import Any
 from django.conf import settings
 
 from ecoiq_os.decision_islah import build_preliminary_brief
+from ecoiq_os.principle_review import require_principle_review
 
 MAX_SOURCES = 4
 MAX_SOURCE_CHARS = 600
@@ -119,6 +120,7 @@ def _question_prompt(brief: dict[str, Any], sources: tuple[GroundedSource, ...])
         "Do not infer verified totals, causes, avoidable losses, savings, "
         "Mizan verdicts, or approvals from excerpts. No actions or tool calls. "
         "The numeric inputs are UNVERIFIED CSV reporting, not established facts. "
+        "No principle applicability or compliance assessment has been completed. "
         "Do not return Markdown or explanations outside JSON. "
         "Source-data JSON follows:\n" + json.dumps(data, ensure_ascii=False)
     )
@@ -207,12 +209,20 @@ def prepare_grounded_draft(
     except (KeyError, TypeError, ValueError):
         return {"status": "INVALID_REPORTED_ANALYSIS", "model_called": False}
 
+    def reviewed(result: dict[str, Any]) -> dict[str, Any]:
+        # Server-side case context binds the inventory to this actual run.
+        # Even exact citations do not assess all principles or approve action.
+        return require_principle_review({
+            **result, "project_id": project.pk,
+            "process_analysis_id": run.pk, "period": run.period,
+        }, case_id=run.case_id)
+
     sources = collect_reviewed_sources(project=project, user=user)
     if not sources:
-        return {
+        return reviewed({
             "status": "NO_REVIEWED_SOURCES", "model_called": False,
             "evidence_count": 0, "implementation_permitted": False,
-        }
+        })
 
     reference_manifest = [
         {"key": src.key, "memory_id": src.memory_id,
@@ -222,23 +232,23 @@ def prepare_grounded_draft(
 
     if (external_transfer_approved is not True
             or getattr(settings, "ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED", False) is not True):
-        return {
+        return reviewed({
             "status": "EXTERNAL_MODEL_DISABLED", "model_called": False,
             "evidence_count": len(sources),
             "source_manifest": reference_manifest,
             "implementation_permitted": False,
-        }
+        })
 
     # Recheck access and source freshness immediately before transmitting.
     if not access.can(user, project, access.ANALYSE):
         return {"status": "ACCESS_DENIED", "model_called": False}
     fresh_sources = collect_reviewed_sources(project=project, user=user)
     if fresh_sources != sources:
-        return {"status": "EVIDENCE_CHANGED", "model_called": False}
+        return reviewed({"status": "EVIDENCE_CHANGED", "model_called": False})
 
     prompt = _question_prompt(brief, sources)
     if len(prompt) > 8000:
-        return {"status": "CONTEXT_LIMIT", "model_called": False}
+        return reviewed({"status": "CONTEXT_LIMIT", "model_called": False})
     if gateway is None:
         from ai_gateway.service import service as gateway
 
@@ -246,10 +256,16 @@ def prepare_grounded_draft(
         user=user, message=prompt, language="en",
         history=[], context={"module": "ecoiq_os"}, mode="quick",
     )
+    # A provider call may take long enough for membership/source state to
+    # change. Do not return quotations under a stale authorisation snapshot.
+    if not access.can(user, project, access.ANALYSE):
+        return {"status": "ACCESS_DENIED", "model_called": True}
+    if collect_reviewed_sources(project=project, user=user) != sources:
+        return reviewed({"status": "EVIDENCE_CHANGED", "model_called": True})
     audited = validate_grounded_questions(response.get("answer"), sources)
-    return {
+    return reviewed({
         **audited, "model_called": True, "evidence_count": len(sources),
         "source_manifest": reference_manifest,
         "independently_verified_causality": False,
         "approval_recorded": False,
-    }
+    })
