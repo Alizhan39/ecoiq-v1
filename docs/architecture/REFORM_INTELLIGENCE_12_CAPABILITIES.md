@@ -81,3 +81,7 @@ instruments or claim causal effects.
 The test checks catalogue completeness, unknown inputs, research-only status
 and safety guardrails. CI, runtime performance and model accuracy require
 separate validation.
+
+## Candidate KPI reuse and explicit gaps
+
+`intelligence_analytics_engine/reform_kpi_crosswalk.py` links a capability to existing 20-KPI formula keys **only as context indicators**. It never copies formulas, creates evidence, proves a root cause, claims corruption, validates financial or legal compliance or certifies an AI model. `legal_access` has no direct metric among the existing 20, so the mapping is intentionally empty and `missing_direct_kpi=True`. Targeted tests are in `intelligence_analytics_engine/test_reform_kpi_crosswalk.py`. All links remain `measured=False` and `decision_ready=False` until a separate authenticated, source-bound observation workflow and expert review are implemented.
