@@ -9,6 +9,9 @@ import type {
 import { useApi } from '@/hooks/useApi';
 import { ErrorState, Loading } from '@/components/States';
 import './FormulaFlow.css';
+import './ProcessFormulaReviewPanel.css';
+import ProcessFormulaReviewPanel from './ProcessFormulaReviewPanel';
+import type { ProcessFormulaReport } from '@/api/processFormulaReview';
 
 type FieldState = Record<string, Record<string, { value: string; source_ref: string }>>;
 
@@ -48,22 +51,29 @@ export default function FormulaFlow() {
   const [period, setPeriod] = useState('');
   const [fields, setFields] = useState<FieldState>({});
   const [run, setRun] = useState<FormulaRun | null>(null);
+  const [processReport, setProcessReport] = useState<ProcessFormulaReport | null>(null);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const formulas = state.status === 'ready' ? state.data.formulas : [];
   const chosen = formulas.find((f) => f.key === selected) ?? formulas[0];
   const results = useMemo(() => new Map<string, FormulaResult>(
-    (run?.results ?? []).map((item) => [item.formula_key, item]),
-  ), [run]);
+    (processReport?.results ?? run?.results ?? []).map((item) => [item.formula_key, item]),
+  ), [run, processReport]);
   const graphNodes: Node[] = useMemo(() => {
     if (state.status !== 'ready') return [];
     return state.data.nodes.map((node) => ({
       ...node,
-      data: { ...node.data, label: `${node.data.ordinal}. ${node.data.label}` },
+      data: {
+        ...node.data,
+        label: `${node.data.ordinal}. ${node.data.label}${results.get(node.id) ? ` · ${results.get(node.id)?.status}` : ''}`,
+      },
       className: [
         'formula-flow__node',
         node.id === chosen?.key ? 'formula-flow__node--selected' : '',
         results.get(node.id)?.status === 'REPORTED_NOT_VERIFIED' ? 'formula-flow__node--calculated' : '',
+        results.get(node.id)?.status === 'NEEDS_MEASUREMENTS' ? 'formula-flow__node--missing' : '',
+        results.get(node.id) && !['REPORTED_NOT_VERIFIED', 'NEEDS_MEASUREMENTS', 'NOT_SUPPLIED'].includes(results.get(node.id)!.status)
+          ? 'formula-flow__node--blocked' : '',
       ].filter(Boolean).join(' '),
     }));
   }, [state, chosen?.key, results]);
@@ -88,6 +98,7 @@ export default function FormulaFlow() {
     if (state.status !== 'ready' || pending || !projectSlug || !state.data.can_preview_calculate) return;
     setMessage(null);
     setRun(null);
+    setProcessReport(null);
     const prepared = buildObservations(formulas, fields);
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) {
       setMessage('Enter a reporting month in YYYY-MM format.');
@@ -216,6 +227,8 @@ export default function FormulaFlow() {
           )}
         </div>
       </section>
+      <ProcessFormulaReviewPanel projectSlug={projectSlug ?? ''}
+        onReport={setProcessReport} />
       <p className="formula-flow__footer">
         <Link to="/trust">Evidence policy</Link> · Only reviewed evidence can
         support verified conclusions. No religious verdicts are generated.
