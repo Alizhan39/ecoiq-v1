@@ -327,3 +327,60 @@ class ProcessAIProcessingReadiness(models.Model):
 
     class Meta:
         ordering = ['-created_at', '-pk']
+
+
+class ProcessKPIMeasurementClaim(models.Model):
+    """Private, append-only-by-service *reported* KPI input tied to one source.
+
+    This does not attest that the value appears in the document, that the
+    document is authentic, or that a formula has been approved. A review of
+    an EvidenceMemory record's metadata is NOT a measurement verification.
+    No public API writes or reads this model in this first stage.
+    """
+
+    class ReviewStatus(models.TextChoices):
+        REPORTED_NOT_VERIFIED = 'REPORTED_NOT_VERIFIED', 'Reported, not verified'
+
+    project = models.ForeignKey(
+        'gold_intelligence.GoldProject', on_delete=models.PROTECT,
+        related_name='process_kpi_measurement_claims',
+    )
+    analysis = models.ForeignKey(
+        ProcessAnalysisRun, on_delete=models.PROTECT,
+        related_name='kpi_measurement_claims',
+    )
+    evidence = models.ForeignKey(
+        'evidence_memory.EvidenceMemory', on_delete=models.PROTECT,
+        related_name='process_kpi_measurement_claims',
+    )
+    created_by = models.ForeignKey(
+        User, on_delete=models.PROTECT,
+        related_name='created_process_kpi_measurement_claims',
+    )
+    formula_key = models.CharField(max_length=50)
+    input_key = models.CharField(max_length=50)
+    value_decimal = models.DecimalField(max_digits=44, decimal_places=18)
+    unit = models.CharField(max_length=30)
+    period = models.CharField(max_length=7)
+    source_chunk_sha256 = models.CharField(max_length=64)
+    formula_spec_sha256 = models.CharField(max_length=64)
+    review_status = models.CharField(
+        max_length=32, choices=ReviewStatus.choices,
+        default=ReviewStatus.REPORTED_NOT_VERIFIED, editable=False,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        indexes = [
+            models.Index(
+                fields=['project', 'analysis', '-created_at'],
+                name='api_kpi_claim_project_run_idx',
+            ),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(review_status='REPORTED_NOT_VERIFIED'),
+                name='api_kpi_claim_never_auto_verif',
+            ),
+        ]
