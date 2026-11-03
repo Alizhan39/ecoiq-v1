@@ -33,7 +33,7 @@ class ProcessKPISourceReadinessTests(TestCase):
         ProjectMembership.objects.create(
             project=cls.project, user=cls.viewer, role="viewer",
         )
-        cls.run = ProcessAnalysisRun.objects.create(
+        cls.analysis_run = ProcessAnalysisRun.objects.create(
             project=cls.project, created_by=cls.analyst, case_id="TEST",
             domain="research", process_name="Illustrative test process",
             resource_type="material", period="2026-10", unit="kg",
@@ -58,7 +58,7 @@ class ProcessKPISourceReadinessTests(TestCase):
                input_key="reported_revenue"):
         return inspect_candidate_source(
             user=user or self.analyst, project=project or self.project,
-            run_id=run.pk if run is not None else self.run.pk,
+            run_id=run.pk if run is not None else self.analysis_run.pk,
             formula_key=formula, input_key=input_key,
             evidence_memory_id=memory.pk,
         )
@@ -79,7 +79,7 @@ class ProcessKPISourceReadinessTests(TestCase):
         for user in (self.viewer, self.stranger, None):
             with self.subTest(user=user), self.assertRaises(PermissionDenied):
                 inspect_candidate_source(
-                    user=user, project=self.project, run_id=self.run.pk,
+                    user=user, project=self.project, run_id=self.analysis_run.pk,
                     formula_key="revenue", input_key="reported_revenue",
                     evidence_memory_id=memory.pk,
                 )
@@ -90,7 +90,7 @@ class ProcessKPISourceReadinessTests(TestCase):
         self.assertEqual(result["source_record_status"], "NOT_ACCESSIBLE_OR_NOT_FOUND")
         self.assertFalse(result["source_record_reviewed_metadata"])
         missing = inspect_candidate_source(
-            user=self.analyst, project=self.project, run_id=self.run.pk,
+            user=self.analyst, project=self.project, run_id=self.analysis_run.pk,
             formula_key="revenue", input_key="reported_revenue",
             evidence_memory_id=999999999,
         )
@@ -133,7 +133,7 @@ class ProcessKPISourceReadinessTests(TestCase):
             )
         with self.assertRaises(Http404):
             inspect_candidate_source(
-                user=self.analyst, project=self.project, run_id=self.run.pk + 900,
+                user=self.analyst, project=self.project, run_id=self.analysis_run.pk + 900,
                 formula_key="revenue", input_key="reported_revenue",
                 evidence_memory_id=memory.pk,
             )
