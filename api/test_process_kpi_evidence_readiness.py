@@ -103,7 +103,7 @@ class ProcessKPISourceReadinessTests(TestCase):
             ({"review_tier": "uploaded"}, "SOURCE_REVIEW_INCOMPLETE"),
             ({"reviewer": None}, "SOURCE_REVIEW_INCOMPLETE"),
             ({"is_demo": True}, "DEMONSTRATION_SOURCE"),
-            ({"verification_status": "rejected"}, "UNUSABLE_SOURCE"),
+            ({"verification_status": "rejected"}, "NOT_ACCESSIBLE_OR_NOT_FOUND"),
             ({"expiry_date": timezone.now().date() - timedelta(days=1)}, "EXPIRED_SOURCE"),
         ):
             with self.subTest(status=status, overrides=overrides):
