@@ -70,6 +70,8 @@ def create_process_kpi_measurement_claim(*, user, project, run_id: int,
     # Validate through the very same bounded Decimal/period/unit contract as
     # the 20 candidate formula engine. Caller cannot supply a different unit
     # or period; these come from the registry and the saved process run.
+    if reported_value is None:
+        raise ValueError("Missing values cannot become stored measurement claims.")
     observation = Observation(
         value=reported_value, unit=unit, period=analysis.period,
         source_ref=f"evidence_memory:{evidence_memory_id}",
