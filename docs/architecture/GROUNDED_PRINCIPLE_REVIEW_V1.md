@@ -53,9 +53,17 @@ questions and citations. The external model flag remains off by default.
 
 ## Reproduction
 
+The v2 report also includes `extended_registry`: typed counts and a content
+fingerprint for the [unified review inventory](UNIFIED_REVIEW_REGISTRY.md).
+It covers the broader 33-KPI catalogue, 114-surah and 99-name references and
+3,762 existing unreviewed KPI/surah work items. These are different record kinds,
+not thousands of assessed principles. The five detailed lists remain operational
+questions, formulas, domains, capabilities and knowledge-review gaps.
+
 `subject_sha256` binds the sanitised service result, server-owned project/run/
 period and case ID. `inventory_sha256` binds the emitted operational questions,
-KPI contracts, crosswalks, safeguards and definition content hashes. These are
+KPI contracts, crosswalks, safeguards, definition content hashes and the extended
+registry fingerprint. These are
 reproducibility identifiers, **not** signatures or durable approval receipts.
 The report omits source passages, Quran locators and divine-name metadata.
 Existing bounded evidence excerpts remain in the model prompt; no religious

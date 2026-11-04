@@ -14,15 +14,14 @@ from typing import Any
 
 from core.esg_principles_data import PRINCIPLES
 from ecoiq_os.formula_registry import PROVISIONAL_KPI_FORMULAS
+from ecoiq_os.review_registry import canonical_knowledge_definitions, registry_summary
 from intelligence_analytics_engine.reform_capabilities import REFORM_CAPABILITIES
 from intelligence_analytics_engine.reform_kpi_crosswalk import proposed_kpi_context
 from islamic_knowledge.contracts import assess_definition
-from islamic_knowledge.environmental_principles import stewardship_drafts
 from islamic_knowledge.governance_domains import GOVERNANCE_DOMAINS
 from islamic_knowledge.governance_kpi_crosswalk import candidate_kpis_for_domain
-from islamic_knowledge.principles import DRAFT_PRINCIPLES
 
-REVIEW_VERSION = "grounded_principle_review_v1"
+REVIEW_VERSION = "grounded_principle_review_v2"
 _RESULT_FIELDS = frozenset({
     "status", "model_called", "evidence_count", "source_manifest", "questions",
     "project_id", "process_analysis_id", "period",
@@ -54,15 +53,8 @@ def build_principle_review(*, case_id: str, subject: dict[str, Any]) -> dict[str
     if len({row["principle_id"] for row in principles}) != len(principles):
         raise ValueError("Duplicate operational principle identifier.")
 
-    # Shared concepts retain their canonical definition, not a second copy.
-    definitions = {}
-    for definition in (*DRAFT_PRINCIPLES, *stewardship_drafts()):
-        previous = definitions.get(definition.id)
-        if previous is not None and previous != definition:
-            raise ValueError("Conflicting canonical knowledge definition.")
-        definitions[definition.id] = definition
     knowledge = []
-    for definition in definitions.values():
+    for definition in canonical_knowledge_definitions():
         gate = assess_definition(definition, {})
         knowledge.append({
             "definition_id": definition.id, "version": definition.version,
@@ -96,12 +88,14 @@ def build_principle_review(*, case_id: str, subject: dict[str, Any]) -> dict[str
         "governance_domains": domains,
         "reform_capabilities": capabilities,
     }
+    extended = registry_summary()
     return {
         "version": REVIEW_VERSION,
         "scope": "ecoiq_os.prepare_grounded_draft",
         "case_id": case_id,
         "subject_sha256": _digest({"case_id": case_id, "result": subject}),
-        "inventory_sha256": _digest(inventory),
+        "inventory_sha256": _digest({"inventory": inventory, "extended_registry": extended}),
+        "extended_registry": extended,
         "status": "REVIEW_REQUIRED",
         "inventory_counts": {key: len(rows) for key, rows in inventory.items()},
         "assessed_operational_principles": 0,

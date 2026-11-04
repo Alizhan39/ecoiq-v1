@@ -7,6 +7,7 @@ from django.test import SimpleTestCase
 from core.esg_principles_data import PRINCIPLES
 from ecoiq_os.formula_registry import PROVISIONAL_KPI_FORMULAS
 from ecoiq_os.principle_review import build_principle_review, require_principle_review
+from ecoiq_os.review_registry import registry_summary
 from intelligence_analytics_engine.reform_capabilities import REFORM_CAPABILITIES
 from islamic_knowledge.environmental_principles import stewardship_drafts
 from islamic_knowledge.governance_domains import GOVERNANCE_DOMAINS
@@ -21,6 +22,9 @@ class PrincipleReviewTests(SimpleTestCase):
 
     def test_every_canonical_item_is_present_without_claiming_assessment(self):
         result = self.report()
+        self.assertEqual(result["extended_registry"], registry_summary())
+        self.assertEqual(result["extended_registry"]["counts_by_kind"]["candidate_kpi"], 33)
+        self.assertEqual(result["extended_registry"]["counts_by_kind"]["kpi_surah_review_pair"], 3762)
         self.assertEqual(
             [item["principle_id"] for item in result["operational_principles"]],
             [item["id"] for item in PRINCIPLES],
@@ -102,6 +106,17 @@ class PrincipleReviewTests(SimpleTestCase):
         registry[0]["question"] += " Updated scope."
         with patch("ecoiq_os.principle_review.PRINCIPLES", registry):
             self.assertNotEqual(first["inventory_sha256"], self.report()["inventory_sha256"])
+
+    def test_extended_registry_changes_invalidate_ai_report_inventory_digest(self):
+        before = self.report()
+        changed = deepcopy(PRINCIPLES)
+        changed[0]["question"] += " Changed scope."
+        # The additional index also binds records not projected in the old
+        # five detailed lists; its digest is part of the final report digest.
+        with patch("ecoiq_os.review_registry.PRINCIPLES", changed):
+            after = self.report()
+        self.assertNotEqual(before["extended_registry"]["content_sha256"], after["extended_registry"]["content_sha256"])
+        self.assertNotEqual(before["inventory_sha256"], after["inventory_sha256"])
 
     def test_mutating_one_report_does_not_change_next_report_or_registry(self):
         first = self.report()
