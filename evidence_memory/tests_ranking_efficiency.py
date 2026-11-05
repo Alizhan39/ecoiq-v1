@@ -22,6 +22,21 @@ class StreamingRankingTests(TestCase):
                 result = _rank_candidates('coal heating gas', candidates, limit)
                 self.assertEqual([row.pk for row in result], [row.pk for row in expected[:limit]])
 
+    def test_equal_scores_use_pk_tie_breaker_independent_of_queryset_order(self):
+        # Two identical embedded sources have identical cosine similarity.
+        # Postgres must not choose an arbitrary physical row order on ties,
+        # and SQLite's streaming fallback must have the same contract.
+        tied_pks = list(EvidenceMemory.objects.filter(
+            text_chunk='coal heating gas',
+        ).order_by('pk').values_list('pk', flat=True))
+        self.assertEqual(len(tied_pks), 2)
+
+        for ordering in ('pk', '-pk'):
+            with self.subTest(ordering=ordering):
+                candidates = EvidenceMemory.objects.order_by(ordering)
+                ranked = _rank_candidates('coal heating gas', candidates, 2)
+                self.assertEqual([row.pk for row in ranked], tied_pks)
+
     def test_ranking_does_not_populate_queryset_result_cache(self):
         filtered = EvidenceMemory.objects.order_by('pk')
         with patch.object(filtered, 'filter', return_value=filtered):
