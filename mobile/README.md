@@ -6,11 +6,12 @@ for why Flutter was chosen, and
 [`docs/MOBILE-API-ADDITIONS.md`](../docs/MOBILE-API-ADDITIONS.md) for the
 backend contract this app consumes.
 
-**This project was authored without a local Flutter SDK available** (see
-the final report's "known risks and limitations"). Only `pubspec.yaml` and
-`lib/`/`test/` source were written — the native `ios/`, `android/`,
-`windows/`, `macos/`, `linux/` platform folders that `flutter create`
-normally generates do **not** exist yet. Bootstrap them first:
+The native iOS/Android/Windows projects have their own CI. Flutter Web is
+built and tested separately, with its own bootstrap in `mobile/web/` and
+Cloudflare Pages release instructions in
+[`docs/deployment/FLUTTER_WEB_CLOUDFLARE.md`](../docs/deployment/FLUTTER_WEB_CLOUDFLARE.md).
+If you need platform runner files not present in a fresh checkout, generate
+them with Flutter 3.27.x:
 
 ## 1. One-time bootstrap (generates the missing platform folders)
 
@@ -24,6 +25,20 @@ This will **not** overwrite `lib/`, `test/`, `pubspec.yaml`, or
 default) — it adds `ios/`, `android/`, `windows/`, `macos/`, `linux/`,
 `web/`. If you don't need every platform, pass `--platforms=ios,android,windows`
 to skip the rest.
+
+## Flutter Web (browser)
+
+```bash
+# From the repository root, with Flutter 3.27.x on PATH
+bash scripts/build-flutter-web.sh
+# The static distribution is mobile/build/web/
+```
+
+The release is built against `ECOIQ_ENV=production`. The repo's new
+`.github/workflows/flutter-web.yml` also tests this in Chrome and produces
+a downloadable web artifact. Only after Cloudflare account secrets are
+configured can a successful `main` push publish it; see the dedicated
+[deployment guide](../docs/deployment/FLUTTER_WEB_CLOUDFLARE.md).
 
 ## 2. Install dependencies
 
