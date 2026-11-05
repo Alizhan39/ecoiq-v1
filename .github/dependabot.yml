@@ -1,0 +1,39 @@
+version: 2
+updates:
+  # Controlled reviewable updates, never auto-merge or mass-upgrade production.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/London
+    open-pull-requests-limit: 3
+    groups:
+      python-patch-and-minor:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: npm
+    directory: /frontend/web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:30"
+      timezone: Europe/London
+    open-pull-requests-limit: 3
+    groups:
+      spa-patch-and-minor:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Europe/London
+    open-pull-requests-limit: 2
