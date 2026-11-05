@@ -17,6 +17,25 @@ Monday, and on manual dispatch.
   reviewable updates to Python, the SPA, and GitHub Actions. It does **not**
   automatically merge anything.
 
+## Remediation from the first audit
+
+The initial CI scan of `main` reported **79 known vulnerabilities across four
+installed packages**: Django 5.2.14, pypdf 6.12.1, WeasyPrint 68.1 and
+setuptools 79.0.1. The fixes proposed in this branch are:
+
+| Package | Before | Proposed | Why |
+|---|---|---|---|
+| Django | 5.2.14 | 5.2.17 | Supported LTS security patch, no framework-major upgrade |
+| pypdf | 6.12.1 | 6.21.4 | Same major, cumulative PDF parser security fixes |
+| WeasyPrint | 68.1 | 70.0 | Security update; requires PDF rendering regression review |
+| setuptools | 79.0.1 | 84.2.1 | Address vulnerable packaging tooling installed in build/runtime environments |
+
+A passing new `pip-audit` run is required before merging. The change must also
+pass all Django, mobile, and frontend checks; PDF output should be visually
+checked on representative reports before deployment. The warning count is the
+scanner's report, not a claim that any specific vulnerability is exploitable
+through an EcoIQ endpoint.
+
 ## Scope and remaining work
 
 A successful scan **does not** prove a package or image is free from
