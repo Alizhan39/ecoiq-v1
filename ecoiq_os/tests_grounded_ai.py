@@ -83,6 +83,8 @@ class GroundedAIProjectTests(TestCase):
                 external_transfer_approved=True, gateway=gateway,
             )
         self.assertEqual(out["status"], "NO_REVIEWED_SOURCES")
+        self.assertEqual(out["principle_review"]["status"], "REVIEW_REQUIRED")
+        self.assertFalse(out["decision_ready"])
         gateway.chat.assert_not_called()
 
     def test_no_model_call_by_default_and_manifest_has_real_sha(self):
@@ -93,6 +95,7 @@ class GroundedAIProjectTests(TestCase):
             external_transfer_approved=True, gateway=gateway,
         )
         self.assertEqual(out["status"], "EXTERNAL_MODEL_DISABLED")
+        self.assertEqual(out["principle_review"]["case_id"], self.analysis.case_id)
         self.assertFalse(out["model_called"])
         self.assertEqual(out["source_manifest"][0]["memory_id"], source.pk)
         self.assertEqual(out["source_manifest"][0]["sha256"], source.integrity_reference)
@@ -127,6 +130,13 @@ class GroundedAIProjectTests(TestCase):
         self.assertIsNone(out["causal_conclusion"])
         self.assertIsNone(out["savings_forecast"])
         self.assertFalse(out["independently_verified_causality"])
+        review = out["principle_review"]
+        self.assertEqual(review["scope"], "ecoiq_os.prepare_grounded_draft")
+        self.assertEqual(review["inventory_counts"]["operational_principles"], 114)
+        self.assertEqual(review["assessed_operational_principles"], 0)
+        self.assertFalse(review["decision_ready"])
+        self.assertFalse(out["publication_permitted"])
+        self.assertEqual(out["process_analysis_id"], self.analysis.pk)
         self.assertEqual(ProcessAnalysisRun.objects.count(), 1)
         args = gateway.chat.call_args.kwargs
         self.assertEqual(args["context"]["module"], "ecoiq_os")
@@ -142,6 +152,7 @@ class GroundedAIProjectTests(TestCase):
                 external_transfer_approved=True, gateway=gateway,
             )
             self.assertEqual(out["status"], "ACCESS_DENIED")
+            self.assertNotIn("principle_review", out)
         other = prepare_grounded_draft(
             project=self.other_project, user=self.analyst, run=self.analysis,
             external_transfer_approved=True, gateway=gateway,
@@ -185,6 +196,53 @@ class GroundedAIProjectTests(TestCase):
             )
         self.assertFalse(out["approval_recorded"])
         self.assertIsNone(out["causal_conclusion"])
+
+    def test_invalid_model_output_also_gets_unapproved_review_report(self):
+        self.add_source()
+        gateway = Mock()
+        gateway.chat.return_value = {"answer": model_json(key="S9")}
+        with override_settings(ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED=True):
+            out = prepare_grounded_draft(
+                project=self.project, user=self.analyst, run=self.analysis,
+                external_transfer_approved=True, gateway=gateway,
+            )
+        self.assertEqual(out["status"], "MODEL_OUTPUT_REJECTED")
+        self.assertEqual(out["questions"], [])
+        self.assertFalse(out["principle_review"]["decision_ready"])
+        self.assertFalse(out["publication_permitted"])
+
+    def test_revoked_access_during_model_call_withholds_output_and_case_report(self):
+        self.add_source()
+        gateway = Mock()
+        def revoke(**kwargs):
+            ProjectMembership.objects.filter(
+                project=self.project, user=self.analyst,
+            ).update(is_active=False)
+            return {"answer": model_json()}
+        gateway.chat.side_effect = revoke
+        with override_settings(ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED=True):
+            out = prepare_grounded_draft(
+                project=self.project, user=self.analyst, run=self.analysis,
+                external_transfer_approved=True, gateway=gateway,
+            )
+        self.assertEqual(out, {"status": "ACCESS_DENIED", "model_called": True})
+
+    def test_changed_source_during_model_call_withholds_quotes(self):
+        source = self.add_source()
+        gateway = Mock()
+        def change_source(**kwargs):
+            EvidenceMemory.objects.filter(pk=source.pk).update(text_chunk="Changed evidence.")
+            return {"answer": model_json()}
+        gateway.chat.side_effect = change_source
+        with override_settings(ECOIQ_GROUNDED_AI_EXTERNAL_ENABLED=True):
+            out = prepare_grounded_draft(
+                project=self.project, user=self.analyst, run=self.analysis,
+                external_transfer_approved=True, gateway=gateway,
+            )
+        self.assertEqual(out["status"], "EVIDENCE_CHANGED")
+        self.assertNotIn("questions", out)
+        self.assertNotIn("source_manifest", out)
+        self.assertFalse(out["principle_review"]["decision_ready"])
 
 
 class GroundedGateBenchmarkTests(TestCase):

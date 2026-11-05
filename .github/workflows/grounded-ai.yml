@@ -9,6 +9,11 @@ on:
       - "ecoiq_os/grounded_ai.py"
       - "ecoiq_os/grounded_ai_eval.py"
       - "ecoiq_os/tests_grounded_ai.py"
+      - "ecoiq_os/principle_review.py"
+      - "ecoiq_os/tests_principle_review.py"
+      - "ecoiq_os/review_registry.py"
+      - "ecoiq_os/tests_review_registry.py"
+      - "core/management/commands/review_registry_inventory.py"
       - ".github/workflows/grounded-ai.yml"
       - "docs/architecture/GROUNDED_AI_V1.md"
   push:
@@ -17,6 +22,11 @@ on:
       - "ecoiq_os/grounded_ai.py"
       - "ecoiq_os/grounded_ai_eval.py"
       - "ecoiq_os/tests_grounded_ai.py"
+      - "ecoiq_os/principle_review.py"
+      - "ecoiq_os/tests_principle_review.py"
+      - "ecoiq_os/review_registry.py"
+      - "ecoiq_os/tests_review_registry.py"
+      - "core/management/commands/review_registry_inventory.py"
       - ".github/workflows/grounded-ai.yml"
 
 jobs:
@@ -46,11 +56,11 @@ jobs:
           pip install -r requirements-dev.txt
       - name: Lint, syntax, Django health and migration drift
         run: |
-          python -m compileall -q ecoiq_os/grounded_ai.py ecoiq_os/grounded_ai_eval.py ecoiq_os/tests_grounded_ai.py
-          ruff check ecoiq_os/grounded_ai.py ecoiq_os/grounded_ai_eval.py ecoiq_os/tests_grounded_ai.py
+          python -m compileall -q ecoiq_os/grounded_ai.py ecoiq_os/grounded_ai_eval.py ecoiq_os/tests_grounded_ai.py ecoiq_os/principle_review.py ecoiq_os/tests_principle_review.py ecoiq_os/review_registry.py ecoiq_os/tests_review_registry.py core/management/commands/review_registry_inventory.py
+          ruff check ecoiq_os/grounded_ai.py ecoiq_os/grounded_ai_eval.py ecoiq_os/tests_grounded_ai.py ecoiq_os/principle_review.py ecoiq_os/tests_principle_review.py ecoiq_os/review_registry.py ecoiq_os/tests_review_registry.py core/management/commands/review_registry_inventory.py
           python manage.py check
           python manage.py makemigrations --check --dry-run
       - name: Project isolation, external consent and exact citations
-        run: python manage.py test ecoiq_os.tests_grounded_ai api.tests_v2_decision_islah api.tests_os_pilot_journey --noinput
+        run: python manage.py test ecoiq_os.tests_grounded_ai ecoiq_os.tests_principle_review ecoiq_os.tests_review_registry api.tests_v2_decision_islah api.tests_os_pilot_journey --noinput
       - name: Offline synthetic citation benchmark
         run: python -m ecoiq_os.grounded_ai_eval

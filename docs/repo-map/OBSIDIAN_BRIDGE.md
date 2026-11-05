@@ -59,6 +59,8 @@ withheld.
 | Metric definitions (material vs derived) | `companies/metric_registry.py` |
 | Project roles and execution context | `gold_intelligence/access.py`, `docs/architecture/PROJECT_ACCESS.md` |
 | Analyst declaration workflow | `companies/analyst.py` |
+| Grounded investigation principle coverage (not an assessment) | `ecoiq_os/principle_review.py`, `docs/architecture/GROUNDED_PRINCIPLE_REVIEW_V1.md` |
+| Typed review inventory and pending KPI/surah pairs | `ecoiq_os/review_registry.py`, `docs/architecture/UNIFIED_REVIEW_REGISTRY.md` |
 | Unknown semantics — the single authority | `core/unknown.py` |
 
 **Entry point:** `companies.eligibility.decide(profile)` — the one place that
