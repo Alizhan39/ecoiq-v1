@@ -1,0 +1,11 @@
+{
+  "name": "EcoIQ — Decision Intelligence",
+  "short_name": "EcoIQ",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0B2530",
+  "description": "Evidence-backed decision intelligence and stewardship."
+}
