@@ -13,7 +13,7 @@ surface, listed below, and the rest is a roadmap rather than a promise.
 | django-stubs | 5.2.7 (`[compatible-mypy]`) |
 | djangorestframework-stubs | 3.16.4 |
 | Python target | 3.11 |
-| Django | 5.2.14 |
+| Django | 5.2.17 |
 
 Pinned exactly in `requirements-dev.txt`, for the same reason Ruff is: an
 unpinned checker turns a green branch red without anyone committing anything.
