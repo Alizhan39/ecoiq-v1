@@ -26,6 +26,11 @@ on:
 permissions:
   contents: read
 
+# Superseded PR commits should not keep installing the full Python stack.
+concurrency:
+  group: dependency-audit-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   python-vulnerability-audit:
     runs-on: ubuntu-latest
