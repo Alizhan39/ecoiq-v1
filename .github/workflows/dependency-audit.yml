@@ -1,0 +1,79 @@
+name: EcoIQ Dependency Vulnerability Audit
+
+# Audits resolved Python dependencies and production SPA packages without
+# rewriting any lockfile or attempting automatic fixes.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "requirements.txt"
+      - "requirements-dev.txt"
+      - "frontend/web/package.json"
+      - "frontend/web/package-lock.json"
+      - ".github/workflows/dependency-audit.yml"
+  push:
+    branches: [main]
+    paths:
+      - "requirements.txt"
+      - "requirements-dev.txt"
+      - "frontend/web/package.json"
+      - "frontend/web/package-lock.json"
+      - ".github/workflows/dependency-audit.yml"
+  schedule:
+    - cron: "30 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Superseded PR commits should not keep installing the full Python stack.
+concurrency:
+  group: dependency-audit-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  python-vulnerability-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install resolved application dependencies and pinned auditor
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pip-audit==2.10.1
+
+      - name: Check installed environment for known vulnerabilities
+        run: |
+          # Fail explicitly on known vulnerabilities or audit service errors.
+          # No --fix and no blanket --ignore-vuln suppressions.
+          python -m pip_audit --local --progress-spinner off
+
+  spa-production-vulnerability-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: frontend/web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Audit locked production dependencies
+        run: |
+          # npm audit reads package-lock.json; package installation is not
+          # required, and third-party install scripts are not executed.
+          npm audit --omit=dev --audit-level=high
