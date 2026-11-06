@@ -10,11 +10,9 @@ environment:
   # shipped in Flutter 3.27 / Dart 3.6.
   sdk: '>=3.6.0 <4.0.0'
 
-# NOTE: this project was authored without a local Flutter SDK available (see
-# the final report's "known risks and limitations" section) -- run `flutter
-# create .` in this directory FIRST to generate the native ios/, android/,
-# windows/, macos/, linux/, web/ platform folders, THEN `flutter pub get`.
-# See mobile/README.md for the exact bootstrap sequence.
+# Browser bootstrap source lives in mobile/web/. Native platform runners may
+# need regeneration on a clean checkout; CI uses Flutter 3.27.x. See
+# docs/deployment/FLUTTER_WEB_CLOUDFLARE.md for the independent web build.
 dependencies:
   flutter:
     sdk: flutter

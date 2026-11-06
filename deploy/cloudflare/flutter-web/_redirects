@@ -1,0 +1,2 @@
+# Deep links (/home, /search, /company/:slug) render through GoRouter.
+/* /index.html 200

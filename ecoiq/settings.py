@@ -88,6 +88,34 @@ if IS_PRODUCTION:
 # Note: bare "https://*" is not valid in Django — use explicit origins or "https://*.domain.com"
 CSRF_TRUSTED_ORIGINS = _parse_env_list('CSRF_TRUSTED_ORIGINS', '')
 
+# Flutter Web is a separate *browser* origin. The native iOS/Android/Windows
+# clients do not need CORS, and CORS never replaces endpoint authentication.
+# Set this env var on Render ONLY after the trusted Pages hostname is known.
+# Examples: ECOIQ_CORS_ALLOWED_ORIGINS=https://app.ecoiq.uk
+#           ECOIQ_CORS_ALLOWED_ORIGINS="https://app.ecoiq.uk https://ecoiq-flutter.pages.dev"
+CORS_ALLOWED_ORIGINS = _parse_env_list('ECOIQ_CORS_ALLOWED_ORIGINS', '')
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_CREDENTIALS = False  # mobile JWT/Bearer tokens; no cross-site cookies
+CORS_URLS_REGEX = r'^/api/'
+if IS_PRODUCTION:
+    from urllib.parse import urlsplit
+    for _cors_origin in CORS_ALLOWED_ORIGINS:
+        _parsed_origin = urlsplit(_cors_origin)
+        if (
+            _parsed_origin.scheme != 'https'
+            or not _parsed_origin.hostname
+            or _parsed_origin.path not in ('', '/')
+            or _parsed_origin.query
+            or _parsed_origin.fragment
+            or _parsed_origin.username
+            or _parsed_origin.password
+            or '*' in _cors_origin
+        ):
+            raise ImproperlyConfigured(
+                'ECOIQ_CORS_ALLOWED_ORIGINS requires explicit HTTPS origins '
+                'with no wildcards, paths or credentials.'
+            )
+
 # Startup diagnostic so Gunicorn logs show exactly what Django parsed (helps
 # diagnose a 400 without needing a shell). Written to stderr directly rather
 # than via `logging` because LOGGING below is not applied until Django finishes
@@ -103,6 +131,7 @@ if not RUNNING_TESTS:
 # ── Applications ──────────────────────────────────────────────────────────────
 
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -410,10 +439,13 @@ MIDDLEWARE = [
     # First, so the request id covers everything below it — including anything
     # logged by security middleware.
     'core.logging_middleware.RequestContextMiddleware',
+    # Must run before SecurityMiddleware / WhiteNoise, which can return early
+    # on redirects and static assets. CORS is restricted to /api/ only.
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     # WhiteNoise, subclassed so the Vite-hashed SPA bundle under
     # /static/spa/assets/ is cached as immutable. See core/whitenoise.py.
-    'core.whitenoise.SpaAwareWhiteNoiseMiddleware',   # static files — must be 2nd
+    'core.whitenoise.SpaAwareWhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',   # language detection from cookie/Accept-Language
     'django.middleware.common.CommonMiddleware',

@@ -1,0 +1,95 @@
+name: EcoIQ Flutter Web (Cloudflare Pages)
+
+# Native mobile and Django suites remain separate. This workflow is the
+# browser-specific compile/smoke gate and optional, secret-gated deployment.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - "scripts/build-flutter-web.sh"
+      - "deploy/cloudflare/flutter-web/**"
+      - ".github/workflows/flutter-web.yml"
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - "scripts/build-flutter-web.sh"
+      - "deploy/cloudflare/flutter-web/**"
+      - ".github/workflows/flutter-web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-web-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  flutter-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Flutter (same version as native CI)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.x'
+          channel: stable
+          cache: true
+
+      - name: Verify formatting and browser unit tests
+        working-directory: mobile
+        run: |
+          flutter pub get --enforce-lockfile
+          dart format --output=none --set-exit-if-changed lib/core/device/device_info_service.dart test/core/device_info_web_test.dart
+          flutter test --platform chrome test/core/device_info_web_test.dart
+
+      - name: Production release build (never use mock backend)
+        run: bash scripts/build-flutter-web.sh
+
+      - name: Upload static Pages distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: ecoiq-flutter-web
+          path: mobile/build/web/
+          if-no-files-found: error
+          retention-days: 7
+
+  # This job can ONLY run after a push to main, and only when the account
+  # owner has configured Cloudflare credentials. It does not touch Render.
+  deploy-pages:
+    needs: flutter-web
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download vetted web build
+        uses: actions/download-artifact@v4
+        with:
+          name: ecoiq-flutter-web
+          path: web-dist
+
+      - name: Check Cloudflare configuration without printing secrets
+        id: cloudflare
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$CF_TOKEN" ] && [ -n "$CF_ACCOUNT" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Cloudflare is not linked. Web artifact is built and stored in Actions, but no live deployment occurred."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy Flutter Web to Cloudflare Pages
+        if: steps.cloudflare.outputs.ready == 'true'
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy web-dist --project-name=ecoiq-flutter --branch=main
