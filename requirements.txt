@@ -93,7 +93,7 @@ meteostat==1.7.6
 # polling stand-in explicitly written to be replaced by a real queue.
 # httpx: already an indirect dependency (via the anthropic SDK) — now used
 # directly for the shared external-intelligence HTTP client.
-celery>=5.6
+celery>=5.6.3
 redis>=8.0
 httpx>=0.28
 
