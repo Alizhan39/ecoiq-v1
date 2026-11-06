@@ -472,10 +472,11 @@ def _rank_candidates(query_text, candidates, top_k):
 
     if connection.vendor == 'postgresql':
         from pgvector.django import CosineDistance
-        return list(candidates.annotate(distance=CosineDistance('embedding', query_vector)).order_by('distance')[:top_k])
+        return list(candidates.annotate(distance=CosineDistance('embedding', query_vector)).order_by('distance', 'pk')[:top_k])
 
     # Stream ORM rows without populating the QuerySet cache and retain only
-    # top_k winners. The key-only comparison preserves input order on ties.
+    # top_k winners. Break exact similarity ties on ascending primary key,
+    # matching the PostgreSQL ordering regardless of input queryset order.
     query_array = np.asarray(query_vector)
     query_norm = np.linalg.norm(query_array)
 
@@ -487,7 +488,7 @@ def _rank_candidates(query_text, candidates, top_k):
             denom = (np.linalg.norm(vector) * query_norm) or 1e-9
             yield float(np.dot(vector, query_array) / denom), memory
 
-    return [memory for _, memory in nlargest(top_k, scored_rows(), key=lambda pair: pair[0])]
+    return [memory for _, memory in nlargest(top_k, scored_rows(), key=lambda pair: (pair[0], -pair[1].pk))]
 
 
 def _similarities_for(query_text, memories):
