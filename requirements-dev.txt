@@ -11,7 +11,7 @@
 # Pinned exactly so CI and a developer's machine cannot disagree about what a
 # violation is. A floating version means a Ruff release can turn a green branch
 # red without a commit. Bump deliberately.
-ruff==0.14.2
+ruff==0.17.3
 
 # Used by core/tests_quality_gate.py to parse the workflow file. PyYAML is
 # currently present only as a transitive dependency of langchain-core, which is
@@ -24,4 +24,4 @@ PyYAML>=6.0
 # version-coupled, hence the [compatible-mypy] extra.
 mypy==1.18.2
 django-stubs[compatible-mypy]==5.2.7
-djangorestframework-stubs==3.16.4
+djangorestframework-stubs==3.18.2
