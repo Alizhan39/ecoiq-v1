@@ -4,11 +4,11 @@ Django==5.2.17
 # Keep the packaging toolchain patched in runtime images as well as CI.
 setuptools==84.2.1
 gunicorn==23.0.0
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.13
 pypdf==6.21.4
-python-dotenv==1.2.2
+python-dotenv==1.2.4
 weasyprint==70.0
-whitenoise==6.9.0
+whitenoise==6.12.0
 
 # ── Durable media storage (Cloudflare R2, S3-compatible) ─────────────────────
 # Uploaded files previously lived on the web service's own filesystem, which
@@ -18,8 +18,8 @@ whitenoise==6.9.0
 #
 # Both are inert unless MEDIA_STORAGE_BACKEND=r2: core/storage.py imports them
 # lazily, so a filesystem or test process never loads boto3.
-django-storages==1.14.4
-boto3==1.35.99
+django-storages==1.14.6
+boto3==1.43.123
 
 # ── Billing (Stripe) ─────────────────────────────────────────────────────────
 # Official Stripe Python SDK, pinned exactly like the other core dependencies
@@ -145,4 +145,4 @@ structlog==26.1.0
 
 # Error monitoring. Runtime infrastructure — it must be in the production image
 # that render.yaml builds. Inert unless SENTRY_DSN is set.
-sentry-sdk==2.66.1
+sentry-sdk==2.73.0
