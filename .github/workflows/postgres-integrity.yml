@@ -1,0 +1,120 @@
+name: EcoIQ PostgreSQL integrity and restore CI
+
+# Production uses PostgreSQL/pgvector, while the existing full Django suite
+# runs on SQLite. This gate exercises the actual database backend and verifies
+# a backup can be restored into a separate, disposable PostgreSQL database.
+# No production credentials, data, deployments, or paid resources are involved.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/models.py"
+      - "**/migrations/**"
+      - "ecoiq/settings.py"
+      - "requirements.txt"
+      - ".github/workflows/postgres-integrity.yml"
+  push:
+    branches: [main]
+    paths:
+      - "**/models.py"
+      - "**/migrations/**"
+      - "ecoiq/settings.py"
+      - "requirements.txt"
+      - ".github/workflows/postgres-integrity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: postgres-integrity-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        # Same PostgreSQL major as the documented production database, with
+        # pgvector available for evidence_memory's VectorExtension migration.
+        image: pgvector/pgvector:0.8.7-pg18-bookworm
+        env:
+          POSTGRES_DB: ecoiq_ci
+          POSTGRES_USER: ecoiq_ci
+          # No real credentials or real data. GitHub-hosted runner is ephemeral.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U ecoiq_ci -d ecoiq_ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=8
+
+    env:
+      DJANGO_SECRET_KEY: non-production-ci-only-secret-key
+      DEBUG: "False"
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      DATABASE_URL: postgresql://ecoiq_ci@127.0.0.1:5432/ecoiq_ci
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.16"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install application dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Validate real PostgreSQL schema and pgvector
+        run: |
+          set -euo pipefail
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+          python manage.py migrate --noinput
+          python manage.py migrate --check --noinput
+          python manage.py shell -c "from django.db import connection; assert connection.vendor == 'postgresql'"
+          test -n "$(docker exec "$POSTGRES_CONTAINER_ID" psql -U ecoiq_ci -d ecoiq_ci -Atc "SELECT extversion FROM pg_extension WHERE extname = 'vector'")"
+        env:
+          POSTGRES_CONTAINER_ID: ${{ job.services.postgres.id }}
+
+      - name: Exercise pg_dump and pg_restore with synthetic data
+        env:
+          POSTGRES_CONTAINER_ID: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          if [ -z "$POSTGRES_CONTAINER_ID" ]; then
+            echo "::error::Postgres service container is unavailable"
+            exit 1
+          fi
+          # This marker contains no user, client, financial or production data.
+          docker exec "$POSTGRES_CONTAINER_ID" psql -U ecoiq_ci -d ecoiq_ci -v ON_ERROR_STOP=1 -c "CREATE TABLE ci_restore_probe (value text PRIMARY KEY); INSERT INTO ci_restore_probe VALUES ('ecoiq-backup-roundtrip-ok');"
+          # Use pg_dump/pg_restore from the PG18 service itself: a host-side older
+          # pg_dump would fail on a newer PostgreSQL server major.
+          docker exec "$POSTGRES_CONTAINER_ID" pg_dump -U ecoiq_ci -d ecoiq_ci --format=custom --no-owner --no-acl > "$RUNNER_TEMP/ecoiq-ci.dump"
+          test -s "$RUNNER_TEMP/ecoiq-ci.dump"
+          docker exec "$POSTGRES_CONTAINER_ID" createdb -U ecoiq_ci ecoiq_restore_ci
+          docker exec -i "$POSTGRES_CONTAINER_ID" pg_restore -U ecoiq_ci -d ecoiq_restore_ci --exit-on-error --no-owner --no-acl < "$RUNNER_TEMP/ecoiq-ci.dump"
+          marker="$(docker exec "$POSTGRES_CONTAINER_ID" psql -U ecoiq_ci -d ecoiq_restore_ci -Atc "SELECT value FROM ci_restore_probe")"
+          test "$marker" = "ecoiq-backup-roundtrip-ok"
+          migration_count="$(docker exec "$POSTGRES_CONTAINER_ID" psql -U ecoiq_ci -d ecoiq_restore_ci -Atc "SELECT COUNT(*) FROM django_migrations")"
+          test "$migration_count" -gt 0
+          DATABASE_URL=postgresql://ecoiq_ci@127.0.0.1:5432/ecoiq_restore_ci python manage.py migrate --check --noinput
+          echo "PostgreSQL 18 backup/restore verified with synthetic marker and Django migration history."
+
+      - name: Exercise evidence and provenance tests against PostgreSQL
+        env:
+          DEBUG: "True"
+        run: |
+          python manage.py test evidence_memory.tests evidence_memory.tests_ranking_efficiency companies.tests_provenance --noinput
