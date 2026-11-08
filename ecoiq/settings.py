@@ -572,10 +572,37 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # 0 files, 0 bytes, 0 database references across all six upload fields. Nothing
 # had been lost because nothing had been uploaded. That is the good moment.
 #
-# OPT-IN. The filesystem stays the default so local development and the test
-# suite need no credentials and no network. R2 is selected only by setting
-# MEDIA_STORAGE_BACKEND=r2.
-MEDIA_STORAGE_BACKEND = os.environ.get('MEDIA_STORAGE_BACKEND', 'filesystem').strip().lower()
+# Production MUST use durable media. Render's local filesystem is ephemeral
+# even without a deploy (free services can spin down). Choosing R2 as the
+# production default is intentionally fail-closed: absent R2 credentials halt
+# startup instead of silently accepting uploads that will be lost.
+#
+# Development and tests may use the local filesystem without credentials.
+# This deployment currently has no Render persistent disk; a future disk-backed
+# storage option requires an explicit reviewed implementation, not a silent
+# fallback to MEDIA_ROOT.
+def _select_media_storage_backend(raw_backend: str | None, is_production: bool) -> str:
+    selected = (
+        ('r2' if is_production else 'filesystem')
+        if raw_backend is None else raw_backend.strip().lower()
+    )
+    if selected not in {'r2', 'filesystem'}:
+        raise ImproperlyConfigured(
+            'MEDIA_STORAGE_BACKEND must be r2 or filesystem; '
+            f'got {selected!r}.'
+        )
+    if is_production and selected == 'filesystem':
+        raise ImproperlyConfigured(
+            'Refusing MEDIA_STORAGE_BACKEND=filesystem in production: '
+            'Render local uploads are lost on deploy, restart and spin-down. '
+            'Configure durable R2 before enabling uploads.'
+        )
+    return selected
+
+
+MEDIA_STORAGE_BACKEND = _select_media_storage_backend(
+    os.environ.get('MEDIA_STORAGE_BACKEND'), IS_PRODUCTION
+)
 
 #: Presigned read URLs expire in five minutes by default. A URL that leaks —
 #: pasted into a ticket, captured by an intermediary — stops working quickly.
