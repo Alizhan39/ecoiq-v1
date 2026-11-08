@@ -97,6 +97,31 @@ class StorageSelectionTests(SimpleTestCase):
 
         self.assertNotIn('storage_r2', settings.STORAGES['default']['BACKEND'])
 
+    def test_production_defaults_to_durable_r2(self):
+        from ecoiq.settings import _select_media_storage_backend
+
+        self.assertEqual(_select_media_storage_backend(None, True), 'r2')
+        self.assertEqual(_select_media_storage_backend(None, False), 'filesystem')
+
+    def test_production_rejects_ephemeral_filesystem_even_when_explicit(self):
+        from ecoiq.settings import _select_media_storage_backend
+
+        with self.assertRaisesMessage(
+            ImproperlyConfigured, 'Refusing MEDIA_STORAGE_BACKEND=filesystem'
+        ):
+            _select_media_storage_backend('filesystem', True)
+
+    def test_typo_never_silently_selects_local_filesystem(self):
+        from ecoiq.settings import _select_media_storage_backend
+
+        with self.assertRaisesMessage(ImproperlyConfigured, 'must be r2 or filesystem'):
+            _select_media_storage_backend('r-2', True)
+
+    def test_development_remains_explicitly_local(self):
+        from ecoiq.settings import _select_media_storage_backend
+
+        self.assertEqual(_select_media_storage_backend('filesystem', False), 'filesystem')
+
     def test_r2_requires_every_variable_and_fails_closed(self):
         """
         Falling back to the local filesystem here would write uploads to a disk
