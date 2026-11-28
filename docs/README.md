@@ -6,7 +6,7 @@ Documentation index for the EcoIQ repository.
 
 ## Product references
 
-- [Five AI startup criteria for the EcoIQ Amanah pilot (Russian)](product/ai-startup-criteria/README.md) — source screenshots and questions for a banquet-hall pilot.
+- [Which AI startups will survive and grow? (Russian)](product/ai-startup-criteria/README.md) — five criteria from the slide, with the wording used in the video.
 
 ## Tazkiyah 114 — The Surah Map
 
