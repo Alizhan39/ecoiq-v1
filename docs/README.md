@@ -4,6 +4,10 @@ Documentation index for the EcoIQ repository.
 
 ---
 
+## Product references
+
+- [Five AI startup criteria for the EcoIQ Amanah pilot (Russian)](product/ai-startup-criteria/README.md) — source screenshots and questions for a banquet-hall pilot.
+
 ## Tazkiyah 114 — The Surah Map
 
 A Qur'an-inspired reflection and action platform: **114 Surahs → 114 life pathways.** It helps
